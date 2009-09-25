@@ -187,10 +187,6 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 		    d.add (p, 1);
 	    }
 
-	// normalize probability distributions over matched-pattern replacements
-	for (int p = 0; p < pattern.size(); ++p)
-	    ((IntegerRandomVariable) pattern.get(p)).normalize();
-
 	// init board summary counts
 	cellCount = new int[cellTypes];
 	for (int c = 0; c < cellTypes; ++c)
