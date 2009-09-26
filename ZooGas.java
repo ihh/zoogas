@@ -1,28 +1,10 @@
-import java.awt.Toolkit;
-import java.awt.Graphics;
-import java.awt.image.BufferStrategy;
+import java.lang.*;
+import java.util.*;
+import java.text.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.image.*;
 import javax.swing.JFrame;
-
-
-import java.awt.event.MouseListener;
-import java.awt.event.MouseEvent;
-
-import java.awt.event.KeyListener;
-import java.awt.event.KeyEvent;
-
-
-import java.awt.Point;
-import java.util.Vector;
-import java.util.Random;
-import java.awt.Color;
-
-import java.awt.FontMetrics;
-
-import java.lang.Math;
-import java.lang.String;
-import java.lang.RuntimeException;
-
-import java.text.DecimalFormat;
 
 public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
@@ -49,8 +31,6 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     int initialDiversity = 3;  // initial number of species (can be increased with mutator gas)
 
     // view
-    double refreshPeriod = 1;  // probability of updating a cell before a refresh
-    boolean uniformSpeed = true;  // aim for constant (slow) update speed
     int pixelsPerCell = 4;  // width & height of each cell in pixels
     int boardSize;  // width & height of board in pixels
     int popChartHeight = 100, popBarHeight = 4, entropyBarHeight = 20, statusBarHeight;  // size in pixels of various parts of the status bar (below the board)
@@ -112,7 +92,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	cell = new int[size][size];
 	boardSize = size * pixelsPerCell;
 
-	patternMatchesPerRefresh = (int) (refreshPeriod * size * size);
+	patternMatchesPerRefresh = (int) (size * size);
 
 	wallParticle = species + 1;
 	cementParticle = species + 2;
@@ -148,12 +128,11 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	addPatterns();
 
 	// pad any empty patterns, just to level out the speed
-	if (uniformSpeed)
-	    for (int p = 0; p < cellTypes * cellTypes; ++p) {
-		IntegerRandomVariable d = (IntegerRandomVariable) pattern.get(p);
-		if (d.size() == 0)
-		    d.add (p, 1);
-	    }
+	for (int p = 0; p < cellTypes * cellTypes; ++p) {
+	    IntegerRandomVariable d = (IntegerRandomVariable) pattern.get(p);
+	    if (d.size() == 0)
+		d.add (p, 1);
+	}
 
 	// init board summary counts
 	cellCount = new int[cellTypes];
@@ -346,86 +325,87 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 	drawEverything();
 
-	Point mousePos = new Point(), sprayCell = new Point();
+	Timer timer = new Timer();
+	timer.scheduleAtFixedRate (new ZooGasRefresher(this), (long) 0, (long) 20);  // 50Hz redraws
+
 	while (true)
 	    {
 		evolveStuff();
-
-		plotCounts();
-
-		refreshBuffer();
-
-		// randomize
-		if (randomPressed) {
-		    randomizeBoard();
-		    redrawBoard();
-		    randomPressed = false;
-		}
-
-		// do spray
-		if (mouseDown) {
-		    mousePos = getMousePosition();
-		    if (mousePos != null) {
-			cursor.x = (int) (mousePos.x / pixelsPerCell);
-			cursor.y = (int) (mousePos.y / pixelsPerCell);
-
-			if (cursor.x < size && cursor.y < size)
-			    for (int i = 0; i < sprayPower; ++i) {
-				if (sprayReserve[sprayParticle] > 0) {
-
-				    sprayCell.x = (cursor.x + rnd.nextInt(sprayDiameter) + size - sprayDiameter / 2) % size;
-				    sprayCell.y = (cursor.y + rnd.nextInt(sprayDiameter) + size - sprayDiameter / 2) % size;
-
-				    int oldCell = readCell (sprayCell);
-				    if (oldCell == 0)
-					writeCell (sprayCell, sprayParticle, oldCell);
-
-				    // unless this cell was already full of spray, or a wall, deplete the reserve
-				    //				    if (oldCell != sprayParticle && oldCell != wallParticle)
-				    if (oldCell == 0)
-					--sprayReserve[sprayParticle];
-				}
-			    }
-		    }
-
-		} else {  // if (mouseDown) ...
-
-		    // not spraying, so refresh spray reserves
-		    for (int c = 0; c < cellTypes; ++c) {
-			double refillRate = sprayRefillRate[c] * (entropy + 1) / (maxEntropy + 1);
-
-			if (refillRate > 0. && sprayReserve[c] < sprayMax[c])
-			    {
-				if (refillRate > 1.)
-				    sprayReserve[c] += (int) (refillRate + .5);
-				else if (rnd.nextDouble() < refillRate)
-				    ++sprayReserve[c];
-			    }
-		    }
-		}
+		useTools();
 	    }
     }
 
-    private void refreshBuffer() {
+    protected void useTools() {
+	Point mousePos, sprayCell = new Point();
+
+	// randomize
+	if (randomPressed) {
+	    randomizeBoard();
+	    redrawBoard();
+	    refreshBuffer();
+	    randomPressed = false;
+	}
+
+	// do spray
+	if (mouseDown) {
+	    mousePos = getMousePosition();
+	    if (mousePos != null) {
+		cursor.x = (int) (mousePos.x / pixelsPerCell);
+		cursor.y = (int) (mousePos.y / pixelsPerCell);
+
+		if (cursor.x < size && cursor.y < size)
+		    for (int i = 0; i < sprayPower; ++i) {
+			if (sprayReserve[sprayParticle] > 0) {
+
+			    sprayCell.x = (cursor.x + rnd.nextInt(sprayDiameter) + size - sprayDiameter / 2) % size;
+			    sprayCell.y = (cursor.y + rnd.nextInt(sprayDiameter) + size - sprayDiameter / 2) % size;
+
+			    int oldCell = readCell (sprayCell);
+			    if (oldCell == 0) {
+				writeCell (sprayCell, sprayParticle, oldCell);
+				--sprayReserve[sprayParticle];
+			    }
+			}
+		    }
+	    }
+
+	} else {  // if (mouseDown) ...
+
+	    // not spraying, so refresh spray reserves
+	    for (int c = 0; c < cellTypes; ++c) {
+		double refillRate = sprayRefillRate[c] * (entropy + 1) / (maxEntropy + 1);
+
+		if (refillRate > 0. && sprayReserve[c] < sprayMax[c])
+		    {
+			if (refillRate > 1.)
+			    sprayReserve[c] += (int) (refillRate + .5);
+			else if (rnd.nextDouble() < refillRate)
+			    ++sprayReserve[c];
+		    }
+	    }
+	}
+    }
+
+    protected void refreshBuffer() {
 	bf.show();
 	Toolkit.getDefaultToolkit().sync();	
     }
 
-    private void evolveStuff() {
+    protected void evolveStuff() {
 	Point p = new Point(), n = new Point();
 	int pc, nc;
 	for (int u = 0; u < patternMatchesPerRefresh; ++u)
 	    {
 		getRandomPoint(p);
 		pc = readCell(p);
-		if (uniformSpeed || pc != 0) {
-		    getRandomNeighbor(p,n);
-		    nc = readCell (n);
-		    int cellPairIndex = makeCellPairIndex (pc, nc);
-		    IntegerRandomVariable pd = (IntegerRandomVariable) pattern.get(cellPairIndex);
-		    if (uniformSpeed || pd.size() > 0)
-			writeCellPair (p, n, pd.sample (rnd), cellPairIndex);
-		}
+
+		getRandomNeighbor(p,n);
+		nc = readCell (n);
+
+		int cellPairIndex = makeCellPairIndex (pc, nc);
+		IntegerRandomVariable pd = (IntegerRandomVariable) pattern.get(cellPairIndex);
+
+		writeCellPair (p, n, pd.sample (rnd), cellPairIndex);
 	    }
     }
 
@@ -487,7 +467,6 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	if (old_pc != pc) {
 	    if (!idealPressed) {
 		cell[p.x][p.y] = pc;
-		drawCell (p);
 	    }
 	    --cellCount[old_pc];
 	    ++cellCount[pc];
@@ -544,7 +523,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	refreshBuffer();
     }
 
-    private void redrawBoard() {
+    protected void redrawBoard() {
 	bfGraphics.setColor(Color.black);
 	bfGraphics.fillRect(0,0,boardSize,boardSize);
 
@@ -552,12 +531,10 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	for (p.x = 0; p.x < size; ++p.x)
 	    for (p.y = 0; p.y < size; ++p.y)
 		drawCell (p);
-
-	refreshBuffer();
     }
 
     // status & tool bars
-    private void plotCounts() {
+    protected void plotCounts() {
 	int h = 0;
 	int cellsOnBoard = size * size;
 	double[] p = new double[species + 1];
@@ -570,25 +547,26 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    totalCount += cellCount[c];
 	}
 
-	for (int c = 1; c <= species; ++c) {
-	    p[c] = ((double) cellCount[c]) / (double) totalCount;
-	    if (p[c] > 0 && p[c] <= 1)
-		entropy -= p[c] * log2(p[c]);
+	if (maxCount > 0)
+	    for (int c = 1; c <= species; ++c) {
+		p[c] = ((double) cellCount[c]) / (double) totalCount;
+		if (p[c] > 0 && p[c] <= 1)
+		    entropy -= p[c] * log2(p[c]);
 
-	    bfGraphics.setColor(cellColor(c));
-	    int b = popChartHeight * cellCount[c] / totalCount;
-	    int w = boardSize * cellCount[c] / maxCount;
-	    if (b < 1 && cellCount[c] > 0)
-		b = 1;
-	    if (b + h > popChartHeight)
-		b = popChartHeight - h;
-	    bfGraphics.fillRect(histXPos,boardSize + popChartHeight - h - b,1,b);
-	    h += b;
+		bfGraphics.setColor(cellColor(c));
+		int b = popChartHeight * cellCount[c] / totalCount;
+		int w = boardSize * cellCount[c] / maxCount;
+		if (b < 1 && cellCount[c] > 0)
+		    b = 1;
+		if (b + h > popChartHeight)
+		    b = popChartHeight - h;
+		bfGraphics.fillRect(histXPos,boardSize + popChartHeight - h - b,1,b);
+		h += b;
 
-	    bfGraphics.fillRect(0,boardSize + popChartHeight + popBarHeight * c,w,popBarHeight);
-	    bfGraphics.setColor(Color.black);
-	    bfGraphics.fillRect(w+1,boardSize + popChartHeight + popBarHeight * c,boardSize-w-1,popBarHeight);
-	}
+		bfGraphics.fillRect(0,boardSize + popChartHeight + popBarHeight * c,w,popBarHeight);
+		bfGraphics.setColor(Color.black);
+		bfGraphics.fillRect(w+1,boardSize + popChartHeight + popBarHeight * c,boardSize-w-1,popBarHeight);
+	    }
 	bfGraphics.setColor(Color.black);
 	bfGraphics.fillRect(histXPos,boardSize,1,popChartHeight - h);
 
