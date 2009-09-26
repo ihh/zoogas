@@ -56,7 +56,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     int patternMatchesPerRefresh;
 
     // main board data
-    int[][] cell;
+    int[][] cell, lock;
     int[] cellCount;
 
     // helper objects
@@ -90,6 +90,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	// set helpers, etc.
 	rnd = new Random();
 	cell = new int[size][size];
+	lock = new int[size][size];
 	boardSize = size * pixelsPerCell;
 
 	patternMatchesPerRefresh = (int) (size * size);
@@ -141,13 +142,15 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 	// init board
 	for (int x = 0; x < size; ++x)
-	    for (int y = 0; y < size; ++y)
+	    for (int y = 0; y < size; ++y) {
 		if (rnd.nextDouble() < initialDensity) {
 		    int s = rnd.nextInt(initialDiversity) * (species/initialDiversity) + 1;
 		    cell[x][y] = s;
 		    ++cellCount[s];
 		} else
 		    ++cellCount[0];
+		lock[x][y] = 0;
+	    }
 
 	// init spray tools
 	initSprayTools();
@@ -325,17 +328,17 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 	drawEverything();
 
-	Timer timer = new Timer();
-	timer.scheduleAtFixedRate (new ZooGasRefresher(this), (long) 0, (long) 20);  // 50Hz redraws
-
 	while (true)
 	    {
 		evolveStuff();
 		useTools();
+
+		plotCounts();
+		refreshBuffer();
 	    }
     }
 
-    protected void useTools() {
+    private void useTools() {
 	Point mousePos, sprayCell = new Point();
 
 	// randomize
@@ -391,22 +394,52 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	Toolkit.getDefaultToolkit().sync();	
     }
 
-    protected void evolveStuff() {
+    private void evolveStuff() {
 	Point p = new Point(), n = new Point();
-	int pc, nc;
 	for (int u = 0; u < patternMatchesPerRefresh; ++u)
 	    {
 		getRandomPoint(p);
-		pc = readCell(p);
-
 		getRandomNeighbor(p,n);
-		nc = readCell (n);
-
-		int cellPairIndex = makeCellPairIndex (pc, nc);
-		IntegerRandomVariable pd = (IntegerRandomVariable) pattern.get(cellPairIndex);
-
-		writeCellPair (p, n, pd.sample (rnd), cellPairIndex);
+		evolvePairLocked(p,n);
 	    }
+    }
+
+    boolean onBoard (Point p) { return p.x >= 0 && p.x < size && p.y >= 0 && p.y < size; }
+
+    void evolvePairLocked (Point sourceCoords, Point targetCoords)
+    {
+	++lock[sourceCoords.x][sourceCoords.y];
+	if (onBoard (targetCoords)) {
+	    ++lock[targetCoords.x][targetCoords.y];
+	    evolvePair (sourceCoords, targetCoords);
+	    --lock[targetCoords.x][targetCoords.y];
+	} else {
+	    // request remote evolveTarget
+	}
+	--lock[sourceCoords.x][sourceCoords.y];
+    }
+
+    synchronized void evolvePair (Point sourceCoords, Point targetCoords)
+    {
+	writeCell (sourceCoords, evolveTargetInner (targetCoords, readCell(sourceCoords)));
+    }
+
+    synchronized int evolveTarget (Point targetCoords, int oldSourceState)
+    {
+	if (lock[targetCoords.x][targetCoords.y] > 0)
+	    return -1;
+	return evolveTargetInner (targetCoords, oldSourceState);
+    }
+
+    int evolveTargetInner (Point targetCoords, int oldSourceState)
+    {
+	int oldTargetState = readCell (targetCoords);
+
+	int oldCellPairIndex = makeCellPairIndex (oldSourceState, oldTargetState);
+	int newCellPairIndex = ((IntegerRandomVariable) pattern.get(oldCellPairIndex)).sample(rnd);
+
+	writeCell (targetCoords, getTargetState (newCellPairIndex));
+	return getSourceState (newCellPairIndex);
     }
 
     private void getRandomPoint (Point p) {
@@ -425,17 +458,17 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     private static double log2(double x) { return Math.log(x) / Math.log(2); }
 
-    private void writeCellPair (Point p, Point n, int newCellPairIndex) {
-	writeCellPair (p, n, newCellPairIndex, makeCellPairIndex (readCell(p), readCell(n)));
+
+    private int makeCellPairIndex (int sourceState, int targetState) {
+	return targetState + cellTypes * sourceState;
     }
 
-    private void writeCellPair (Point p, Point n, int newCellPairIndex, int oldCellPairIndex) {
-	writeCell (p, (int) (newCellPairIndex / cellTypes), (int) (oldCellPairIndex / cellTypes));
-	writeCell (n, newCellPairIndex % cellTypes, oldCellPairIndex % cellTypes);
+    private int getSourceState (int cellPairIndex) {
+	return cellPairIndex / cellTypes;
     }
 
-    private int makeCellPairIndex (int pc, int nc) {
-	return nc + cellTypes * pc;
+    private int getTargetState (int cellPairIndex) {
+	return cellPairIndex % cellTypes;
     }
 
     private int readCell (Point p) {
@@ -467,6 +500,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	if (old_pc != pc) {
 	    if (!idealPressed) {
 		cell[p.x][p.y] = pc;
+		drawCell(p);
 	    }
 	    --cellCount[old_pc];
 	    ++cellCount[pc];
