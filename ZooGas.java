@@ -27,34 +27,34 @@ import java.text.DecimalFormat;
 public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     // simulation particle params
-    int size;  // size of board in cells
-    int species;  // number of species
-    int aversion;  // number of species that species will consider too similar to prey on
-    int omnivorousness;  // number of species that each species can prey on
-    double forageEfficiency;  // probability that predation leads successfully to breeding
-    double chokeRate;  // probability of dying due to overcrowding
-    double birthRate;  // probability of breeding
-    int mutateRange;  // mutation distance
+    int size = 128;  // size of board in cells
+    int species = 18;  // number of species
+    int aversion = 1;  // number of species that species will consider too similar to prey on
+    int omnivorousness = 11;  // number of species that each species can prey on
+    double forageEfficiency = .8;  // probability that predation leads successfully to breeding
+    double chokeRate = .01;  // probability of dying due to overcrowding
+    double birthRate = .02;  // probability of breeding
+    int mutateRange = 2;  // mutation distance
 
     // tool particle params
-    double buriedWallDecayRate, exposedWallDecayRate;  // probability of wall decay when buried/exposed
-    double cementSetRate, cementStickRate;  // probability of cement setting into wall (or sticking to existing wall)
-    double gasDispersalRate;  // probability that a gas particle will disappear
-    double gasMultiplyRate;  // probability that a surviving fecundity gas particle will multiply
-    double lavaSeedRate;  // probability that lava will stick to a wall particle (it always sticks to basalt)
-    double lavaFlowRate;  // probability that lava will take a random step
+    double buriedWallDecayRate = .00018, exposedWallDecayRate = .00022;  // probability of wall decay when buried/exposed
+    double cementSetRate = .2, cementStickRate = .9;  // probability of cement setting into wall (or sticking to existing wall)
+    double gasDispersalRate = .1;  // probability that a gas particle will disappear
+    double gasMultiplyRate = .2;  // probability that a surviving fecundity gas particle will multiply (gives illusion of pressure)
+    double lavaSeedRate = .01;  // probability that lava will stick to a wall particle (it always sticks to basalt)
+    double lavaFlowRate = .3;  // probability that lava will take a random step
 
     // initial conditions
-    double initialDensity;  // initial density of species-containing cells
-    int initialDiversity;  // initial number of species (can be increased with mutator gas)
+    double initialDensity = .1;  // initial density of species-containing cells
+    int initialDiversity = 3;  // initial number of species (can be increased with mutator gas)
 
     // view
-    double refreshPeriod;  // probability of updating a cell before a refresh
-    boolean uniformSpeed;  // aim for constant (slow) update speed
-    int pixelsPerCell;  // width & height of each cell in pixels
+    double refreshPeriod = 1;  // probability of updating a cell before a refresh
+    boolean uniformSpeed = true;  // aim for constant (slow) update speed
+    int pixelsPerCell = 4;  // width & height of each cell in pixels
     int boardSize;  // width & height of board in pixels
-    int popChartHeight, popBarHeight, entropyBarHeight, statusBarHeight;  // size in pixels of various parts of the status bar (below the board)
-    int toolKeyWidth, toolReserveBarWidth, toolHeight, toolBarWidth;  // size in pixels of various parts of the tool bar (right of the board)
+    int popChartHeight = 100, popBarHeight = 4, entropyBarHeight = 20, statusBarHeight;  // size in pixels of various parts of the status bar (below the board)
+    int toolKeyWidth = 16, toolReserveBarWidth = 100, toolHeight = 30, toolBarWidth;  // size in pixels of various parts of the tool bar (right of the board)
     Vector cellColorVec;
 
     // tools
@@ -63,8 +63,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     double[] sprayRefillRate;
 
     // cheat c0d3z
-    String cheatString;
-    int cheatStringPos;
+    String cheatString = "boosh";
+    int cheatStringPos = 0;
     boolean cheating() { return cheatStringPos == cheatString.length(); }
 
     // underlying cellular automata model
@@ -90,7 +90,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     boolean idealPressed;  // true if 'idealize' button was pressed (model as a perfectly-mixing ideal gas, using Gillespie algorithm)
     int sprayParticle;  // current spray particle
 
-    int histXPos;  // x-pixel of histogram
+    int histXPos = 0;  // x-pixel of histogram
 
     double entropy;  // current entropy score (defined in terms of *relative* species populations)
     double bestEntropy;  // best entropy so far
@@ -106,58 +106,26 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     // constructor
     public ZooGas() {
-	// set main parameters
-	this.species = 18;
-	this.omnivorousness = 11;
-	this.aversion = 1;
-
-	this.initialDensity = .1;
-	this.initialDiversity = 3;
-
-	this.size = 128;  // ideally a power of 2, for good random numbers
-	this.pixelsPerCell = 4;
-
-	double bdpScale = 1;  // scaling factor for birth/death/predation process
-	this.forageEfficiency = .8 * bdpScale;
-	this.birthRate = .02 * bdpScale;
-	this.chokeRate = .01 * bdpScale;
-
-	this.mutateRange = 2;
-
-	this.refreshPeriod = 1;
-	this.uniformSpeed = true;
-
-	this.buriedWallDecayRate = .00018;
-	this.exposedWallDecayRate = .00022;
-
-	this.cementSetRate = .2;
-	this.cementStickRate = .9;
-
-	this.gasDispersalRate = .1;
-	this.gasMultiplyRate = .2;
-
-	this.lavaSeedRate = .01;
-	this.lavaFlowRate = .3;
 
 	// set helpers, etc.
-	this.rnd = new Random();
-	this.cell = new int[size][size];
-	this.boardSize = size * pixelsPerCell;
+	rnd = new Random();
+	cell = new int[size][size];
+	boardSize = size * pixelsPerCell;
 
-	this.patternMatchesPerRefresh = (int) (refreshPeriod * size * size);
+	patternMatchesPerRefresh = (int) (refreshPeriod * size * size);
 
-	this.wallParticle = species + 1;
-	this.cementParticle = species + 2;
-	this.acidParticle = species + 3;
-	this.fecundityParticle = species + 4;
-	this.mutatorParticle = species + 5;
-	this.lavaParticle = species + 6;
-	this.basaltParticle = species + 7;
+	wallParticle = species + 1;
+	cementParticle = species + 2;
+	acidParticle = species + 3;
+	fecundityParticle = species + 4;
+	mutatorParticle = species + 5;
+	lavaParticle = species + 6;
+	basaltParticle = species + 7;
 
-	this.cellTypes = basaltParticle + 1;
+	cellTypes = basaltParticle + 1;
 
 	// init color vector
-	this.cellColorVec = new Vector (cellTypes);
+	cellColorVec = new Vector (cellTypes);
 	cellColorVec.add (Color.black);  // empty space
 	for (int s = 0; s < species; ++s)
 	    cellColorVec.add (Color.getHSBColor ((float) s / (float) (species+1), 1, 1));
@@ -171,8 +139,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	cellColorVec.add (Color.orange);  // basalt
 
 	// init pattern-matching rule dictionary
-	this.cellTypes = cellColorVec.size();
-	this.pattern = new Vector (cellTypes * cellTypes);
+	cellTypes = cellColorVec.size();
+	pattern = new Vector (cellTypes * cellTypes);
 	for (int p = 0; p < cellTypes * cellTypes; ++p)
 	    pattern.add (new IntegerRandomVariable());
 
@@ -197,7 +165,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    for (int y = 0; y < size; ++y)
 		if (rnd.nextDouble() < initialDensity) {
 		    int s = rnd.nextInt(initialDiversity) * (species/initialDiversity) + 1;
-		    this.cell[x][y] = s;
+		    cell[x][y] = s;
 		    ++cellCount[s];
 		} else
 		    ++cellCount[0];
@@ -206,40 +174,29 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	initSprayTools();
 
 	// init view
-	this.popChartHeight = 100;
-	this.popBarHeight = 4;
-	this.entropyBarHeight = 20;
-	this.statusBarHeight = popChartHeight + popBarHeight * (species + 1) + entropyBarHeight;
+	statusBarHeight = popChartHeight + popBarHeight * (species + 1) + entropyBarHeight;
+	toolBarWidth = toolKeyWidth + toolReserveBarWidth;
 
-	this.toolKeyWidth = 16;
-	this.toolReserveBarWidth = 100;
-	this.toolHeight = 30;
-	this.toolBarWidth = toolKeyWidth + toolReserveBarWidth;
-
-	this.histXPos = 0;
-
-	this.bestEntropy = 0;
-	this.maxEntropy = log2(species);
-	this.entropy = log2(initialDiversity);
-	this.minEntropyOverCycle = entropy;
-	this.bestMinEntropyOverCycle = entropy;
+	entropy = log2(initialDiversity);
+	bestEntropy = minEntropyOverCycle = bestMinEntropyOverCycle = entropy;
+	maxEntropy = log2(species);
 
 	// init Swing
-	this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	this.setUndecorated(true);
-	this.setSize(boardSize + toolBarWidth,boardSize + statusBarHeight);
-	this.setVisible(true);
+	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+	setUndecorated(true);
+	setSize(boardSize + toolBarWidth,boardSize + statusBarHeight);
+	setVisible(true);
 
 	// double buffering
-	this.createBufferStrategy(2);
-	bf = this.getBufferStrategy();
+	createBufferStrategy(2);
+	bf = getBufferStrategy();
 	bfGraphics = bf.getDrawGraphics();
 
 	// register for mouse & keyboard events
-	this.cursor = new Point();
-	this.mouseDown = false;
-	this.randomPressed = false;
-	this.idealPressed = false;
+	cursor = new Point();
+	mouseDown = false;
+	randomPressed = false;
+	idealPressed = false;
 
         addMouseListener(this);
         addKeyListener(this);
@@ -349,12 +306,12 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     // init tools method
     private void initSprayTools() {
-	this.sprayDiameter = 6;
-	this.sprayPower = 45;
+	sprayDiameter = 6;
+	sprayPower = 45;
 
-	this.sprayReserve = new int[cellTypes];
-	this.sprayMax = new int[cellTypes];
-	this.sprayRefillRate = new double[cellTypes];
+	sprayReserve = new int[cellTypes];
+	sprayMax = new int[cellTypes];
+	sprayRefillRate = new double[cellTypes];
 
 	for (int c = 0; c < cellTypes; ++c) {
 	    sprayReserve[c] = sprayMax[c] = 0;
@@ -378,10 +335,9 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	sprayRefillRate[lavaParticle] = .5 * baseRefillRate;
 	sprayMax[lavaParticle] = 400;
 
-	this.sprayParticle = cementParticle;
+	sprayParticle = cementParticle;
 
-	this.cheatString = new String ("boosh");
-	this.cheatStringPos = 0;
+	cheatStringPos = 0;
     }
 
     // main game loop
