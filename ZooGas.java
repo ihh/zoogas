@@ -360,13 +360,15 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 		    for (int i = 0; i < sprayPower; ++i) {
 			if (sprayReserve[sprayParticle] > 0) {
 
-			    sprayCell.x = (cursor.x + rnd.nextInt(sprayDiameter) + size - sprayDiameter / 2) % size;
-			    sprayCell.y = (cursor.y + rnd.nextInt(sprayDiameter) + size - sprayDiameter / 2) % size;
+			    sprayCell.x = cursor.x + rnd.nextInt(sprayDiameter) - sprayDiameter / 2;
+			    sprayCell.y = cursor.y + rnd.nextInt(sprayDiameter) - sprayDiameter / 2;
 
-			    int oldCell = readCell (sprayCell);
-			    if (oldCell == 0) {
-				writeCell (sprayCell, sprayParticle, oldCell);
-				--sprayReserve[sprayParticle];
+			    if (onBoard(sprayCell)) {
+				int oldCell = readCell (sprayCell);
+				if (oldCell == 0) {
+				    writeCell (sprayCell, sprayParticle, oldCell);
+				    --sprayReserve[sprayParticle];
+				}
 			    }
 			}
 		    }
@@ -448,11 +450,18 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     }
 
     private void getRandomNeighbor (Point p, Point n) {
-	int ni = rnd.nextInt(4);
-	n.x = p.x;
-	n.y = p.y;
-	int delta = (ni & 1) == 0 ? size-1 : +1;
-	if ((ni & 2) == 0) { n.x = (n.x + delta) % size; } else { n.y = (n.y + delta) % size; }
+	do {
+	    int ni = rnd.nextInt(4);
+	    n.x = p.x;
+	    n.y = p.y;
+	    int delta = (ni & 1) == 0 ? -1 : +1;
+	    if ((ni & 2) == 0) { n.x += delta; } else { n.y += delta; }
+	    // Replace previous two lines with the following for periodic boundary conditions:
+	    /*
+	      int delta = (ni & 1) == 0 ? size-1 : +1;
+	      if ((ni & 2) == 0) { n.x = (n.x + delta) % size; } else { n.y = (n.y + delta) % size; }
+	    */
+	} while (!onBoard(n));
     }
     private int neighborhoodSize() { return 4; }
 
