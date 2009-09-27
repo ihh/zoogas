@@ -9,7 +9,7 @@ testserver: classfiles
 testclient: classfiles
 	java ZooGas 4445 localhost 4444
 
-classfiles: $(subst .java,.class,$(wildcard *.java))
+classfiles class: $(subst .java,.class,$(wildcard *.java))
 
 %.class: %.java
 	javac $<

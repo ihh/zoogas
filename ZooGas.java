@@ -52,6 +52,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     // networking
     BoardServer boardServer = null;
     int boardServerPort = 4444;
+    String localhost = null;
 
     // underlying cellular automata model
     int cellTypes;  // 0 is assumed to represent inactive, empty space
@@ -62,7 +63,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     int patternMatchesPerRefresh;
 
     // main board data
-    int[][] cell, lock;
+    int[][] cell;
     int[] cellCount;
     HashMap remoteCell;  // map of off-board Point's to RemoteCellCoord's
 
@@ -113,10 +114,10 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     public ZooGas (int port, InetSocketAddress remote) {
 	this(port);
 	for (int i = 0; i < size; ++i) {
-	    connectRemotePair (new Point(0,i), new Point(-1,i), new Point(-size,0), remote);
-	    connectRemotePair (new Point(127,i), new Point(128,i), new Point(size,0), remote);
-	    connectRemotePair (new Point(i,0), new Point(i,-1), new Point(0,-size), remote);
-	    connectRemotePair (new Point(i,127), new Point(i,128), new Point(0,size), remote);
+	    connectBorderPair (new Point(0,i), new Point(-1,i), new Point(-size,0), remote);
+	    connectBorderPair (new Point(127,i), new Point(128,i), new Point(size,0), remote);
+	    connectBorderPair (new Point(i,0), new Point(i,-1), new Point(0,-size), remote);
+	    connectBorderPair (new Point(i,127), new Point(i,128), new Point(0,size), remote);
 	}
     }
 
@@ -131,6 +132,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	} catch (IOException e) {
 	    System.err.println("I/O error while instantiating BoardServer.");
             System.err.println(e.toString());
+	    e.printStackTrace();
 	}
     }
 
@@ -140,7 +142,6 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	// set helpers, etc.
 	rnd = new Random();
 	cell = new int[size][size];
-	lock = new int[size][size];
 	remoteCell = new HashMap();
 	boardSize = size * pixelsPerCell;
 
@@ -200,7 +201,6 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 		    ++cellCount[s];
 		} else
 		    ++cellCount[0];
-		lock[x][y] = 0;
 	    }
 
 	// init spray tools
@@ -233,6 +233,13 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
         addMouseListener(this);
         addKeyListener(this);
+
+	// net init
+	try {
+	    localhost = InetAddress.getLocalHost().getHostAddress();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	}
     }
 
     // builder method for patterns
@@ -450,81 +457,26 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    {
 		getRandomPoint(p);
 		getRandomNeighbor(p,n);
-		evolvePairLocked(p,n);
+		spawnEvolvePair(p,n);
 	    }
     }
 
     private boolean onBoard (Point p) { return p.x >= 0 && p.x < size && p.y >= 0 && p.y < size; }
 
-    private boolean evolvePairLocked (Point sourceCoords, Point targetCoords)
+    private void spawnEvolvePair (Point sourceCoords, Point targetCoords)
     {
-	if (lock[sourceCoords.x][sourceCoords.y] > 0)
-	    return false;
-	++lock[sourceCoords.x][sourceCoords.y];
-
 	if (onBoard (targetCoords)) {
-
-	    if (lock[targetCoords.x][targetCoords.y] > 0)
-		{
-		    --lock[sourceCoords.x][sourceCoords.y];
-		    return false;
-		}
-	    ++lock[targetCoords.x][targetCoords.y];
-
 	    evolvePair (sourceCoords, targetCoords);
-
-	    --lock[targetCoords.x][targetCoords.y];
 	} else {
 	    // request remote evolveTarget
 	    RemoteCellCoord remoteCoords = (RemoteCellCoord) remoteCell.get (targetCoords);
-	    if (remoteCoords != null) {
-		// System.err.println ("Attempting evolveBorderPair, source " + sourceCoords + ", remote target " + remoteCoords.p + " @ " + remoteCoords.sockAddr);
-		boolean success = evolveBorderPair (sourceCoords, remoteCoords);
-		// if it fails, could sleep (for random # of milliseconds) and retry; but it hardly seems worth it
-		// System.err.println ("..." + (success ? "succeeded" : "failed"));
-	    }
+	    if (remoteCoords != null)
+		evolveBorderPair (sourceCoords, remoteCoords);
 	}
-
-	--lock[sourceCoords.x][sourceCoords.y];
-	return true;
     }
 
-    private boolean evolveBorderPair (Point sourceCoords, RemoteCellCoord remoteCoords) {
-
-	boolean ok = true;
-
-        try {
-            PrintWriter out = new PrintWriter(remoteCoords.socket.getOutputStream(), true);
-            BufferedReader in = new BufferedReader(new InputStreamReader(remoteCoords.socket.getInputStream()));
-
-	    if (in != null && out != null) {
-		out.println ("EVOLVE");
-		out.println (remoteCoords.p.x);
-		out.println (remoteCoords.p.y);
-		out.println (readCell (sourceCoords));
-		
-		String fromServer = in.readLine();
-		if (fromServer == null)
-		    ok = false;
-		else {
-		    int returnValue = new Integer(fromServer).intValue();
-		    if (returnValue < 0)
-			ok = false;
-		    else
-			writeCell (sourceCoords, returnValue);
-		}
-	    }
-
-        } catch (UnknownHostException e) {
-            System.err.println("In evolveBorderPair: don't know about host: " + remoteCoords.sockAddr.getHostName() + ".");
-	    ok = false;
-        } catch (IOException e) {
-            System.err.println("In evolveBorderPair: couldn't get I/O for the connection to: " + remoteCoords.sockAddr);
-            System.err.println(e.toString());
-	    ok = false;
-        }
-
-	return ok;
+    protected void evolveBorderPair (Point sourceCoords, RemoteCellCoord remoteCoords) {
+	BoardServer.sendDatagram (remoteCoords.addr, remoteCoords.port, "EVOLVE " + remoteCoords.p.x + " " + remoteCoords.p.y + " " + readCell(sourceCoords) + " " + sourceCoords.x + " " + sourceCoords.y + " " + localhost + " " + boardServerPort);
     }
 
     synchronized void evolvePair (Point sourceCoords, Point targetCoords)
@@ -534,8 +486,6 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     synchronized int evolveTarget (Point targetCoords, int oldSourceState)
     {
-	if (lock[targetCoords.x][targetCoords.y] > 0)
-	    return -1;
 	return evolveTargetInner (targetCoords, oldSourceState);
     }
 
@@ -551,38 +501,17 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     }
 
 
-    private void connectRemotePair (Point source, Point target, Point remoteOrigin, InetSocketAddress remoteBoard) {
+    private void connectBorderPair (Point source, Point target, Point remoteOrigin, InetSocketAddress remoteBoard) {
 
-        try {
-	    Point remoteSource = new Point (source.x - remoteOrigin.x, source.y - remoteOrigin.y);
-	    Point remoteTarget = new Point (target.x - remoteOrigin.x, target.y - remoteOrigin.y);
+	Point remoteSource = new Point (source.x - remoteOrigin.x, source.y - remoteOrigin.y);
+	Point remoteTarget = new Point (target.x - remoteOrigin.x, target.y - remoteOrigin.y);
 
-	    // debug
-	    // System.err.println ("Opening bidirectional connection with " + remoteBoard + ": " + target + "->" + remoteTarget + ", " + remoteSource + "->" + source);
+	// debug
+	// System.err.println ("Opening bidirectional connection with " + remoteBoard + ": " + target + "->" + remoteTarget + ", " + remoteSource + "->" + source);
 
-            Socket socket = new Socket(remoteBoard.getAddress(), remoteBoard.getPort());
-            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+	BoardServer.sendDatagram (remoteBoard.getAddress(), remoteBoard.getPort(), "CONNECT " + remoteSource.x + " " + remoteSource.y + " " + source.x + " " + source.y + " " + localhost + " " + boardServerPort);
 
-	    out.println ("CONNECT");
-
-	    out.println (remoteSource.x);
-	    out.println (remoteSource.y);
-
-	    out.println (source.x);
-	    out.println (source.y);
-
-	    out.println (InetAddress.getLocalHost().getHostAddress());
-	    out.println (boardServerPort);
-
-	    addRemoteCellCoord (target, new RemoteCellCoord (socket, remoteBoard, remoteTarget));
-
-        } catch (UnknownHostException e) {
-            System.err.println("In connectRemotePair: don't know about host " + remoteBoard.getHostName());
-            System.err.println(e.toString());
-        } catch (IOException e) {
-            System.err.println("In connectRemotePair: couldn't get I/O for the connection to " + remoteBoard);
-            System.err.println(e.toString());
-        }
+	addRemoteCellCoord (target, new RemoteCellCoord (remoteBoard, remoteTarget));
     }
 
     protected void addRemoteCellCoord (Point p, RemoteCellCoord pRemote) {
@@ -645,7 +574,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	return cell[p.x][p.y];
     }
 
-    private void writeCell (Point p, int pc) {
+    protected void writeCell (Point p, int pc) {
 	writeCell (p, pc, readCell(p));
     }
 
