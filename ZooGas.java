@@ -513,7 +513,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    Point remoteSource = new Point (source.x - remoteOrigin.x, source.y - remoteOrigin.y);
 	    Point remoteTarget = new Point (target.x - remoteOrigin.x, target.y - remoteOrigin.y);
 
-	    addRemoteCellCoord (target, new RemoteCellCoord (remoteBoard, remoteTarget));
+	    addRemoteCellCoord (target, remoteBoard, remoteTarget);
 	    connectRequests[i] = BoardServer.connectString (remoteSource, source, localhost, boardServerPort);
 
 	    source.x += lineVector.x;
@@ -526,9 +526,9 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	BoardServer.sendTCPPacket (remoteBoard.getAddress(), remoteBoard.getPort(), connectRequests);
     }
 
-    protected void addRemoteCellCoord (Point p, RemoteCellCoord pRemote) {
-	System.err.println("Connecting (" + p.x + "," + p.y + ") to (" + pRemote.p.x + "," + pRemote.p.y + ") on " + pRemote.sockAddr);
-	remoteCell.put (p, pRemote);
+    protected void addRemoteCellCoord (Point p, InetSocketAddress remoteBoard, Point pRemote) {
+	System.err.println("Connecting (" + p.x + "," + p.y + ") to (" + pRemote.x + "," + pRemote.y + ") on " + remoteBoard);
+	remoteCell.put (new Point(p), new RemoteCellCoord (remoteBoard, pRemote));
     }
 
     private void getRandomPoint (Point p) {

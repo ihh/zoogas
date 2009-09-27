@@ -47,7 +47,7 @@ public class BoardServer extends Thread {
 		String command = args[0];
 
 		// uncomment to log all incoming datagram commands
-		// logCommand (args);
+		logCommand (args);
 		    
 		if (command.equalsIgnoreCase ("BYE"))
 		    listening = false;
@@ -81,7 +81,7 @@ public class BoardServer extends Thread {
 		    Point remoteCell = new Point(intArgs[3], intArgs[4]);
 		    InetSocketAddress sockAddr = new InetSocketAddress (args[5], intArgs[6]);
 
-		    gas.addRemoteCellCoord (localCell, new RemoteCellCoord (sockAddr, remoteCell));
+		    gas.addRemoteCellCoord (localCell, sockAddr, remoteCell);
 
 		    // debug
 		    // System.err.println (command + " " + localCell + " " + remoteCell + " " + sockAddr);
@@ -101,6 +101,7 @@ public class BoardServer extends Thread {
     }
 
     static void sendDatagram (InetAddress addr, int port, String data) {
+	System.err.println ("Send '" + data + "' to " + addr + " port " + port);
 	try {
 	    // get a datagram socket
 	    DatagramSocket socket = new DatagramSocket();
