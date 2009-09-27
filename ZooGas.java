@@ -18,7 +18,6 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     double forageEfficiency = .8;  // probability that predation leads successfully to breeding
     double chokeRate = .01;  // probability of dying due to overcrowding
     double birthRate = .02;  // probability of breeding
-    int mutateRange = 2;  // mutation distance
 
     // tool particle params
     double buriedWallDecayRate = .00018, exposedWallDecayRate = .00022;  // probability of wall decay when buried/exposed
@@ -27,6 +26,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     double gasMultiplyRate = .2;  // probability that a surviving fecundity gas particle will multiply (gives illusion of pressure)
     double lavaSeedRate = .01;  // probability that lava will stick to a wall particle (it always sticks to basalt)
     double lavaFlowRate = .3;  // probability that lava will take a random step
+    int mutateRange = 2;  // range of species change due to contact w/mutator gas
 
     // initial conditions
     double initialDensity = .1;  // initial density of species-containing cells
@@ -503,7 +503,6 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	writeCell (targetCoords, getTargetState (newCellPairIndex));
 	return getSourceState (newCellPairIndex);
     }
-
 
     private void connectBorder (Point sourceStart, Point targetStart, Point lineVector, int lineLength, Point remoteOrigin, InetSocketAddress remoteBoard) {
 	String[] connectRequests = new String [lineLength];
