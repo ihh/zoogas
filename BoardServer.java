@@ -34,7 +34,7 @@ public class BoardServer extends Thread {
 
 		    String command = args[0];
 
-		    // debug
+		    // uncomment to log all incoming datagram commands
 		    /*
 		    StringBuffer join = new StringBuffer (command);
 		    for (int a = 1; a < args.length - 1; ++a) {
@@ -55,7 +55,7 @@ public class BoardServer extends Thread {
 			    int returnPort = intArgs[7];
 			    int remoteSourceWriteCount = intArgs[8];
 
-			    int newSourceState = gas.evolveTarget (localTarget, oldSourceState);
+			    int newSourceState = gas.evolveLocalTargetForRemoteSource (localTarget, oldSourceState);
 
 			    sendReturnDatagram (returnAddr, returnPort, remoteSource, newSourceState, remoteSourceWriteCount);
 

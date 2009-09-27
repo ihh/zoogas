@@ -459,39 +459,39 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    {
 		getRandomPoint(p);
 		getRandomNeighbor(p,n);
-		spawnEvolvePair(p,n);
+		evolvePair(p,n);
 	    }
     }
 
     private boolean onBoard (Point p) { return p.x >= 0 && p.x < size && p.y >= 0 && p.y < size; }
 
-    private void spawnEvolvePair (Point sourceCoords, Point targetCoords)
+    private void evolvePair (Point sourceCoords, Point targetCoords)
     {
 	if (onBoard (targetCoords)) {
-	    evolvePair (sourceCoords, targetCoords);
+	    evolveLocalSourceAndLocalTarget (sourceCoords, targetCoords);
 	} else {
-	    // request remote evolveTarget
+	    // request remote evolveLocalTargetForRemoteSource
 	    RemoteCellCoord remoteCoords = (RemoteCellCoord) remoteCell.get (targetCoords);
 	    if (remoteCoords != null)
-		evolveBorderPair (sourceCoords, remoteCoords);
+		evolveLocalSourceAndRemoteTarget (sourceCoords, remoteCoords);
 	}
     }
 
-    protected void evolveBorderPair (Point sourceCoords, RemoteCellCoord remoteCoords) {
+    protected void evolveLocalSourceAndRemoteTarget (Point sourceCoords, RemoteCellCoord remoteCoords) {
 	BoardServer.sendEvolveDatagram (remoteCoords.addr, remoteCoords.port, remoteCoords.p, readCell(sourceCoords), sourceCoords, localhost, boardServerPort, getCellWriteCount(sourceCoords));
     }
 
-    synchronized void evolvePair (Point sourceCoords, Point targetCoords)
+    synchronized void evolveLocalSourceAndLocalTarget (Point sourceCoords, Point targetCoords)
     {
-	writeCell (sourceCoords, evolveTargetInner (targetCoords, readCell(sourceCoords)));
+	writeCell (sourceCoords, evolveTargetForSource (targetCoords, readCell(sourceCoords)));
     }
 
-    synchronized int evolveTarget (Point targetCoords, int oldSourceState)
+    synchronized int evolveLocalTargetForRemoteSource (Point targetCoords, int oldSourceState)
     {
-	return evolveTargetInner (targetCoords, oldSourceState);
+	return evolveTargetForSource (targetCoords, oldSourceState);
     }
 
-    int evolveTargetInner (Point targetCoords, int oldSourceState)
+    int evolveTargetForSource (Point targetCoords, int oldSourceState)
     {
 	int oldTargetState = readCell (targetCoords);
 
