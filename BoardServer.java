@@ -46,8 +46,8 @@ public class BoardServer extends Thread {
 
 		String command = args[0];
 
-		// uncomment to log all incoming datagram commands
-		logCommand (args);
+		// uncomment to log all incoming commands
+		// logCommand (args);
 		    
 		if (command.equalsIgnoreCase ("BYE"))
 		    listening = false;
@@ -101,7 +101,8 @@ public class BoardServer extends Thread {
     }
 
     static void sendDatagram (InetAddress addr, int port, String data) {
-	System.err.println ("Send '" + data + "' to " + addr + " port " + port);
+	// uncomment to log all outgoing datagrams
+	// System.err.println ("Send UDP datagram '" + data + "' to " + addr + " port " + port);
 	try {
 	    // get a datagram socket
 	    DatagramSocket socket = new DatagramSocket();
@@ -132,8 +133,11 @@ public class BoardServer extends Thread {
             socket = new Socket(addr, port);
             out = new PrintWriter(socket.getOutputStream(), true);
 
-	    for (int i = 0; i < data.length; ++i)
+	    for (int i = 0; i < data.length; ++i) {
 		out.println(data[i]);
+		// uncomment to log all outgoing TCP packets
+		// System.err.println ("Send TCP packet '" + data[i] + "' to " + addr + " port " + port);
+	    }
 
 	    out.close();
 	    socket.close();
