@@ -51,7 +51,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     // networking
     BoardServer boardServer = null;  // board servers field UDP requests for cross-border interactions
-    ConnectionServer connectServer = null;   // since establishing connections is a bit more critical than individual particle interactions, connectionServer runs over TCP
+    ConnectionServer connectServer = null;   // connectionServer runs over TCP (otherwise requests to establish connections can get lost amongst the flood of UDP traffic)
     int boardServerPort = 4444;
     String localhost = null;
 
@@ -114,12 +114,11 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     // networked constructor (client)
     public ZooGas (int port, InetSocketAddress remote) {
 	this(port);
-	for (int i = 0; i < size; ++i) {
-	    connectBorderPair (new Point(0,i), new Point(-1,i), new Point(-size,0), remote);
-	    connectBorderPair (new Point(127,i), new Point(128,i), new Point(size,0), remote);
-	    connectBorderPair (new Point(i,0), new Point(i,-1), new Point(0,-size), remote);
-	    connectBorderPair (new Point(i,127), new Point(i,128), new Point(0,size), remote);
-	}
+
+	connectBorder (new Point(0,0), new Point(-1,0), new Point(0,1), 128, new Point(-size,0), remote);  // west
+	connectBorder (new Point(127,0), new Point(128,0), new Point(0,1), 128, new Point(+size,0), remote);  // east
+	connectBorder (new Point(0,0), new Point(0,-1), new Point(1,0), 128, new Point(0,-size), remote);  // north
+	connectBorder (new Point(0,127), new Point(0,128), new Point(1,0), 128, new Point(0,+size), remote);  // south
     }
 
     // networked constructor (server)
@@ -506,17 +505,25 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     }
 
 
-    private void connectBorderPair (Point source, Point target, Point remoteOrigin, InetSocketAddress remoteBoard) {
+    private void connectBorder (Point sourceStart, Point targetStart, Point lineVector, int lineLength, Point remoteOrigin, InetSocketAddress remoteBoard) {
+	String[] connectRequests = new String [lineLength];
+	Point source = new Point (sourceStart);
+	Point target = new Point (targetStart);
+	for (int i = 0; i < lineLength; ++i) {
+	    Point remoteSource = new Point (source.x - remoteOrigin.x, source.y - remoteOrigin.y);
+	    Point remoteTarget = new Point (target.x - remoteOrigin.x, target.y - remoteOrigin.y);
 
-	Point remoteSource = new Point (source.x - remoteOrigin.x, source.y - remoteOrigin.y);
-	Point remoteTarget = new Point (target.x - remoteOrigin.x, target.y - remoteOrigin.y);
+	    addRemoteCellCoord (target, new RemoteCellCoord (remoteBoard, remoteTarget));
+	    connectRequests[i] = BoardServer.connectString (remoteSource, source, localhost, boardServerPort);
 
-	// debug
-	// System.err.println ("Opening bidirectional connection with " + remoteBoard + ": " + target + "->" + remoteTarget + ", " + remoteSource + "->" + source);
+	    source.x += lineVector.x;
+	    source.y += lineVector.y;
 
-	BoardServer.sendConnectTCPPacket (remoteBoard.getAddress(), remoteBoard.getPort(), remoteSource, source, localhost, boardServerPort);
+	    target.x += lineVector.x;
+	    target.y += lineVector.y;
+	}
 
-	addRemoteCellCoord (target, new RemoteCellCoord (remoteBoard, remoteTarget));
+	BoardServer.sendTCPPacket (remoteBoard.getAddress(), remoteBoard.getPort(), connectRequests);
     }
 
     protected void addRemoteCellCoord (Point p, RemoteCellCoord pRemote) {
