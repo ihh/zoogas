@@ -4,6 +4,8 @@ import java.text.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
+import java.net.*;
+import java.io.*;
 import javax.swing.JFrame;
 
 public class ZooGas extends JFrame implements MouseListener, KeyListener {
@@ -47,6 +49,10 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     int cheatStringPos = 0;
     boolean cheating() { return cheatStringPos == cheatString.length(); }
 
+    // networking
+    BoardServer boardServer = null;
+    int boardServerPort = 4444;
+
     // underlying cellular automata model
     int cellTypes;  // 0 is assumed to represent inactive, empty space
     Vector pattern;  // probabilistic pattern replacement dictionary, indexed by source cellPairIndex
@@ -58,6 +64,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     // main board data
     int[][] cell, lock;
     int[] cellCount;
+    HashMap remoteCell;  // map of off-board Point's to RemoteCellCoord's
 
     // helper objects
     Random rnd;
@@ -80,17 +87,61 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     // main()
     public static void main(String[] args) {
-	new ZooGas();
-    }
-	
+	// create ZooGas
+	ZooGas gas = null;
+	switch (args.length)
+	    {
+	    case 0:
+		gas = new ZooGas();  // standalone
+		break;
+	    case 1:
+		gas = new ZooGas(new Integer(args[0]).intValue());  // server on specified port
+		break;
+	    case 3:
+		gas = new ZooGas(new Integer(args[0]).intValue(), new InetSocketAddress (args[1], new Integer(args[2]).intValue()));  // client, connecting to server at specified address/port
+		break;
+	    default:
+		System.err.println ("Usage: <progname> [<port> [<remote address> <remote port>]]");
+		break;
+	    }
 
-    // constructor
+	// run it
+	gas.gameLoop();
+    }
+
+    // networked constructor (client)
+    public ZooGas (int port, InetSocketAddress remote) {
+	this(port);
+	for (int i = 0; i < size; ++i) {
+	    connectRemotePair (new Point(0,i), new Point(-1,i), new Point(-size,0), remote);
+	    connectRemotePair (new Point(127,i), new Point(128,i), new Point(size,0), remote);
+	    connectRemotePair (new Point(i,0), new Point(i,-1), new Point(0,-size), remote);
+	    connectRemotePair (new Point(i,127), new Point(i,128), new Point(0,size), remote);
+	}
+    }
+
+    // networked constructor (server)
+    public ZooGas (int port) {
+	this();
+	this.boardServerPort = port;
+
+	try {
+	    boardServer = new BoardServer (this, boardServerPort);
+	    boardServer.start();
+	} catch (IOException e) {
+	    System.err.println("I/O error while instantiating BoardServer.");
+            System.err.println(e.toString());
+	}
+    }
+
+    // default constructor
     public ZooGas() {
 
 	// set helpers, etc.
 	rnd = new Random();
 	cell = new int[size][size];
 	lock = new int[size][size];
+	remoteCell = new HashMap();
 	boardSize = size * pixelsPerCell;
 
 	patternMatchesPerRefresh = (int) (size * size);
@@ -182,9 +233,6 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
         addMouseListener(this);
         addKeyListener(this);
-
-	// run game loop
-	gameLoop();
     }
 
     // builder method for patterns
@@ -324,7 +372,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     // main game loop
     private void gameLoop() {
-	// Your game logic goes here.
+	// Game logic goes here.
 
 	drawEverything();
 
@@ -406,19 +454,74 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    }
     }
 
-    boolean onBoard (Point p) { return p.x >= 0 && p.x < size && p.y >= 0 && p.y < size; }
+    private boolean onBoard (Point p) { return p.x >= 0 && p.x < size && p.y >= 0 && p.y < size; }
 
-    void evolvePairLocked (Point sourceCoords, Point targetCoords)
+    private void evolvePairLocked (Point sourceCoords, Point targetCoords)
     {
 	++lock[sourceCoords.x][sourceCoords.y];
+
 	if (onBoard (targetCoords)) {
 	    ++lock[targetCoords.x][targetCoords.y];
 	    evolvePair (sourceCoords, targetCoords);
 	    --lock[targetCoords.x][targetCoords.y];
 	} else {
 	    // request remote evolveTarget
+	    RemoteCellCoord remoteCoords = (RemoteCellCoord) remoteCell.get (targetCoords);
+	    if (remoteCoords != null) {
+		// System.err.println ("Attempting evolveBorderPair, source " + sourceCoords + ", remote target " + remoteCoords.p + " @ " + remoteCoords.sockAddr);
+		boolean success = evolveBorderPair (sourceCoords, remoteCoords);
+		// if it fails, could sleep (for random # of milliseconds) and retry; but it hardly seems worth it
+		// System.err.println ("..." + (success ? "succeeded" : "failed"));
+	    }
 	}
+
 	--lock[sourceCoords.x][sourceCoords.y];
+    }
+
+    private boolean evolveBorderPair (Point sourceCoords, RemoteCellCoord remoteCoords) {
+
+	boolean ok = true;
+
+        try {
+	    InetAddress addr = remoteCoords.sockAddr.getAddress();
+	    int port = remoteCoords.sockAddr.getPort();
+
+            Socket socket = new Socket(addr, port);
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+	    if (in != null && out != null) {
+		out.println ("EVOLVE");
+		out.println (remoteCoords.p.x);
+		out.println (remoteCoords.p.y);
+		out.println (readCell (sourceCoords));
+		
+		String fromServer = in.readLine();
+		if (fromServer == null)
+		    ok = false;
+		else {
+		    int returnValue = new Integer(fromServer).intValue();
+		    if (returnValue < 0)
+			ok = false;
+		    else
+			writeCell (sourceCoords, returnValue);
+		}
+	    }
+
+	    out.close();
+	    in.close();
+	    socket.close();
+
+        } catch (UnknownHostException e) {
+            System.err.println("In evolveBorderPair: don't know about host: " + remoteCoords.sockAddr.getHostName() + ".");
+	    ok = false;
+        } catch (IOException e) {
+            System.err.println("In evolveBorderPair: couldn't get I/O for the connection to: " + remoteCoords.sockAddr);
+            System.err.println(e.toString());
+	    ok = false;
+        }
+
+	return ok;
     }
 
     synchronized void evolvePair (Point sourceCoords, Point targetCoords)
@@ -444,24 +547,65 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	return getSourceState (newCellPairIndex);
     }
 
+
+    private void connectRemotePair (Point source, Point target, Point remoteOrigin, InetSocketAddress remoteBoard) {
+
+        try {
+	    Point remoteSource = new Point (source.x - remoteOrigin.x, source.y - remoteOrigin.y);
+	    Point remoteTarget = new Point (target.x - remoteOrigin.x, target.y - remoteOrigin.y);
+
+	    // debug
+	    // System.err.println ("Opening bidirectional connection with " + remoteBoard + ": " + target + "->" + remoteTarget + ", " + remoteSource + "->" + source);
+
+            Socket socket = new Socket(remoteBoard.getAddress(), remoteBoard.getPort());
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+
+	    out.println ("CONNECT");
+
+	    out.println (remoteSource.x);
+	    out.println (remoteSource.y);
+
+	    out.println (source.x);
+	    out.println (source.y);
+
+	    out.println (InetAddress.getLocalHost().getHostAddress());
+	    out.println (boardServerPort);
+
+	    out.close();
+	    socket.close();
+
+	    addRemoteCellCoord (target, new RemoteCellCoord (remoteBoard, remoteTarget));
+
+        } catch (UnknownHostException e) {
+            System.err.println("In connectRemotePair: don't know about host " + remoteBoard.getHostName());
+            System.err.println(e.toString());
+        } catch (IOException e) {
+            System.err.println("In connectRemotePair: couldn't get I/O for the connection to " + remoteBoard);
+            System.err.println(e.toString());
+        }
+    }
+
+    protected void addRemoteCellCoord (Point p, RemoteCellCoord pRemote) {
+	// System.err.println("Connecting " + p + " to " + pRemote.p + " on " + pRemote.sockAddr);
+	remoteCell.put (p, pRemote);
+    }
+
     private void getRandomPoint (Point p) {
 	p.x = rnd.nextInt(size);
 	p.y = rnd.nextInt(size);
     }
 
     private void getRandomNeighbor (Point p, Point n) {
-	do {
-	    int ni = rnd.nextInt(4);
-	    n.x = p.x;
-	    n.y = p.y;
-	    int delta = (ni & 1) == 0 ? -1 : +1;
-	    if ((ni & 2) == 0) { n.x += delta; } else { n.y += delta; }
-	    // Replace previous two lines with the following for periodic boundary conditions:
-	    /*
-	      int delta = (ni & 1) == 0 ? size-1 : +1;
-	      if ((ni & 2) == 0) { n.x = (n.x + delta) % size; } else { n.y = (n.y + delta) % size; }
-	    */
-	} while (!onBoard(n));
+	int ni = rnd.nextInt(4);
+	n.x = p.x;
+	n.y = p.y;
+	int delta = (ni & 1) == 0 ? -1 : +1;
+	if ((ni & 2) == 0) { n.x += delta; } else { n.y += delta; }
+	// Replace previous two lines with the following for periodic boundary conditions:
+	/*
+	  int delta = (ni & 1) == 0 ? size-1 : +1;
+	  if ((ni & 2) == 0) { n.x = (n.x + delta) % size; } else { n.y = (n.y + delta) % size; }
+	*/
     }
     private int neighborhoodSize() { return 4; }
 
@@ -492,8 +636,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    }
 	    if (cellCount[rv] == 0) {
 		for (int k = 0; k < cellTypes; ++k)
-		    System.out.println (k + " " + cellCount[k]);
-		System.out.println ("Sampled: " + rv + " " + cellCount[rv]);
+		    System.err.println (k + " " + cellCount[k]);
+		System.err.println ("Sampled: " + rv + " " + cellCount[rv]);
 		throw new RuntimeException (new String ("Returned a zero-probability cell type"));
 	    }
 	    return rv;
@@ -637,7 +781,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	int entropyBarBase = boardSize + popChartHeight + popBarHeight * (species + 1);
 	float entropyBarLevel = (float) (entropy / maxEntropy);
 	if (entropyBarLevel < 0 || entropyBarLevel > 1) {
-	    System.out.println ("entropyBarLevel: " + entropyBarLevel);
+	    System.err.println ("entropyBarLevel: " + entropyBarLevel);
 	    throw new RuntimeException (new String ("Entropy outside permitted range"));
 	}
 	int entropyBarWidth = (int) (entropyBarLevel * (float) boardSize);
