@@ -456,13 +456,23 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     private boolean onBoard (Point p) { return p.x >= 0 && p.x < size && p.y >= 0 && p.y < size; }
 
-    private void evolvePairLocked (Point sourceCoords, Point targetCoords)
+    private boolean evolvePairLocked (Point sourceCoords, Point targetCoords)
     {
+	if (lock[sourceCoords.x][sourceCoords.y] > 0)
+	    return false;
 	++lock[sourceCoords.x][sourceCoords.y];
 
 	if (onBoard (targetCoords)) {
+
+	    if (lock[targetCoords.x][targetCoords.y] > 0)
+		{
+		    --lock[sourceCoords.x][sourceCoords.y];
+		    return false;
+		}
 	    ++lock[targetCoords.x][targetCoords.y];
+
 	    evolvePair (sourceCoords, targetCoords);
+
 	    --lock[targetCoords.x][targetCoords.y];
 	} else {
 	    // request remote evolveTarget
@@ -476,6 +486,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	}
 
 	--lock[sourceCoords.x][sourceCoords.y];
+	return true;
     }
 
     private boolean evolveBorderPair (Point sourceCoords, RemoteCellCoord remoteCoords) {
@@ -483,12 +494,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	boolean ok = true;
 
         try {
-	    InetAddress addr = remoteCoords.sockAddr.getAddress();
-	    int port = remoteCoords.sockAddr.getPort();
-
-            Socket socket = new Socket(addr, port);
-            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            PrintWriter out = new PrintWriter(remoteCoords.socket.getOutputStream(), true);
+            BufferedReader in = new BufferedReader(new InputStreamReader(remoteCoords.socket.getInputStream()));
 
 	    if (in != null && out != null) {
 		out.println ("EVOLVE");
@@ -507,10 +514,6 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 			writeCell (sourceCoords, returnValue);
 		}
 	    }
-
-	    out.close();
-	    in.close();
-	    socket.close();
 
         } catch (UnknownHostException e) {
             System.err.println("In evolveBorderPair: don't know about host: " + remoteCoords.sockAddr.getHostName() + ".");
@@ -571,10 +574,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    out.println (InetAddress.getLocalHost().getHostAddress());
 	    out.println (boardServerPort);
 
-	    out.close();
-	    socket.close();
-
-	    addRemoteCellCoord (target, new RemoteCellCoord (remoteBoard, remoteTarget));
+	    addRemoteCellCoord (target, new RemoteCellCoord (socket, remoteBoard, remoteTarget));
 
         } catch (UnknownHostException e) {
             System.err.println("In connectRemotePair: don't know about host " + remoteBoard.getHostName());
@@ -846,7 +846,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	int xSize = fm.stringWidth(text), xPos = boardSize + toolBarWidth - xSize;
 	int ch = fm.getHeight(), yPos = toolYCenter(row) + ch / 2;
 	if (show) {
-	    bfGraphics.setColor (Color.white);
+	    bfGraphics.setColor (Color.getHSBColor ((float) rnd.nextDouble(), 1, 1));
 	    bfGraphics.drawString (text, xPos, yPos);
 	} else {
 	    bfGraphics.setColor (Color.black);
