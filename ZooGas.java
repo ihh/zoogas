@@ -527,7 +527,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     }
 
     protected void addRemoteCellCoord (Point p, RemoteCellCoord pRemote) {
-	System.err.println("Connecting " + p + " to " + pRemote.p + " on " + pRemote.sockAddr);
+	System.err.println("Connecting (" + p.x + "," + p.y + ") to (" + pRemote.p.x + "," + pRemote.p.y + ") on " + pRemote.sockAddr);
 	remoteCell.put (p, pRemote);
     }
 
