@@ -63,7 +63,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     int patternMatchesPerRefresh;
 
     // main board data
-    int[][] cell;
+    int[][] cell, cellWriteCount;
     int[] cellCount;
     HashMap remoteCell;  // map of off-board Point's to RemoteCellCoord's
 
@@ -142,6 +142,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	// set helpers, etc.
 	rnd = new Random();
 	cell = new int[size][size];
+	cellWriteCount = new int[size][size];
 	remoteCell = new HashMap();
 	boardSize = size * pixelsPerCell;
 
@@ -195,6 +196,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	// init board
 	for (int x = 0; x < size; ++x)
 	    for (int y = 0; y < size; ++y) {
+		cellWriteCount[x][y] = 0;
 		if (rnd.nextDouble() < initialDensity) {
 		    int s = rnd.nextInt(initialDiversity) * (species/initialDiversity) + 1;
 		    cell[x][y] = s;
@@ -476,7 +478,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     }
 
     protected void evolveBorderPair (Point sourceCoords, RemoteCellCoord remoteCoords) {
-	BoardServer.sendDatagram (remoteCoords.addr, remoteCoords.port, "EVOLVE " + remoteCoords.p.x + " " + remoteCoords.p.y + " " + readCell(sourceCoords) + " " + sourceCoords.x + " " + sourceCoords.y + " " + localhost + " " + boardServerPort);
+	BoardServer.sendEvolveDatagram (remoteCoords.addr, remoteCoords.port, remoteCoords.p, readCell(sourceCoords), sourceCoords, localhost, boardServerPort, getCellWriteCount(sourceCoords));
     }
 
     synchronized void evolvePair (Point sourceCoords, Point targetCoords)
@@ -509,7 +511,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	// debug
 	// System.err.println ("Opening bidirectional connection with " + remoteBoard + ": " + target + "->" + remoteTarget + ", " + remoteSource + "->" + source);
 
-	BoardServer.sendDatagram (remoteBoard.getAddress(), remoteBoard.getPort(), "CONNECT " + remoteSource.x + " " + remoteSource.y + " " + source.x + " " + source.y + " " + localhost + " " + boardServerPort);
+	BoardServer.sendConnectDatagram (remoteBoard.getAddress(), remoteBoard.getPort(), remoteSource, source, localhost, boardServerPort);
 
 	addRemoteCellCoord (target, new RemoteCellCoord (remoteBoard, remoteTarget));
     }
@@ -553,6 +555,10 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	return cellPairIndex % cellTypes;
     }
 
+    protected int getCellWriteCount (Point p) {
+	return cellWriteCount[p.x][p.y];
+    }
+
     private int readCell (Point p) {
 	if (idealPressed) {
 	    int x = rnd.nextInt (size * size);
@@ -582,6 +588,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	if (old_pc != pc) {
 	    if (!idealPressed) {
 		cell[p.x][p.y] = pc;
+		++cellWriteCount[p.x][p.y];
 		drawCell(p);
 	    }
 	    --cellCount[old_pc];

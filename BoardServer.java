@@ -53,17 +53,20 @@ public class BoardServer extends Thread {
 			    Point remoteSource = new Point(intArgs[4], intArgs[5]);
 			    InetAddress returnAddr = InetAddress.getByName (args[6]);
 			    int returnPort = intArgs[7];
+			    int remoteSourceWriteCount = intArgs[8];
 
 			    int newSourceState = gas.evolveTarget (localTarget, oldSourceState);
 
-			    sendDatagram (returnAddr, returnPort, "RETURN " + remoteSource.x + " " + remoteSource.y + " " + newSourceState);
+			    sendReturnDatagram (returnAddr, returnPort, remoteSource, newSourceState, remoteSourceWriteCount);
 
 		    } else if (command.equalsIgnoreCase ("RETURN")) {
 
 			    Point localSource = new Point(intArgs[1], intArgs[2]);
 			    int newSourceState = intArgs[3];
+			    int oldWriteCount = intArgs[4];
 
-			    gas.writeCell (localSource, newSourceState);
+			    if (oldWriteCount == gas.getCellWriteCount(localSource))
+				gas.writeCell (localSource, newSourceState);
 
 		    } else if (command.equalsIgnoreCase ("CONNECT")) {
 
@@ -102,4 +105,17 @@ public class BoardServer extends Thread {
 	    e.printStackTrace();
         }
     }
+
+    static void sendConnectDatagram (InetAddress addr, int port, Point remoteCell, Point localCell, String localHost, int localPort) {
+	sendDatagram (addr, port, "CONNECT " + remoteCell.x + " " + remoteCell.y + " " + localCell.x + " " + localCell.y + " " + localHost + " " + localPort);
+    }
+
+    static void sendEvolveDatagram (InetAddress addr, int port, Point remoteTarget, int oldSourceState, Point localSource, String returnHost, int returnPort, int writeCount) {
+	sendDatagram (addr, port, "EVOLVE " + remoteTarget.x + " " + remoteTarget.y + " " + oldSourceState + " " + localSource.x + " " + localSource.y + " " + returnHost + " " + returnPort + " " + writeCount);
+    }
+
+    static void sendReturnDatagram (InetAddress addr, int port, Point remoteSource, int newSourceState, int writeCount) {
+	sendDatagram (addr, port, "RETURN " + remoteSource.x + " " + remoteSource.y + " " + newSourceState + " " + writeCount);
+    }
+
 }
