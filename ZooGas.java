@@ -50,7 +50,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     boolean cheating() { return cheatStringPos == cheatString.length(); }
 
     // networking
-    BoardServer boardServer = null;
+    BoardServer boardServer = null;  // board servers field UDP requests for cross-border interactions
+    ConnectionServer connectServer = null;   // since establishing connections is a bit more critical than individual particle interactions, connectionServer runs over TCP
     int boardServerPort = 4444;
     String localhost = null;
 
@@ -129,9 +130,11 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	try {
 	    boardServer = new BoardServer (this, boardServerPort);
 	    boardServer.start();
+
+	    connectServer = new ConnectionServer (this, boardServerPort);
+	    connectServer.start();
+
 	} catch (IOException e) {
-	    System.err.println("I/O error while instantiating BoardServer.");
-            System.err.println(e.toString());
 	    e.printStackTrace();
 	}
     }
@@ -511,13 +514,13 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	// debug
 	// System.err.println ("Opening bidirectional connection with " + remoteBoard + ": " + target + "->" + remoteTarget + ", " + remoteSource + "->" + source);
 
-	BoardServer.sendConnectDatagram (remoteBoard.getAddress(), remoteBoard.getPort(), remoteSource, source, localhost, boardServerPort);
+	BoardServer.sendConnectTCPPacket (remoteBoard.getAddress(), remoteBoard.getPort(), remoteSource, source, localhost, boardServerPort);
 
 	addRemoteCellCoord (target, new RemoteCellCoord (remoteBoard, remoteTarget));
     }
 
     protected void addRemoteCellCoord (Point p, RemoteCellCoord pRemote) {
-	// System.err.println("Connecting " + p + " to " + pRemote.p + " on " + pRemote.sockAddr);
+	System.err.println("Connecting " + p + " to " + pRemote.p + " on " + pRemote.sockAddr);
 	remoteCell.put (p, pRemote);
     }
 

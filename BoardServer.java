@@ -15,78 +15,89 @@ public class BoardServer extends Thread {
     }
 
     public void run() {
-	while (true) {
+	Boolean listening = true;
+	while (listening) {
 	    try {
 		byte[] buf = new byte[256];
 		DatagramPacket packet = new DatagramPacket(buf, buf.length);
 		socket.receive(packet);
 
 		String packetString = new String (packet.getData());
-		String[] args = packetString.split (" ");
-
-		int[] intArgs = new int[args.length];
-		for (int a = 0; a < args.length; ++a)
-		    try {
-			intArgs[a] = new Integer(args[a]).intValue();
-		    } catch (NumberFormatException e) { }
-
-		if (args.length >= 1) {
-
-		    String command = args[0];
-
-		    // uncomment to log all incoming datagram commands
-		    /*
-		    StringBuffer join = new StringBuffer (command);
-		    for (int a = 1; a < args.length - 1; ++a) {
-			join.append (" " + args[a]);
-		    }
-		    System.err.println (join);
-		    */
-		    
-		    if (command.equalsIgnoreCase ("BYE"))
-			break;
-
-		    else if (command.equalsIgnoreCase ("EVOLVE")) {
-
-			    Point localTarget = new Point(intArgs[1], intArgs[2]);
-			    int oldSourceState = intArgs[3];
-			    Point remoteSource = new Point(intArgs[4], intArgs[5]);
-			    InetAddress returnAddr = InetAddress.getByName (args[6]);
-			    int returnPort = intArgs[7];
-			    int remoteSourceWriteCount = intArgs[8];
-
-			    int newSourceState = gas.evolveLocalTargetForRemoteSource (localTarget, oldSourceState);
-
-			    sendReturnDatagram (returnAddr, returnPort, remoteSource, newSourceState, remoteSourceWriteCount);
-
-		    } else if (command.equalsIgnoreCase ("RETURN")) {
-
-			    Point localSource = new Point(intArgs[1], intArgs[2]);
-			    int newSourceState = intArgs[3];
-			    int oldWriteCount = intArgs[4];
-
-			    if (oldWriteCount == gas.getCellWriteCount(localSource))
-				gas.writeCell (localSource, newSourceState);
-
-		    } else if (command.equalsIgnoreCase ("CONNECT")) {
-
-			// connect a remote cell
-			Point localCell = new Point(intArgs[1], intArgs[2]);
-			Point remoteCell = new Point(intArgs[3], intArgs[4]);
-			InetSocketAddress sockAddr = new InetSocketAddress (args[5], intArgs[6]);
-
-			gas.addRemoteCellCoord (localCell, new RemoteCellCoord (sockAddr, remoteCell));
-
-			// debug
-			// System.err.println (command + " " + localCell + " " + remoteCell + " " + sockAddr);
-		    }
-		}
+		process (gas, packetString, listening);
 	    } catch (IOException e) {
 		e.printStackTrace();
 	    }
 	}
 
 	socket.close();
+    }
+
+    static void process (ZooGas gas, String data, Boolean listening) {
+	try {
+	    String[] args = data.split (" ");
+
+	    int[] intArgs = new int[args.length];
+	    for (int a = 0; a < args.length; ++a)
+		try {
+		    intArgs[a] = new Integer(args[a]).intValue();
+		} catch (NumberFormatException e) { }
+
+	    if (args.length >= 1) {
+
+		String command = args[0];
+
+		// uncomment to log all incoming datagram commands
+		// logCommand (args);
+		    
+		if (command.equalsIgnoreCase ("BYE"))
+		    listening = false;
+
+		else if (command.equalsIgnoreCase ("EVOLVE")) {
+
+		    Point localTarget = new Point(intArgs[1], intArgs[2]);
+		    int oldSourceState = intArgs[3];
+		    Point remoteSource = new Point(intArgs[4], intArgs[5]);
+		    InetAddress returnAddr = InetAddress.getByName (args[6]);
+		    int returnPort = intArgs[7];
+		    int remoteSourceWriteCount = intArgs[8];
+
+		    int newSourceState = gas.evolveLocalTargetForRemoteSource (localTarget, oldSourceState);
+
+		    sendReturnDatagram (returnAddr, returnPort, remoteSource, newSourceState, remoteSourceWriteCount);
+
+		} else if (command.equalsIgnoreCase ("RETURN")) {
+
+		    Point localSource = new Point(intArgs[1], intArgs[2]);
+		    int newSourceState = intArgs[3];
+		    int oldWriteCount = intArgs[4];
+
+		    if (oldWriteCount == gas.getCellWriteCount(localSource))
+			gas.writeCell (localSource, newSourceState);
+
+		} else if (command.equalsIgnoreCase ("CONNECT")) {
+
+		    // connect a remote cell
+		    Point localCell = new Point(intArgs[1], intArgs[2]);
+		    Point remoteCell = new Point(intArgs[3], intArgs[4]);
+		    InetSocketAddress sockAddr = new InetSocketAddress (args[5], intArgs[6]);
+
+		    gas.addRemoteCellCoord (localCell, new RemoteCellCoord (sockAddr, remoteCell));
+
+		    // debug
+		    // System.err.println (command + " " + localCell + " " + remoteCell + " " + sockAddr);
+		}
+	    }
+	} catch (IOException e) {
+	    e.printStackTrace();
+	}
+    }
+
+    private static void logCommand (String[] args) {
+	StringBuffer join = new StringBuffer();
+	for (int a = 0; a < args.length - 1; ++a) {
+	    join.append (" " + args[a]);
+	}
+	System.err.println (join);
     }
 
     static void sendDatagram (InetAddress addr, int port, String data) {
@@ -106,8 +117,43 @@ public class BoardServer extends Thread {
         }
     }
 
+    static void sendTCPPacket (InetAddress addr, int port, String data) {
+	String[] dataArray = new String[1];
+	dataArray[0] = data;
+	sendTCPPacket (addr, port, dataArray);
+    }
+
+    static void sendTCPPacket (InetAddress addr, int port, String[] data) {
+        Socket socket = null;
+        PrintWriter out = null;
+
+        try {
+            socket = new Socket(addr, port);
+            out = new PrintWriter(socket.getOutputStream(), true);
+
+	    for (int i = 0; i < data.length; ++i)
+		out.println(data[i]);
+
+	    out.close();
+	    socket.close();
+
+        } catch (UnknownHostException e) {
+	    e.printStackTrace();
+        } catch (IOException e) {
+	    e.printStackTrace();
+        }
+    }
+
+    static String connectString (Point remoteCell, Point localCell, String localHost, int localPort) {
+	return new String ("CONNECT " + remoteCell.x + " " + remoteCell.y + " " + localCell.x + " " + localCell.y + " " + localHost + " " + localPort);
+    }
+
+    static void sendConnectTCPPacket (InetAddress addr, int port, Point remoteCell, Point localCell, String localHost, int localPort) {
+	sendTCPPacket (addr, port, connectString (remoteCell, localCell, localHost, localPort));
+    }
+
     static void sendConnectDatagram (InetAddress addr, int port, Point remoteCell, Point localCell, String localHost, int localPort) {
-	sendDatagram (addr, port, "CONNECT " + remoteCell.x + " " + remoteCell.y + " " + localCell.x + " " + localCell.y + " " + localHost + " " + localPort);
+	sendDatagram (addr, port, connectString (remoteCell, localCell, localHost, localPort));
     }
 
     static void sendEvolveDatagram (InetAddress addr, int port, Point remoteTarget, int oldSourceState, Point localSource, String returnHost, int returnPort, int writeCount) {
