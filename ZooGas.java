@@ -82,10 +82,10 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     Point cursor;  // co-ordinates of cell beneath current mouse position
     boolean mouseDown;  // true if mouse is currently down
     boolean randomPressed;  // true if 'randomize' button was pressed (randomize the model once only)
-    boolean idealPressed;  // true if 'idealize' button was pressed (model as a perfectly-mixing ideal gas, using Gillespie algorithm)
+    boolean mixPressed;  // true if 'mix' button was pressed (model as a perfectly-mixed gas, i.e. with no spatial fluctuations, using Gillespie algorithm)
     int sprayParticle;  // current spray particle
 
-    int histXPos = 0;  // x-pixel of histogram
+    int histXPos = 0;  // current x-position of sweeping population graph
 
     double entropy;  // current entropy score (defined in terms of *relative* species populations)
     double bestEntropy;  // best entropy so far
@@ -288,7 +288,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	cursor = new Point();
 	mouseDown = false;
 	randomPressed = false;
-	idealPressed = false;
+	mixPressed = false;
 
         addMouseListener(this);
         addKeyListener(this);
@@ -633,7 +633,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     }
 
     private int readCell (Point p) {
-	if (idealPressed) {
+	if (mixPressed) {
 	    int x = rnd.nextInt (size * size);
 	    int rv = 0;
 	    while (rv < cellTypes - 1) {
@@ -659,7 +659,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     private void writeCell (Point p, int pc, int old_pc) {
 	if (old_pc != pc) {
-	    if (!idealPressed) {
+	    if (!mixPressed) {
 		cell[p.x][p.y] = pc;
 		++cellWriteCount[p.x][p.y];
 		drawCell(p);
@@ -996,7 +996,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 		if (c == 'k' || c == 'K') {
 		    randomPressed = true;
 		} else if (c == 'l' || c == 'L') {
-		    idealPressed = true;
+		    mixPressed = true;
 		} else if (c == '0') {
 		    initSprayTools();
 		} else if (c == '9') {
@@ -1032,7 +1032,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 		randomPressed = true;
 	}
 	mouseDown = false;
-	idealPressed = false;
+	mixPressed = false;
     }
 }
 
