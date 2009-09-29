@@ -17,7 +17,7 @@ To use the spray, just mouseover where you want to repair and press S (or click)
 
 You have a few other tools, too:
 If the animals get out of hand, use the acid spray (D). Kinda cruel though.
-Folk say they like the perfume (F), but y'ask me, they horny enough without it.
+They like the perfume (F), but don't use it outside the cages: it stinks up the place.
 Keep your hands off the mutator gas (G), that ain't for newbies like you!
 
 You can track your population balances down the bottom of the screen.

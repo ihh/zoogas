@@ -416,11 +416,11 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 	double baseRefillRate = 0.25 * (double) sprayPower;
 
-	sprayRefillRate[cementParticle] = .75 * baseRefillRate;
-	sprayMax[cementParticle] = 1000;
+	sprayRefillRate[cementParticle] = .35 * baseRefillRate;
+	sprayMax[cementParticle] = 600;
 
 	sprayRefillRate[acidParticle] = .75 * baseRefillRate;
-	sprayMax[acidParticle] = 800;
+	sprayMax[acidParticle] = 400;
 
 	sprayRefillRate[fecundityParticle] = .5 * baseRefillRate;
 	sprayMax[fecundityParticle] = 100;
@@ -506,6 +506,14 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     }
 
     protected void refreshBuffer() {
+	// draw border around board
+	bfGraphics.setColor(Color.white);
+	bfGraphics.drawLine(0,0,boardSize,0);
+	bfGraphics.drawLine(0,0,0,boardSize);
+	bfGraphics.drawLine(0,boardSize,boardSize,boardSize);
+	bfGraphics.drawLine(boardSize,0,boardSize,boardSize);
+
+	// update buffer
 	bf.show();
 	Toolkit.getDefaultToolkit().sync();	
     }
@@ -838,12 +846,15 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	// cheat mode
 	plotOrHide ('B', 4, lavaParticle, .4, cheating());
 
+	// name of the game
+	flashOrHide ("Z00 GAS", 5, true, 0, 400, true, Color.white);
+
 	// lava spray (only available in cheat mode)
 	printOrHide (cheatString, 6, cheating(), Color.getHSBColor ((float) rnd.nextDouble(), 1, 1));
 
 	// entropy: positive feedback
 	double dScore = Math.pow(2,entropy);
-	flashOrHide ("Nice diversity!", 7, dScore > 3.1, 100, -1, true, Color.pink);
+	flashOrHide ("Nice diversity!", 7, dScore > 3.6, 100, -1, true, Color.pink);
 	flashOrHide ("AWESOME!", 8, dScore > 5, 100, -1, true, Color.yellow);
 
 	// entropy: negative feedback
