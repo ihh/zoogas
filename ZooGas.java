@@ -7,6 +7,7 @@ import java.awt.image.*;
 import java.net.*;
 import java.io.*;
 import javax.swing.JFrame;
+import javax.imageio.ImageIO;
 
 public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
@@ -29,6 +30,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     int mutateRange = 2;  // range of species change due to contact w/mutator gas
 
     // initial conditions
+    String initImageFilename = "TheZoo.bmp";  // if non-null, initialization loads a seed image from this filename
     double initialDensity = .1;  // initial density of species-containing cells
     int initialDiversity = 3;  // initial number of species (can be increased with mutator gas)
 
@@ -196,15 +198,64 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    cellCount[c] = 0;
 
 	// init board
+	boolean boardInitialized = false;
+	if (initImageFilename != null) {
+
+	    // uncomment to get rgb values of colors for designing image...
+	    /*
+	    for (int t = 1; t < cellTypes; ++t) {
+		Color testColor = (Color) cellColorVec.get(t);
+		System.out.println(t + " " + testColor);
+	    }
+	    */
+
+	    try {
+		BufferedImage img = ImageIO.read(new File(initImageFilename));
+		for (int x = 0; x < size; ++x)
+		    for (int y = 0; y < size; ++y) {
+			int c = img.getRGB(x,y);
+			int red = (c & 0x00ff0000) >> 16;
+			int green = (c & 0x0000ff00) >> 8;
+			int blue = c & 0x000000ff;
+
+			// find state with closest color
+			if (red!=0 || green!=0 || blue!=0) {
+			    int s = 0, dmin = 0;
+			    for (int t = 1; t < cellTypes; ++t) {
+				Color ct = (Color) cellColorVec.get(t);
+				int rdist = red - ct.getRed(), gdist = green - ct.getGreen(), bdist = blue - ct.getBlue();
+				int dist = rdist*rdist + gdist*gdist + bdist*bdist;
+				if (s == 0 || dist < dmin) {
+				    s = t;
+				    dmin = dist;
+				}
+			    }
+			    if (s == acidParticle)
+				System.err.println (x + " " + y + " " + red + " " + green + " " + blue);
+			    cell[x][y] = s;
+			}
+		    }
+
+		boardInitialized = true;
+
+	    } catch (IOException e) {
+		e.printStackTrace();
+	    }
+	}
+
+	if (!boardInitialized)  // fallback: randomize board
+	    for (int x = 0; x < size; ++x)
+		for (int y = 0; y < size; ++y)
+		    if (rnd.nextDouble() < initialDensity) {
+			int s = rnd.nextInt(initialDiversity) * (species/initialDiversity) + 1;
+			cell[x][y] = s;
+		    }
+
+	// init cell counts
 	for (int x = 0; x < size; ++x)
 	    for (int y = 0; y < size; ++y) {
 		cellWriteCount[x][y] = 0;
-		if (rnd.nextDouble() < initialDensity) {
-		    int s = rnd.nextInt(initialDiversity) * (species/initialDiversity) + 1;
-		    cell[x][y] = s;
-		    ++cellCount[s];
-		} else
-		    ++cellCount[0];
+		++cellCount[cell[x][y]];
 	    }
 
 	// init spray tools
