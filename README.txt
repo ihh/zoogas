@@ -10,16 +10,20 @@ There are three types of animal here: reds, greens and blues.
 Reds eat greens eat blues eat reds.
 Munch munch munch munch munch.
 
-There's not much to do; just watch'em eat each other and breed.
-You could use this cement (S) to make cages, I guess.
-Or torment them with the acid spray (D). Kinda cruel though.
+There's not much to do; just maintain the cage enclosures.
+They're built out of this cheap cement that degrades really fast.
+You can use this cement spray (S) to repair'em, but watch your stocks (upper right).
+To use the spray, just mouseover where you want to repair and press S (or click).
+
+You have a few other tools, too:
+If the animals get out of hand, use the acid spray (D). Kinda cruel though.
 Folk say they like the perfume (F), but y'ask me, they horny enough without it.
 Keep your hands off the mutator gas (G), that ain't for newbies like you!
 
 You can track your population balances down the bottom of the screen.
-Tools are on the right. Watch your diversity score!
+Tools are on the right. Watch your diversity score and don't let any critters go extinct!
 
-OK, I'm off to the secret Volcano - that's the next game. Catch ya later!
+OK, I'm off to lunch. Catch ya later!
 ---STAN THE MAN, HEAD ZOOKEEPER
 
 
@@ -43,23 +47,16 @@ The higher your score, the faster your sprays and gases will be restocked.
 (Your highest diversity score is also shown.)
 
 Things to try:
-- use cement spray to build a cage enclosure
-- select a single species inside a cage (hint: make cage small or use acid)
-- mutate the animals inside the cage
 - maintain the cage walls
+- use cement spray to build a new cage enclosure from scratch
+- isolate a single species inside a cage
+- mutate the population of a cage
 - build two cages with a common wall
 - break down the wall with corrosive gas (or just let the wall decay)
 - just go crazy and spray cement everywhere, creating a loosely-connected set of patches
 - use mutator gas all over the patches
 - trap perfume and mutator gas in the walls
-- can you get a stable 3-cycle inside a cage? (seems HARD -- I haven't done it yet -- STAN)
+- can you get a stable 3-cycle inside a cage?
 
 There is a cheat code, but you'll have to guess it!
 (Or look in the source code. All sorts of fun can be had by tweaking the game parameters, too.)
-
-
-
-Implementation details:
-Cyclic competitive Lotka-Volterra model on 4-neighbor square grid.
-Ian Holmes
-9/22/09
