@@ -51,6 +51,10 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     int cheatStringPos = 0;
     boolean cheating() { return cheatStringPos == cheatString.length(); }
 
+    // commentator code ("well done"-type messages)
+    int boardUpdateCount = 0;
+    int[] timeFirstTrue = new int[100];   // indexed by row: tracks the first time when various conditions are true, so that the messages flash at first
+
     // networking
     BoardServer boardServer = null;  // board servers field UDP requests for cross-border interactions
     ConnectionServer connectServer = null;   // connectionServer runs over TCP (otherwise requests to establish connections can get lost amongst the flood of UDP traffic)
@@ -231,7 +235,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 				}
 			    }
 			    if (s == acidParticle)
-				System.err.println (x + " " + y + " " + red + " " + green + " " + blue);
+				System.err.println ("Warning: dark grey pixel in image at (" + x + "," + y + "), RGB value (" + red + "," + green + "," + blue + ") is being read as acid");
 			    cell[x][y] = s;
 			}
 		    }
@@ -514,6 +518,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 		getRandomNeighbor(p,n);
 		evolvePair(p,n);
 	    }
+	++boardUpdateCount;
     }
 
     private boolean onBoard (Point p) { return p.x >= 0 && p.x < size && p.y >= 0 && p.y < size; }
@@ -819,7 +824,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	bfGraphics.setColor(Color.white);
 	bfGraphics.drawString (bestEntropyString, boardSize + toolBarWidth - bsw, boardSize + statusBarHeight - ch);
 
-	// toolbar
+	// spray levels
 	int m = 0;
 	for (int c = 0; c < cellTypes; ++c)
 	    if (sprayMax[c] > m)
@@ -830,23 +835,75 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	plotReserve ('F', 2, fecundityParticle, .5);
 	plotReserve ('G', 3, mutatorParticle, .2);
 
+	// cheat mode
 	plotOrHide ('B', 4, lavaParticle, .4, cheating());
 
-	printOrHide (cheatString, 6, cheating());
+	// lava spray (only available in cheat mode)
+	printOrHide (cheatString, 6, cheating(), Color.getHSBColor ((float) rnd.nextDouble(), 1, 1));
+
+	// entropy: positive feedback
+	double dScore = Math.pow(2,entropy);
+	flashOrHide ("Nice diversity!", 7, dScore > 3.1, 100, -1, true, Color.pink);
+	flashOrHide ("AWESOME!", 8, dScore > 5, 100, -1, true, Color.yellow);
+
+	// entropy: negative feedback
+	flashOrHide ("Uh-oh", 9, dScore < 2.5 && dScore > 1.8, 10, 400, false, Color.red);
+	flashOrHide ("Diversity low", 10, dScore < 2, 20, 500, false, Color.red);
+
+	// number of species
+	int liveSpecies = 0;
+	for (int s = 1; s <= species; ++s)
+	    if (cellCount[s] > 0)
+		++liveSpecies;
+
+	Color darkRed = Color.getHSBColor(0,(float).5,(float).5);
+	flashOrHide ("EXTINCTION", 11, liveSpecies < 3, 25, 600, true, darkRed);
+	flashOrHide ("POP CRASH", 12, liveSpecies < 2, 30, -1, true, Color.white);
+
+	flashOrHide (liveSpecies + " species!", 13, liveSpecies > 3, 100, -1, false, Color.orange);
+	flashOrHide ("GR00VY", 14, liveSpecies > 5, 500, -1, false, Color.orange);
+
+	flashOrHide ("V0ID space", 16, liveSpecies < 1, 0, 1000, false, Color.cyan);
+
+	// networking
+	flashOrHide ("Online", 18, boardServer != null, 0, -1, false, Color.blue);
+	flashOrHide ("Connected", 19, remoteCell.size() > 0, 0, -1, false, Color.cyan);
+
+
     }
 
     private int toolYCenter (int row) { return (2 * row + 1) * toolHeight / 2; }
 
-    private void printOrHide (String text, int row, boolean show) {
+    private void flashOrHide (String text, int row, boolean show, int minTime, int maxTime, boolean onceOnly, Color color) {
+	int flashPeriod = 10, flashes = 10;
+	boolean reallyShow = false;
+	boolean currentlyShown = timeFirstTrue[row] > 0;
+	if (show) {
+	    if (!currentlyShown)
+		timeFirstTrue[row] = boardUpdateCount;
+	    else {
+		int timeSinceFirstTrue = boardUpdateCount - timeFirstTrue[row];
+		int flashesSinceFirstTrue = (timeSinceFirstTrue - minTime) / flashPeriod;
+		reallyShow = timeSinceFirstTrue >= minTime && (maxTime < 0 || timeSinceFirstTrue <= maxTime) && ((flashesSinceFirstTrue > 2*flashes) || (flashesSinceFirstTrue % 2 == 0));
+	    }
+	} else if (!onceOnly)
+	    timeFirstTrue[row] = 0;
+
+	if (reallyShow || currentlyShown)
+	    printOrHide (text, row, reallyShow, color);
+    }
+
+    private void printOrHide (String text, int row, boolean show, Color color) {
 	FontMetrics fm = bfGraphics.getFontMetrics();
 	int xSize = fm.stringWidth(text), xPos = boardSize + toolBarWidth - xSize;
 	int ch = fm.getHeight(), yPos = toolYCenter(row) + ch / 2;
+
+	bfGraphics.setColor (Color.black);
+	bfGraphics.fillRect (boardSize, yPos - ch + 1, toolBarWidth, ch + 2);
+
 	if (show) {
-	    bfGraphics.setColor (Color.getHSBColor ((float) rnd.nextDouble(), 1, 1));
+	    bfGraphics.setColor (color);
 	    bfGraphics.drawString (text, xPos, yPos);
-	} else {
-	    bfGraphics.setColor (Color.black);
-	    bfGraphics.fillRect (xPos, yPos - ch + 1, xSize, ch);
 	}
     }
 
