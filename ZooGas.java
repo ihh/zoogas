@@ -74,12 +74,16 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     int[] cellCount;
     HashMap remoteCell;  // map of off-board Point's to RemoteCellCoord's
 
-    // helper objects
+    // random number generator
     Random rnd;
+
+    // Swing
     BufferStrategy bf;
     Graphics bfGraphics;
+    Cursor boardCursor, normalCursor;
 
-    Point cursor;  // co-ordinates of cell beneath current mouse position
+    // helper objects
+    Point cursorPos;  // co-ordinates of cell beneath current mouse position
     boolean mouseDown;  // true if mouse is currently down
     boolean randomPressed;  // true if 'randomize' button was pressed (randomize the model once only)
     boolean mixPressed;  // true if 'mix' button was pressed (model as a perfectly-mixed gas, i.e. with no spatial fluctuations, using Gillespie algorithm)
@@ -279,13 +283,16 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	setSize(boardSize + toolBarWidth,boardSize + statusBarHeight);
 	setVisible(true);
 
+	boardCursor = new Cursor(Cursor.HAND_CURSOR);
+	normalCursor = new Cursor(Cursor.DEFAULT_CURSOR);
+
 	// double buffering
 	createBufferStrategy(2);
 	bf = getBufferStrategy();
 	bfGraphics = bf.getDrawGraphics();
 
 	// register for mouse & keyboard events
-	cursor = new Point();
+	cursorPos = new Point();
 	mouseDown = false;
 	randomPressed = false;
 	mixPressed = false;
@@ -453,8 +460,6 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     }
 
     private void useTools() {
-	Point mousePos, sprayCell = new Point();
-
 	// randomize
 	if (randomPressed) {
 	    randomizeBoard();
@@ -463,19 +468,26 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    randomPressed = false;
 	}
 
+	Point mousePos = getMousePosition(), sprayCell = new Point();
+
+	cursorPos.x = (int) (mousePos.x / pixelsPerCell);
+	cursorPos.y = (int) (mousePos.y / pixelsPerCell);
+
+	if (onBoard(cursorPos))
+	    setCursor(boardCursor);
+	else
+	    setCursor(normalCursor);
+
 	// do spray
 	if (mouseDown) {
-	    mousePos = getMousePosition();
 	    if (mousePos != null) {
-		cursor.x = (int) (mousePos.x / pixelsPerCell);
-		cursor.y = (int) (mousePos.y / pixelsPerCell);
 
-		if (cursor.x < size && cursor.y < size)
+		if (onBoard(cursorPos))
 		    for (int i = 0; i < sprayPower; ++i) {
 			if (sprayReserve[sprayParticle] > 0) {
 
-			    sprayCell.x = cursor.x + rnd.nextInt(sprayDiameter) - sprayDiameter / 2;
-			    sprayCell.y = cursor.y + rnd.nextInt(sprayDiameter) - sprayDiameter / 2;
+			    sprayCell.x = cursorPos.x + rnd.nextInt(sprayDiameter) - sprayDiameter / 2;
+			    sprayCell.y = cursorPos.y + rnd.nextInt(sprayDiameter) - sprayDiameter / 2;
 
 			    if (onBoard(sprayCell)) {
 				int oldCell = readCell (sprayCell);
