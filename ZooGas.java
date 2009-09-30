@@ -854,8 +854,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 	// entropy: positive feedback
 	double dScore = Math.pow(2,entropy);
-	flashOrHide ("Nice diversity!", 7, dScore > 3.6, 100, -1, true, Color.pink);
-	flashOrHide ("AWESOME!", 8, dScore > 5, 100, -1, true, Color.yellow);
+	flashOrHide ("Nice balance!", 7, dScore > 3.6, 100, -1, true, Color.pink);
+	flashOrHide ("AWESOME ZOO!", 8, dScore > 5, 100, -1, true, Color.yellow);
 
 	// entropy: negative feedback
 	flashOrHide ("Uh-oh", 9, dScore < 2.5 && dScore > 1.8, 10, 400, false, Color.red);
@@ -869,7 +869,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 	Color darkRed = Color.getHSBColor(0,(float).5,(float).5);
 	flashOrHide ("EXTINCTION", 11, liveSpecies < 3, 25, 600, true, darkRed);
-	flashOrHide ("POP CRASH", 12, liveSpecies < 2, 30, -1, true, Color.white);
+	flashOrHide ("ECO CRASH", 12, liveSpecies < 2, 30, -1, true, Color.white);
 
 	flashOrHide (liveSpecies + " species!", 13, liveSpecies > 3, 100, -1, false, Color.orange);
 	flashOrHide ("GR00VY", 14, liveSpecies > 5, 500, -1, false, Color.orange);
