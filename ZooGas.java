@@ -385,7 +385,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 	// fecundity gas
 	for (int c = 1; c <= species; ++c) {
-	    addPattern (fecundityParticle, c, fecundityParticle, 0, 1);  // fecundity particle makes species BREED
+	    addPattern (fecundityParticle, c, c, c, 1);  // fecundity particle makes species BREED
 	    addPattern (c, fecundityParticle, c, c, 1);
 	}
 	addPattern (fecundityParticle, 0, fecundityParticle, fecundityParticle, lifeRate*gasMultiplyRate);  // gas breeds (!? gives illusion of pressure, I guess)
@@ -418,7 +418,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	addPattern (lavaParticle, 0, 0, lavaParticle, lavaFlowRate);  // lava does random walk step
 	addPattern (lavaParticle, 0, 0, lavaParticle, 1 - lavaFlowRate);  // lava stays put
 
-	addPattern (basaltParticle, fecundityParticle, lavaParticle, 0, 1);  // this just for fun: perfume melts basalt
+	addPattern (basaltParticle, fecundityParticle, lavaParticle, 0, lavaSeedRate);  // this just for fun: perfume melts basalt
+	addPattern (basaltParticle, fecundityParticle, lavaParticle, 0, 1 - lavaSeedRate);
     }
 
     // helper to add a pattern
