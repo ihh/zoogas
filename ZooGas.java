@@ -388,8 +388,9 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    addPattern (fecundityParticle, c, fecundityParticle, 0, 1);  // fecundity particle makes species BREED
 	    addPattern (c, fecundityParticle, c, c, 1);
 	}
-	addPattern (fecundityParticle, 0, fecundityParticle, fecundityParticle, gasMultiplyRate);  // gas breeds (!? gives illusion of pressure, I guess)
-	addPattern (fecundityParticle, 0, 0, fecundityParticle, 1 - gasMultiplyRate);  // gas does random walk step
+	addPattern (fecundityParticle, 0, fecundityParticle, fecundityParticle, lifeRate*gasMultiplyRate);  // gas breeds (!? gives illusion of pressure, I guess)
+	addPattern (fecundityParticle, 0, 0, fecundityParticle, gasDispersalRate * (1 - lifeRate*gasMultiplyRate));  // gas disperses
+	addPattern (fecundityParticle, 0, 0, fecundityParticle, (1 - gasDispersalRate) * (1 - lifeRate*gasMultiplyRate));  // gas does random walk step
 
 	// mutator gas
 	for (int c = 1; c <= species; ++c)
