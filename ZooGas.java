@@ -468,15 +468,16 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    randomPressed = false;
 	}
 
-	Point mousePos = getMousePosition(), sprayCell = new Point();
+	Point mousePos = getMousePosition();
+	if (mousePos != null) {
+	    cursorPos.x = (int) (mousePos.x / pixelsPerCell);
+	    cursorPos.y = (int) (mousePos.y / pixelsPerCell);
 
-	cursorPos.x = (int) (mousePos.x / pixelsPerCell);
-	cursorPos.y = (int) (mousePos.y / pixelsPerCell);
-
-	if (onBoard(cursorPos))
-	    setCursor(boardCursor);
-	else
-	    setCursor(normalCursor);
+	    if (onBoard(cursorPos))
+		setCursor(boardCursor);
+	    else
+		setCursor(normalCursor);
+	}
 
 	// do spray
 	if (mouseDown) {
@@ -485,6 +486,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 		if (onBoard(cursorPos))
 		    for (int i = 0; i < sprayPower; ++i) {
 			if (sprayReserve[sprayParticle] > 0) {
+
+			    Point sprayCell = new Point();
 
 			    sprayCell.x = cursorPos.x + rnd.nextInt(sprayDiameter) - sprayDiameter / 2;
 			    sprayCell.y = cursorPos.y + rnd.nextInt(sprayDiameter) - sprayDiameter / 2;
