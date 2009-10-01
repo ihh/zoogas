@@ -16,12 +16,15 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     int species = 18;  // number of species
     int aversion = 1;  // number of species that species will consider too similar to prey on
     int omnivorousness = 11;  // number of species that each species can prey on
+    double lifeRate = .1;  // probability of moving, preying, choking or spawning
     double forageEfficiency = .8;  // probability that predation leads successfully to breeding
     double chokeRate = .01;  // probability of dying due to overcrowding
     double birthRate = .02;  // probability of breeding
 
     // tool particle params
-    double buriedWallDecayRate = .00018, exposedWallDecayRate = .00022;  // probability of wall decay when buried/exposed
+    int wallDecayStates = 5;
+    double playDecayRate = .006;  // speed of decay events that drive gameplay
+    double buriedWallDecayRate = .18, exposedWallDecayRate = .22;  // probability of wall decay when buried/exposed
     double cementSetRate = .2, cementStickRate = .9;  // probability of cement setting into wall (or sticking to existing wall)
     double gasDispersalRate = .1;  // probability that a gas particle will disappear
     double gasMultiplyRate = .2;  // probability that a surviving fecundity gas particle will multiply (gives illusion of pressure)
@@ -31,6 +34,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     // initial conditions
     String initImageFilename = "TheZoo.bmp";  // if non-null, initialization loads a seed image from this filename
+    // String initImageFilename = null;
     double initialDensity = .1;  // initial density of species-containing cells
     int initialDiversity = 3;  // initial number of species (can be increased with mutator gas)
 
@@ -39,7 +43,6 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     int boardSize;  // width & height of board in pixels
     int popChartHeight = 100, popBarHeight = 4, entropyBarHeight = 20, statusBarHeight;  // size in pixels of various parts of the status bar (below the board)
     int toolKeyWidth = 16, toolReserveBarWidth = 100, toolHeight = 30, toolBarWidth;  // size in pixels of various parts of the tool bar (right of the board)
-    Vector cellColorVec;
 
     // tools
     int sprayDiameter, sprayPower;  // diameter & power of spraypaint tool
@@ -62,7 +65,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     String localhost = null;
 
     // underlying cellular automata model
-    int cellTypes;  // 0 is assumed to represent inactive, empty space
+    int cellTypes = 0;
+    Vector cellColorVec = new Vector(), cellName = new Vector();
     Vector pattern;  // probabilistic pattern replacement dictionary, indexed by source cellPairIndex
 
     // constant helper vars
@@ -160,32 +164,27 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 	patternMatchesPerRefresh = (int) (size * size);
 
-	wallParticle = species + 1;
-	cementParticle = species + 2;
-	acidParticle = species + 3;
-	fecundityParticle = species + 4;
-	mutatorParticle = species + 5;
-	lavaParticle = species + 6;
-	basaltParticle = species + 7;
+	// init particles
+	newCellType ("0", Color.black);  // empty space
+	for (int s = 1; s <= species; ++s)
+	    newCellType ("s" + s, Color.getHSBColor ((float) (s-1) / (float) (species+1), 1, 1));
 
-	cellTypes = basaltParticle + 1;
+	int[] wallParticles = new int[wallDecayStates];
+	for (int w = 1; w <= wallDecayStates; ++w) {
+	    float gray = (float) w / (float) (wallDecayStates + 1);
+	    wallParticles[w-1] = newCellType ("w" + w, new Color (gray, gray, gray));  // walls
+	}
+	wallParticle = wallParticles[0];
+	cementParticle = newCellType ("ts", Color.white);  // cement
 
-	// init color vector
-	cellColorVec = new Vector (cellTypes);
-	cellColorVec.add (Color.black);  // empty space
-	for (int s = 0; s < species; ++s)
-	    cellColorVec.add (Color.getHSBColor ((float) s / (float) (species+1), 1, 1));
 	float gasHue = (float) species / (float) (species+1);
-	cellColorVec.add (Color.gray);  // walls
-	cellColorVec.add (Color.white);  // cement
-	cellColorVec.add (Color.darkGray);  // acids
-	cellColorVec.add (Color.getHSBColor (gasHue, (float) .5, (float) .5));  // fecundity gas
-	cellColorVec.add (Color.getHSBColor (gasHue, (float) .5, (float) 1));  // mutator gas
-	cellColorVec.add (Color.lightGray);  // lava
-	cellColorVec.add (Color.orange);  // basalt
+	acidParticle = newCellType ("td", Color.darkGray);  // acids
+	fecundityParticle = newCellType ("tf", Color.getHSBColor (gasHue, (float) .5, (float) .5));  // fecundity gas
+	mutatorParticle = newCellType ("tg", Color.getHSBColor (gasHue, (float) .5, (float) 1));  // mutator gas
+	lavaParticle = newCellType ("tb", Color.lightGray);  // lava
+	basaltParticle = newCellType ("wb", Color.orange);  // basalt
 
 	// init pattern-matching rule dictionary
-	cellTypes = cellColorVec.size();
 	pattern = new Vector (cellTypes * cellTypes);
 	for (int p = 0; p < cellTypes * cellTypes; ++p)
 	    pattern.add (new IntegerRandomVariable());
@@ -308,51 +307,70 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	}
     }
 
+    // builder method for cell types
+    private int newCellType (String name, Color color) {
+	cellColorVec.add (color);
+	cellName.add (name);
+	++cellTypes;
+	return cellTypes - 1;
+    }
+
+    private String stateName (int s) {
+	return (String) cellName.get(s);
+    }
+
     // builder method for patterns
     private void addPatterns() {
 	// the cyclic ecology
 	for (int s = 1; s <= species; ++s)
 	    {
 		// adjacent to emptiness
-		addPattern (s, 0, s, s, birthRate);  // spontaneous birth
-		addPattern (s, 0, 0, s, 1 - birthRate);  // no birth, so take a random walk step
+		addPattern (s, 0, s, s, lifeRate*birthRate);  // spontaneous birth
+		addPattern (s, 0, 0, s, lifeRate*(1-birthRate));  // no birth, so take a random walk step
+		addPattern (s, 0, s, 0, 1 - lifeRate);  // do nothing
 
 		// adjacent to self
-		addPattern (s, s, 0, s, chokeRate);  // spontaneous death due to overcrowding
-		addPattern (s, s, s, s, 1 - chokeRate);  // no overcrowding, we're good pals here
+		addPattern (s, s, 0, s, lifeRate*chokeRate);  // spontaneous death due to overcrowding
+		addPattern (s, s, s, s, 1 - lifeRate*chokeRate);  // no overcrowding, we're good pals here
 
 		// adjacent to wall
-		addPattern (s, wallParticle, 0, wallParticle, chokeRate);  // spontaneous death due to being muthafuckin BURIED ALIVE or CRUSHED AGAINST A BRICK WALL
-		addPattern (s, wallParticle, s, wallParticle, 1 - chokeRate);  // no overcrowding, take a deep breath
+		for (int w = wallParticle; w < wallParticle + wallDecayStates; ++w) {
+		    addPattern (s, w, 0, w, lifeRate*chokeRate);  // spontaneous death due to being muthafuckin BURIED ALIVE or CRUSHED AGAINST A BRICK WALL
+		    addPattern (s, w, s, w, 1 - lifeRate*chokeRate);  // no overcrowding, take a deep breath
+		}
 
 		// adjacent to prey
 		for (int t = aversion; t < aversion + omnivorousness; ++t) {
 		    int prey = ((s - 1 + t) % species) + 1;
-		    addPattern (s, prey, s, s, forageEfficiency);  // eat + breed (i.e. convert)
-		    addPattern (s, prey, s, 0, 1. - forageEfficiency);  // eat + don't breed
+		    addPattern (s, prey, s, s, lifeRate*forageEfficiency);  // eat + breed (i.e. convert)
+		    addPattern (s, prey, s, 0, lifeRate*(1 - forageEfficiency));  // eat + don't breed
+		    addPattern (s, prey, s, prey, 1 - lifeRate);  // don't eat or breed
 		}
 
 		// adjacent to other
 		for (int t = 0; t < species; ++t)
 		    if (t < aversion || t >= aversion + omnivorousness) {
 			int other = ((s - 1 + t) % species) + 1;
-			addPattern (s, other, 0, other, chokeRate);  // spontaneous death due to overcrowding
-			addPattern (s, other, s, other, 1 - chokeRate);  // no overcrowding, we're good pals here
+			addPattern (s, other, 0, other, lifeRate*chokeRate);  // spontaneous death due to overcrowding
+			addPattern (s, other, s, other, 1 - lifeRate*chokeRate);  // no overcrowding, we're good pals here
 		    }
 	    }
 
 	// decaying walls
-	for (int c = 0; c < cellTypes; ++c)
-	    {
-		double decayRate = (c == wallParticle ? buriedWallDecayRate : (c == acidParticle ? 1 : exposedWallDecayRate));
-		addPattern (wallParticle, c, 0, c, decayRate);  // wall decays
-		addPattern (wallParticle, c, wallParticle, c, 1 - decayRate);  // wall lives
-	    }
+	for (int w = wallParticle; w < wallParticle + wallDecayStates; ++w)
+	    for (int c = 0; c < cellTypes; ++c)
+		{
+		    boolean isWall = c >= wallParticle && c < wallParticle + wallDecayStates;
+		    double decayRate = playDecayRate * (isWall ? buriedWallDecayRate : (c == acidParticle ? 1 : exposedWallDecayRate));
+		    addPattern (w, c, (w == wallParticle) ? 0 : (w-1), c, decayRate);  // wall decays
+		    addPattern (w, c, w, c, 1 - decayRate);  // wall lives
+		}
 
 	// drifting & setting cement
 	for (int c = 1; c < cellTypes; ++c) {
-	    double setRate = (c == wallParticle ? cementStickRate : cementSetRate);
-	    addPattern (cementParticle, c, wallParticle, c, setRate);  // cement sets into wall
+	    boolean isWall = c >= wallParticle && c < wallParticle + wallDecayStates;
+	    double setRate = (isWall ? cementStickRate : cementSetRate);
+	    addPattern (cementParticle, c, wallParticle + wallDecayStates - 1, c, setRate);  // cement sets into wall
 	    addPattern (cementParticle, c, cementParticle, c, 1 - setRate);  // cement stays liquid
 	}
 	addPattern (cementParticle, 0, 0, cementParticle, 1);  // liquid cement always does random walk step
@@ -388,7 +406,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 	// flowing & setting lava
 	for (int c = 1; c < cellTypes; ++c) {
-	    if (c == basaltParticle || c == wallParticle) {
+	    boolean isWall = c >= wallParticle && c < wallParticle + wallDecayStates;
+	    if (c == basaltParticle || isWall) {
 		double setRate = (c == basaltParticle ? 1 : lavaSeedRate);
 		addPattern (lavaParticle, c, basaltParticle, c, setRate);  // lava sets into basalt
 		addPattern (lavaParticle, c, lavaParticle, c, 1 - setRate);  // lava stays liquid
@@ -403,14 +422,14 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     // helper to add a pattern
     private void addPattern (int pc_old, int nc_old, int pc_new, int nc_new, double prob) {
 	if (pc_old == 0)
-	    throw new RuntimeException (new String ("Can't trigger a rule on empty space"));
+	    throw new RuntimeException (new String ("Can't trigger a rule on empty space: " + pc_old + "(" + stateName(pc_old) + ") " + nc_old + "(" + stateName(nc_old) + ") " + pc_new + "(" + stateName(pc_new) + ") " + nc_new + "(" + stateName(nc_new) + ")"));
 	((IntegerRandomVariable) pattern.get (makeCellPairIndex(pc_old,nc_old))).add (makeCellPairIndex(pc_new,nc_new), prob);
     }
 
     // init tools method
     private void initSprayTools() {
-	sprayDiameter = 6;
-	sprayPower = 45;
+	sprayDiameter = 2;
+	sprayPower = 15;
 
 	sprayReserve = new int[cellTypes];
 	sprayMax = new int[cellTypes];
@@ -424,16 +443,16 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	double baseRefillRate = 0.25 * (double) sprayPower;
 
 	sprayRefillRate[cementParticle] = .35 * baseRefillRate;
-	sprayMax[cementParticle] = 600;
+	sprayMax[cementParticle] = 300;
 
 	sprayRefillRate[acidParticle] = .75 * baseRefillRate;
-	sprayMax[acidParticle] = 400;
+	sprayMax[acidParticle] = 200;
 
 	sprayRefillRate[fecundityParticle] = .5 * baseRefillRate;
-	sprayMax[fecundityParticle] = 100;
+	sprayMax[fecundityParticle] = 80;
 
 	sprayRefillRate[mutatorParticle] = .03 * baseRefillRate;
-	sprayMax[mutatorParticle] = 100;
+	sprayMax[mutatorParticle] = 40;
 
 	sprayRefillRate[lavaParticle] = .5 * baseRefillRate;
 	sprayMax[lavaParticle] = 400;
@@ -578,9 +597,12 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 	int oldCellPairIndex = makeCellPairIndex (oldSourceState, oldTargetState);
 	int newCellPairIndex = ((IntegerRandomVariable) pattern.get(oldCellPairIndex)).sample(rnd);
-
-	writeCell (targetCoords, getTargetState (newCellPairIndex));
-	return getSourceState (newCellPairIndex);
+	
+	int newTargetState = getTargetState (newCellPairIndex);
+	int newSourceState = getSourceState (newCellPairIndex);
+	
+	writeCell (targetCoords, newTargetState);
+	return newSourceState;
     }
 
     private void connectBorder (Point sourceStart, Point targetStart, Point lineVector, int lineLength, Point remoteOrigin, InetSocketAddress remoteBoard) {
