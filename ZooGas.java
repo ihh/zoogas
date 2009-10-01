@@ -165,7 +165,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	patternMatchesPerRefresh = (int) (size * size);
 
 	// init particles
-	newCellType ("0", Color.black);  // empty space
+	newCellType ("_", Color.black);  // empty space
 	for (int s = 1; s <= species; ++s)
 	    newCellType ("s" + s, Color.getHSBColor ((float) (s-1) / (float) (species+1), 1, 1));
 
@@ -190,6 +190,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    pattern.add (new IntegerRandomVariable());
 
 	// call method to add probabilistic pattern-matching replacement rules
+	System.err.println ("Adding production rules");
 	addPatterns();
 
 	// pad any empty patterns, just to level out the speed
@@ -424,6 +425,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	if (pc_old == 0)
 	    throw new RuntimeException (new String ("Can't trigger a rule on empty space: " + pc_old + "(" + stateName(pc_old) + ") " + nc_old + "(" + stateName(nc_old) + ") " + pc_new + "(" + stateName(pc_new) + ") " + nc_new + "(" + stateName(nc_new) + ")"));
 	((IntegerRandomVariable) pattern.get (makeCellPairIndex(pc_old,nc_old))).add (makeCellPairIndex(pc_new,nc_new), prob);
+	// print the pattern to stdout
+	System.out.println ("P(" + stateName(pc_old) + " " + stateName(nc_old) + " -> " + stateName(pc_new) + " " + stateName(nc_new) + ") = " + prob);
     }
 
     // init tools method
