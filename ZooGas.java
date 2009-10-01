@@ -425,8 +425,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	if (pc_old == 0)
 	    throw new RuntimeException (new String ("Can't trigger a rule on empty space: " + pc_old + "(" + stateName(pc_old) + ") " + nc_old + "(" + stateName(nc_old) + ") " + pc_new + "(" + stateName(pc_new) + ") " + nc_new + "(" + stateName(nc_new) + ")"));
 	((IntegerRandomVariable) pattern.get (makeCellPairIndex(pc_old,nc_old))).add (makeCellPairIndex(pc_new,nc_new), prob);
-	// print the pattern to stdout
-	System.out.println ("P(" + stateName(pc_old) + " " + stateName(nc_old) + " -> " + stateName(pc_new) + " " + stateName(nc_new) + ") = " + prob);
+	// print the pattern to stderr
+	System.err.println ("P(" + stateName(pc_old) + " " + stateName(nc_old) + " -> " + stateName(pc_new) + " " + stateName(nc_new) + ") = " + prob);
     }
 
     // init tools method
