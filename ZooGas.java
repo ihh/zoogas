@@ -238,8 +238,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 				    dmin = dist;
 				}
 			    }
-			    if (s == acidParticle)
-				System.err.println ("Warning: dark grey pixel in image at (" + x + "," + y + "), RGB value (" + red + "," + green + "," + blue + ") is being read as acid");
+			    if (dmin > 0)
+				System.err.println ("Warning: pixel in image at (" + x + "," + y + "), RGB value (" + red + "," + green + "," + blue + ") is being read as '" + (String) cellName.get(s) + "' (" + (Color) cellColorVec.get(s) + "; distance=" + (int) Math.sqrt(dmin) + ")");
 			    cell[x][y] = s;
 			}
 		    }
