@@ -20,6 +20,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     double forageEfficiency = .8;  // probability that predation leads successfully to breeding
     double chokeRate = .01;  // probability of dying due to overcrowding
     double birthRate = .02;  // probability of breeding
+    double guestMoveRate = .05;  // move rate of zoo guests
 
     // tool particle params
     int wallDecayStates = 5;
@@ -67,10 +68,11 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     // underlying cellular automata model
     int cellTypes = 0;
     Vector cellColorVec = new Vector(), cellName = new Vector();
+    Map cellNameToIndex = new HashMap();
     Vector pattern;  // probabilistic pattern replacement dictionary, indexed by source cellPairIndex
 
     // constant helper vars
-    int wallParticle, cementParticle, acidParticle, fecundityParticle, mutatorParticle, lavaParticle, basaltParticle;
+    int wallParticle, cementParticle, acidParticle, fecundityParticle, mutatorParticle, lavaParticle, basaltParticle, tripwireParticle, guestParticle;
     int patternMatchesPerRefresh;
 
     // main board data
@@ -172,17 +174,19 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	int[] wallParticles = new int[wallDecayStates];
 	for (int w = 1; w <= wallDecayStates; ++w) {
 	    float gray = (float) w / (float) (wallDecayStates + 1);
-	    wallParticles[w-1] = newCellType ("w" + w, new Color (gray, gray, gray));  // walls
+	    wallParticles[w-1] = newCellType ("w" + w, new Color (gray, gray, gray));  // walls (in various sequential states of decay)
 	}
 	wallParticle = wallParticles[0];
-	cementParticle = newCellType ("ts", Color.white);  // cement
+	cementParticle = newCellType ("ts", Color.white);  // cement (drifts; sets into wall)
 
 	float gasHue = (float) species / (float) (species+1);
-	acidParticle = newCellType ("td", Color.darkGray);  // acids
-	fecundityParticle = newCellType ("tf", Color.getHSBColor (gasHue, (float) .5, (float) .5));  // fecundity gas
-	mutatorParticle = newCellType ("tg", Color.getHSBColor (gasHue, (float) .5, (float) 1));  // mutator gas
-	lavaParticle = newCellType ("tb", Color.lightGray);  // lava
+	acidParticle = newCellType ("td", Color.darkGray);  // acid (destroys everything)
+	fecundityParticle = newCellType ("tf", Color.getHSBColor (gasHue, (float) .5, (float) .5));  // fecundity gas (multiplies; makes animals breed; dissolves basalt into lava)
+	mutatorParticle = newCellType ("tg", Color.getHSBColor (gasHue, (float) .5, (float) 1));  // mutator gas (converts animals into nearby species)
+	lavaParticle = newCellType ("tb", Color.lightGray);  // lava (drifts; sets into basalt)
 	basaltParticle = newCellType ("wb", Color.orange);  // basalt
+	tripwireParticle = newCellType ("tw", new Color(1,1,1));  // tripwire (an invisible, static particle that animals will eat; use as a subtle test of whether animals have escaped)
+	guestParticle = newCellType ("g", new Color(254,254,254));  // guest (a visible, mobile particle that animals will eat; use as a test of whether animals have escaped)
 
 	// init pattern-matching rule dictionary
 	pattern = new Vector (cellTypes * cellTypes);
@@ -310,10 +314,11 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     // builder method for cell types
     private int newCellType (String name, Color color) {
+	int newCellIndex = cellTypes++;
 	cellColorVec.add (color);
 	cellName.add (name);
-	++cellTypes;
-	return cellTypes - 1;
+	cellNameToIndex.put (name, newCellIndex);
+	return newCellIndex;
     }
 
     private String stateName (int s) {
@@ -348,13 +353,17 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 		    addPattern (s, prey, s, prey, 1 - lifeRate);  // don't eat or breed
 		}
 
-		// adjacent to other
+		// adjacent to other species
 		for (int t = 0; t < species; ++t)
 		    if (t < aversion || t >= aversion + omnivorousness) {
 			int other = ((s - 1 + t) % species) + 1;
 			addPattern (s, other, 0, other, lifeRate*chokeRate);  // spontaneous death due to overcrowding
 			addPattern (s, other, s, other, 1 - lifeRate*chokeRate);  // no overcrowding, we're good pals here
 		    }
+
+		// adjacent to guest or tripwire: eat'em!
+		addPattern (s, guestParticle, 0, s, 1);
+		addPattern (s, tripwireParticle, 0, s, 1);
 	    }
 
 	// decaying walls
@@ -378,8 +387,10 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 	// death gas
 	for (int c = 1; c < cellTypes; ++c) {
-	    addPattern (acidParticle, c, acidParticle, 0, gasMultiplyRate);  // acid lives
-	    addPattern (acidParticle, c, 0, 0, 1 - gasMultiplyRate);  // acid dies
+	    if (c != tripwireParticle) {  // ensure tripwire particle can only be destroyed by escaping animals
+		addPattern (acidParticle, c, acidParticle, 0, gasMultiplyRate);  // acid lives
+		addPattern (acidParticle, c, 0, 0, 1 - gasMultiplyRate);  // acid dies
+	    }
 	}
 	addPattern (acidParticle, 0, 0, acidParticle, 1);  // acid always does random walk step, doesn't disperse
 
@@ -418,14 +429,19 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	addPattern (lavaParticle, 0, 0, lavaParticle, lavaFlowRate);  // lava does random walk step
 	addPattern (lavaParticle, 0, 0, lavaParticle, 1 - lavaFlowRate);  // lava stays put
 
+	// basalt
 	addPattern (basaltParticle, fecundityParticle, lavaParticle, 0, lavaSeedRate);  // this just for fun: perfume melts basalt
 	addPattern (basaltParticle, fecundityParticle, lavaParticle, 0, 1 - lavaSeedRate);
+
+	// guests
+	addPattern (guestParticle, 0, 0, guestParticle, guestMoveRate);
+	addPattern (guestParticle, 0, guestParticle, 0, 1 - guestMoveRate);
     }
 
     // helper to add a pattern
     private void addPattern (int pc_old, int nc_old, int pc_new, int nc_new, double prob) {
 	if (pc_old == 0)
-	    throw new RuntimeException (new String ("Can't trigger a rule on empty space: " + pc_old + "(" + stateName(pc_old) + ") " + nc_old + "(" + stateName(nc_old) + ") " + pc_new + "(" + stateName(pc_new) + ") " + nc_new + "(" + stateName(nc_new) + ")"));
+	    System.err.println ("Warning: sourced a rule on empty space: " + pc_old + "(" + stateName(pc_old) + ") " + nc_old + "(" + stateName(nc_old) + ") " + pc_new + "(" + stateName(pc_new) + ") " + nc_new + "(" + stateName(nc_new) + ")");
 	((IntegerRandomVariable) pattern.get (makeCellPairIndex(pc_old,nc_old))).add (makeCellPairIndex(pc_new,nc_new), prob);
 	// print the pattern to stderr
 	System.err.println ("P(" + stateName(pc_old) + " " + stateName(nc_old) + " -> " + stateName(pc_new) + " " + stateName(nc_new) + ") = " + prob);
@@ -598,17 +614,38 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     int evolveTargetForSource (Point targetCoords, int oldSourceState)
     {
+	// get old state-pair
 	int oldTargetState = readCell (targetCoords);
 
 	int oldCellPairIndex = makeCellPairIndex (oldSourceState, oldTargetState);
+
+	// sample new state-pair
 	int newCellPairIndex = ((IntegerRandomVariable) pattern.get(oldCellPairIndex)).sample(rnd);
 	
 	int newTargetState = getTargetState (newCellPairIndex);
 	int newSourceState = getSourceState (newCellPairIndex);
 	
+	// write
 	writeCell (targetCoords, newTargetState);
+
+	// to get an update rate representative of the intended game, do a few string lookups
+	// these are roughly equivalent to the steps we'd have to perform if we moved to a name-based identifier system for state types
+	// (set benchmarkIterations to zero for a snappier game using integer cell types only)
+	int benchmarkIterations = 2;  // let's assume we do things inefficiently & have to look all the names up twice (e.g. once for pattern-matching & once for summary counts)
+	for (int benchmarkIteration = 0; benchmarkIteration < benchmarkIterations; ++benchmarkIteration) {
+	    boolean osNameLookup = (getStateIndex(stateName(oldSourceState)) == oldSourceState);
+	    boolean otNameLookup = (getStateIndex(stateName(oldTargetState)) == oldTargetState);
+	    boolean nsNameLookup = (getStateIndex(stateName(newSourceState)) == newSourceState);
+	    boolean ntNameLookup = (getStateIndex(stateName(newTargetState)) == newTargetState);
+	    if (!(osNameLookup && otNameLookup && nsNameLookup && ntNameLookup))
+		System.err.println("oops");
+	}
+
+	// return
 	return newSourceState;
     }
+
+    int getStateIndex (String stateName) { try { return ((Integer) cellNameToIndex.get(stateName)).intValue(); } catch (Exception e) { } return -1; }
 
     private void connectBorder (Point sourceStart, Point targetStart, Point lineVector, int lineLength, Point remoteOrigin, InetSocketAddress remoteBoard) {
 	String[] connectRequests = new String [lineLength];
@@ -917,6 +954,10 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	flashOrHide ("GR00VY", 14, liveSpecies > 5, 500, -1, false, Color.orange);
 
 	flashOrHide ("V0ID space", 16, liveSpecies < 1, 0, 1000, false, Color.cyan);
+
+	flashOrHide ("Guests dead", 15, cellCount[guestParticle]==0, 0, -1, false, Color.red);
+	flashOrHide ("Animals escaped", 17, cellCount[tripwireParticle]==0, 0, -1, false, Color.red);
+
 
 	// networking
 	flashOrHide ("Online", 18, boardServer != null, 0, -1, false, Color.blue);
