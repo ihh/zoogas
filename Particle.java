@@ -5,6 +5,8 @@ import java.awt.*;
 import java.net.*;
 import java.io.*;
 
+
+// Particle class, encapsulating the behavior, appearance & summary statistics of a given CA state
 public class Particle {
     public String name = null;
     public Color color = null;
