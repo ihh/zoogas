@@ -13,9 +13,15 @@ public class Particle {
     protected IdentityHashMap pattern = new IdentityHashMap();  // production rules, indexed by neighbor Particle
     protected int count = 0;  // how many on the board
 
-    // methods
+    // constructor
     public Particle (String name, Color color) {
 	this.name = name;
 	this.color = color;
+    }
+
+    // methods
+    String visibleName() {
+	String[] partsOfName = name.split ("/", 2);
+	return partsOfName[0].replaceAll("_"," ");
     }
 }

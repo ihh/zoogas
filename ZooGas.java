@@ -81,7 +81,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     Random rnd;
 
     // Swing
-    BufferStrategy bf;
+    Insets insets;
+    BufferStrategy bufferStrategy;
     Graphics bfGraphics;
     Cursor boardCursor, normalCursor;
 
@@ -166,26 +167,26 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	patternMatchesPerRefresh = (int) (size * size);
 
 	// init particles
-	spaceParticle = newCellType ("_", Color.black);  // empty space
+	spaceParticle = newCellType ("/", Color.black);  // empty space
 	speciesParticle = new Particle[species];
 	for (int s = 0; s < species; ++s)
-	    speciesParticle[s] = newCellType ("s" + (s+1), Color.getHSBColor ((float) s / (float) (species+1), 1, 1));
+	    speciesParticle[s] = newCellType ("critter/" + (s+1), Color.getHSBColor ((float) s / (float) (species+1), 1, 1));
 
 	wallParticle = new Particle[wallDecayStates];
 	for (int w = 1; w <= wallDecayStates; ++w) {
 	    float gray = (float) w / (float) (wallDecayStates + 1);
-	    wallParticle[w-1] = newCellType ("w" + w, new Color (gray, gray, gray));  // walls (in various sequential states of decay)
+	    wallParticle[w-1] = newCellType ("wall/" + w, new Color (gray, gray, gray));  // walls (in various sequential states of decay)
 	}
-	cementParticle = newCellType ("ts", Color.white);  // cement (drifts; sets into wall)
+	cementParticle = newCellType ("cement", Color.white);  // cement (drifts; sets into wall)
 
 	float gasHue = (float) species / (float) (species+1);
-	acidParticle = newCellType ("td", Color.darkGray);  // acid (destroys most things; dissolves basalt into lava)
-	fecundityParticle = newCellType ("tf", Color.getHSBColor (gasHue, (float) .5, (float) .5));  // fecundity gas (multiplies; makes animals breed)
-	mutatorParticle = newCellType ("tg", Color.getHSBColor (gasHue, (float) .5, (float) 1));  // mutator gas (converts animals into nearby species)
-	lavaParticle = newCellType ("tb", Color.lightGray);  // lava (drifts; sets into basalt)
-	basaltParticle = newCellType ("wb", Color.orange);  // basalt
-	tripwireParticle = newCellType ("tw", new Color(1,1,1));  // tripwire (an invisible, static particle that animals will eat; use as a subtle test of whether animals have escaped)
-	guestParticle = newCellType ("g", new Color(254,254,254));  // guest (a visible, mobile particle that animals will eat; use as a test of whether animals have escaped)
+	acidParticle = newCellType ("acid", Color.darkGray);  // acid (destroys most things; dissolves basalt into lava)
+	fecundityParticle = newCellType ("perfume", Color.getHSBColor (gasHue, (float) .5, (float) .5));  // fecundity gas (multiplies; makes animals breed)
+	mutatorParticle = newCellType ("mutator", Color.getHSBColor (gasHue, (float) .5, (float) 1));  // mutator gas (converts animals into nearby species)
+	lavaParticle = newCellType ("lava", Color.lightGray);  // lava (drifts; sets into basalt)
+	basaltParticle = newCellType ("wall/basalt", Color.orange);  // basalt
+	tripwireParticle = newCellType ("/tripwire", new Color(1,1,1));  // tripwire (an invisible, static particle that animals will eat; use as a subtle test of whether animals have escaped)
+	guestParticle = newCellType ("zoo_guest", new Color(254,254,254));  // guest (a visible, mobile particle that animals will eat; use as a test of whether animals have escaped)
 
 	// call method to add probabilistic pattern-matching replacement rules
 	addPatterns();
@@ -244,19 +245,24 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	bestEntropy = minEntropyOverCycle = bestMinEntropyOverCycle = entropy;
 	maxEntropy = log2(species);
 
-	// init Swing
+	// init JFrame
 	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	setUndecorated(true);
-	setSize(boardSize + toolBarWidth,boardSize + statusBarHeight);
+	setResizable(false);
 	setVisible(true);
 
+	// set size
+	insets = getInsets();
+	setSize(boardSize + toolBarWidth + insets.left + insets.right,boardSize + statusBarHeight + insets.top + insets.bottom);
+
+	// init double buffering
+	createBufferStrategy(2);
+	bufferStrategy = getBufferStrategy();
+	bfGraphics = bufferStrategy.getDrawGraphics();
+	bfGraphics.translate (insets.left, insets.top);
+
+	// create cursors
 	boardCursor = new Cursor(Cursor.HAND_CURSOR);
 	normalCursor = new Cursor(Cursor.DEFAULT_CURSOR);
-
-	// double buffering
-	createBufferStrategy(2);
-	bf = getBufferStrategy();
-	bfGraphics = bf.getDrawGraphics();
 
 	// register for mouse & keyboard events
 	cursorPos = new Point();
@@ -537,6 +543,18 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    }
     }
 
+    // getCursorPos() returns true if cursor is over board, and places cell coords in cursorPos
+    private boolean getCursorPos() {
+	Point mousePos = getMousePosition();
+	if (mousePos != null) {
+	    cursorPos.x = (int) ((mousePos.x - insets.left) / pixelsPerCell);
+	    cursorPos.y = (int) ((mousePos.y - insets.top) / pixelsPerCell);
+
+	    return onBoard(cursorPos);
+	}
+	return false;
+    }
+
     private void useTools() {
 	// randomize
 	if (randomPressed) {
@@ -546,40 +564,29 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    randomPressed = false;
 	}
 
-	Point mousePos = getMousePosition();
-	if (mousePos != null) {
-	    cursorPos.x = (int) (mousePos.x / pixelsPerCell);
-	    cursorPos.y = (int) (mousePos.y / pixelsPerCell);
-
-	    if (onBoard(cursorPos))
-		setCursor(boardCursor);
-	    else
-		setCursor(normalCursor);
-	}
+	boolean cursorOnBoard = getCursorPos();
+	setCursor(cursorOnBoard ? boardCursor : normalCursor);
 
 	// do spray
 	if (mouseDown) {
-	    if (mousePos != null) {
+	    if (cursorOnBoard)
+		for (int i = 0; i < sprayPower; ++i) {
+		    if (((Double) sprayReserve.get(sprayParticle)).doubleValue() > 0) {
 
-		if (onBoard(cursorPos))
-		    for (int i = 0; i < sprayPower; ++i) {
-			if (((Double) sprayReserve.get(sprayParticle)).doubleValue() > 0) {
+			Point sprayCell = new Point();
 
-			    Point sprayCell = new Point();
+			sprayCell.x = cursorPos.x + rnd.nextInt(sprayDiameter) - sprayDiameter / 2;
+			sprayCell.y = cursorPos.y + rnd.nextInt(sprayDiameter) - sprayDiameter / 2;
 
-			    sprayCell.x = cursorPos.x + rnd.nextInt(sprayDiameter) - sprayDiameter / 2;
-			    sprayCell.y = cursorPos.y + rnd.nextInt(sprayDiameter) - sprayDiameter / 2;
-
-			    if (onBoard(sprayCell)) {
-				Particle oldCell = readCell (sprayCell);
-				if (oldCell == spaceParticle) {
-				    writeCell (sprayCell, sprayParticle, oldCell);
-				    sprayReserve.put (sprayParticle, ((Double) sprayReserve.get(sprayParticle)).doubleValue() - 1);
-				}
+			if (onBoard(sprayCell)) {
+			    Particle oldCell = readCell (sprayCell);
+			    if (oldCell == spaceParticle) {
+				writeCell (sprayCell, sprayParticle, oldCell);
+				sprayReserve.put (sprayParticle, ((Double) sprayReserve.get(sprayParticle)).doubleValue() - 1);
 			    }
 			}
 		    }
-	    }
+		}
 
 	} else {  // if (mouseDown) ...
 
@@ -603,7 +610,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	bfGraphics.drawLine(boardSize,0,boardSize,boardSize);
 
 	// update buffer
-	bf.show();
+	bufferStrategy.show();
 	Toolkit.getDefaultToolkit().sync();	
     }
 
@@ -928,13 +935,13 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	plotReserve ('F', 2, fecundityParticle, .5);
 	plotReserve ('G', 3, mutatorParticle, .2);
 
-	// cheat mode
+	// lava spray (only available in cheat mode)
 	plotOrHide ('B', 4, lavaParticle, .4, cheating());
 
 	// name of the game
 	flashOrHide ("Z00 GAS", 5, true, 0, 400, true, Color.white);
 
-	// lava spray (only available in cheat mode)
+	// cheat mode
 	printOrHide (cheatString, 6, cheating(), Color.getHSBColor ((float) rnd.nextDouble(), 1, 1));
 
 	// entropy: positive feedback
@@ -962,13 +969,17 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	flashOrHide ("V0ID space", 16, liveSpecies < 1, 0, 1000, false, Color.cyan);
 
 	flashOrHide ("Guests eaten", 15, guestParticle.count==0, 0, -1, false, Color.red);
-	flashOrHide ("Animals escaped", 17, tripwireParticle.count==0, 0, -1, false, Color.red);
+	flashOrHide ("ZOO BREAK!", 17, tripwireParticle.count==0, 0, -1, false, Color.red);
 
 
 	// networking
 	flashOrHide ("Online", 18, boardServer != null, 0, -1, false, Color.blue);
 	flashOrHide ("Connected", 19, remoteCell.size() > 0, 0, -1, false, Color.cyan);
 
+	if (getCursorPos()) {
+	    Particle cursorParticle = cell[cursorPos.x][cursorPos.y].particle;
+	    printOrHide (cursorParticle.visibleName(), 20, true, cursorParticle.color);
+	}
 
     }
 
