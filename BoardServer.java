@@ -55,24 +55,33 @@ public class BoardServer extends Thread {
 		else if (command.equalsIgnoreCase ("EVOLVE")) {
 
 		    Point localTarget = new Point(intArgs[1], intArgs[2]);
-		    int oldSourceState = intArgs[3];
-		    Point remoteSource = new Point(intArgs[4], intArgs[5]);
-		    InetAddress returnAddr = InetAddress.getByName (args[6]);
-		    int returnPort = intArgs[7];
-		    int remoteSourceWriteCount = intArgs[8];
+		    Particle oldSourceState = gas.getParticleByName (args[3]);
+		    if (oldSourceState == null) {
+			// TODO: request information about oldSourceState from connecting board
+		    } else {
+			Point remoteSource = new Point(intArgs[4], intArgs[5]);
+			InetAddress returnAddr = InetAddress.getByName (args[6]);
+			int returnPort = intArgs[7];
+			int remoteSourceWriteCount = intArgs[8];
 
-		    int newSourceState = gas.evolveLocalTargetForRemoteSource (localTarget, oldSourceState);
+			Particle newSourceState = gas.evolveLocalTargetForRemoteSource (localTarget, oldSourceState);
 
-		    sendReturnDatagram (returnAddr, returnPort, remoteSource, newSourceState, remoteSourceWriteCount);
+			sendReturnDatagram (returnAddr, returnPort, remoteSource, newSourceState, remoteSourceWriteCount);
+		    }
 
 		} else if (command.equalsIgnoreCase ("RETURN")) {
 
 		    Point localSource = new Point(intArgs[1], intArgs[2]);
-		    int newSourceState = intArgs[3];
-		    int oldWriteCount = intArgs[4];
+		    Particle newSourceState = gas.getParticleByName (args[3]);
+		    if (newSourceState == null) {
+			// TODO: create newSourceState as an inert "guest" particle and write it
+			// TODO: request information about newSourceState from connecting board
+		    } else {
+			int oldWriteCount = intArgs[4];
 
-		    if (oldWriteCount == gas.getCellWriteCount(localSource))
-			gas.writeCell (localSource, newSourceState);
+			if (oldWriteCount == gas.getCellWriteCount(localSource))
+			    gas.writeCell (localSource, newSourceState);
+		    }
 
 		} else if (command.equalsIgnoreCase ("CONNECT")) {
 
@@ -161,12 +170,12 @@ public class BoardServer extends Thread {
 	sendDatagram (addr, port, connectString (remoteCell, localCell, localHost, localPort));
     }
 
-    static void sendEvolveDatagram (InetAddress addr, int port, Point remoteTarget, int oldSourceState, Point localSource, String returnHost, int returnPort, int writeCount) {
-	sendDatagram (addr, port, "EVOLVE " + remoteTarget.x + " " + remoteTarget.y + " " + oldSourceState + " " + localSource.x + " " + localSource.y + " " + returnHost + " " + returnPort + " " + writeCount);
+    static void sendEvolveDatagram (InetAddress addr, int port, Point remoteTarget, Particle oldSourceState, Point localSource, String returnHost, int returnPort, int writeCount) {
+	sendDatagram (addr, port, "EVOLVE " + remoteTarget.x + " " + remoteTarget.y + " " + oldSourceState.name + " " + localSource.x + " " + localSource.y + " " + returnHost + " " + returnPort + " " + writeCount);
     }
 
-    static void sendReturnDatagram (InetAddress addr, int port, Point remoteSource, int newSourceState, int writeCount) {
-	sendDatagram (addr, port, "RETURN " + remoteSource.x + " " + remoteSource.y + " " + newSourceState + " " + writeCount);
+    static void sendReturnDatagram (InetAddress addr, int port, Point remoteSource, Particle newSourceState, int writeCount) {
+	sendDatagram (addr, port, "RETURN " + remoteSource.x + " " + remoteSource.y + " " + newSourceState.name + " " + writeCount);
     }
 
 }
