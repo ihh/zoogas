@@ -71,8 +71,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     // constant helper vars
     Particle spaceParticle, cementParticle, acidParticle, fecundityParticle, mutatorParticle, lavaParticle, basaltParticle, tripwireParticle, guestParticle;
-    Particle[] wallParticles;
-    Vector speciesParticle = new Vector();
+    Particle[] wallParticle, speciesParticle;
     int patternMatchesPerRefresh;
 
     // main board data
@@ -169,13 +168,14 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 	// init particles
 	spaceParticle = newCellType ("_", Color.black);  // empty space
-	for (int s = 1; s <= species; ++s)
-	    speciesParticle.add (newCellType ("s" + s, Color.getHSBColor ((float) (s-1) / (float) (species+1), 1, 1)));
+	speciesParticle = new Particle[species];
+	for (int s = 0; s < species; ++s)
+	    speciesParticle[s] = newCellType ("s" + (s+1), Color.getHSBColor ((float) s / (float) (species+1), 1, 1));
 
-	wallParticles = new Particle[wallDecayStates];
+	wallParticle = new Particle[wallDecayStates];
 	for (int w = 1; w <= wallDecayStates; ++w) {
 	    float gray = (float) w / (float) (wallDecayStates + 1);
-	    wallParticles[w-1] = newCellType ("w" + w, new Color (gray, gray, gray));  // walls (in various sequential states of decay)
+	    wallParticle[w-1] = newCellType ("w" + w, new Color (gray, gray, gray));  // walls (in various sequential states of decay)
 	}
 	cementParticle = newCellType ("ts", Color.white);  // cement (drifts; sets into wall)
 
@@ -222,8 +222,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    for (int x = 0; x < size; ++x)
 		for (int y = 0; y < size; ++y)
 		    if (rnd.nextDouble() < initialDensity) {
-			int s = rnd.nextInt(initialDiversity) * (species/initialDiversity) + 1;
-			Particle p = getParticleByNumber (s);
+			int s = rnd.nextInt(initialDiversity) * (species/initialDiversity);
+			Particle p = speciesParticle[s];
 			cell[x][y].particle = p;
 		    } else
 			cell[x][y].particle = spaceParticle;
@@ -328,7 +328,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	// the cyclic ecology
 	for (int ns = 0; ns < species; ++ns)
 	    {
-		Particle s = getParticleByNumber(ns+1);
+		Particle s = speciesParticle[ns];
 		// adjacent to emptiness
 		addPattern (s, spaceParticle, s, s, lifeRate*birthRate);  // spontaneous birth
 		addPattern (s, spaceParticle, spaceParticle, s, lifeRate*(1-birthRate));  // no birth, so take a random walk step
@@ -338,22 +338,22 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 		// adjacent to wall
 		for (int w = 0; w < wallDecayStates; ++w) {
-		    addPattern (s, wallParticles[w], spaceParticle, wallParticles[w], lifeRate*chokeRate);  // spontaneous death due to being muthafuckin BURIED ALIVE or CRUSHED AGAINST A BRICK WALL
+		    addPattern (s, wallParticle[w], spaceParticle, wallParticle[w], lifeRate*chokeRate);  // spontaneous death due to being muthafuckin BURIED ALIVE or CRUSHED AGAINST A BRICK WALL
 		}
 
 		// adjacent to prey
 		for (int t = aversion; t < aversion + omnivorousness; ++t) {
-		    int prey = ((ns - 1 + t) % species) + 1;
-		    Particle pp = getParticleByNumber(prey);
+		    int prey = (ns - 1 + t) % species;
+		    Particle pp = speciesParticle[prey];
 		    addPattern (s, pp, s, s, lifeRate*forageEfficiency);  // eat + breed (i.e. convert)
 		    addPattern (s, pp, s, spaceParticle, lifeRate*(1 - forageEfficiency));  // eat + don't breed
 		}
 
 		// adjacent to other species
-		for (int t = 0; t < species; ++t)
+		for (int t = 1; t < species; ++t)
 		    if (t < aversion || t >= aversion + omnivorousness) {
-			int other = ((ns - 1 + t) % species) + 1;
-			Particle po = getParticleByNumber(other);
+			int other = (ns - 1 + t) % species;
+			Particle po = speciesParticle[other];
 			addPattern (s, po, spaceParticle, po, lifeRate*chokeRate);  // spontaneous death due to overcrowding
 		    }
 
@@ -364,19 +364,19 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 	// decaying walls
 	for (int w = 0; w < wallDecayStates; ++w) {
-	    Particle pw = wallParticles[w];
+	    Particle pw = wallParticle[w];
 	    for (int c = 0; c < particleTypes(); ++c)
 		{
 		    Particle pc = getParticleByNumber(c);
 		    boolean isWall = false;
 		    for (int w2 = 0; w2 < wallDecayStates; ++w2)
-			if (pc == wallParticles[w2]) {
+			if (pc == wallParticle[w2]) {
 			    isWall = true;
 			    break;
 			}
 
 		    double decayRate = playDecayRate * (isWall ? buriedWallDecayRate : (pc == acidParticle ? 1 : exposedWallDecayRate));
-		    addPattern (pw, pc, (w == 0) ? spaceParticle : wallParticles[w-1], pc, decayRate);  // wall decays
+		    addPattern (pw, pc, (w == 0) ? spaceParticle : wallParticle[w-1], pc, decayRate);  // wall decays
 		}
 	}
 
@@ -385,13 +385,13 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    Particle pc = getParticleByNumber(c);
 	    boolean isWall = false;
 	    for (int w2 = 0; w2 < wallDecayStates; ++w2)
-		if (pc == wallParticles[w2]) {
+		if (pc == wallParticle[w2]) {
 		    isWall = true;
 		    break;
 		}
 
 	    double setRate = (isWall ? cementStickRate : cementSetRate);
-	    addPattern (cementParticle, pc, wallParticles[wallDecayStates - 1], pc, setRate);  // cement sets into wall
+	    addPattern (cementParticle, pc, wallParticle[wallDecayStates - 1], pc, setRate);  // cement sets into wall
 	}
 	addPattern (cementParticle, spaceParticle, spaceParticle, cementParticle, 1);  // liquid cement always does random walk step
 
@@ -409,8 +409,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	addPattern (acidParticle, spaceParticle, spaceParticle, acidParticle, 1);  // acid always does random walk step, doesn't disperse
 
 	// fecundity gas
-	for (int c = 1; c <= species; ++c) {
-	    Particle pc = getParticleByNumber(c);
+	for (int c = 0; c < species; ++c) {
+	    Particle pc = speciesParticle[c];
 	    addPattern (fecundityParticle, pc, pc, pc, 1);  // fecundity particle makes species BREED
 	    addPattern (pc, fecundityParticle, pc, pc, 1);
 	}
@@ -419,13 +419,13 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	addPattern (fecundityParticle, spaceParticle, spaceParticle, fecundityParticle, (1 - gasDispersalRate) * (1 - lifeRate*gasMultiplyRate));  // gas does random walk step
 
 	// mutator gas
-	for (int c = 1; c <= species; ++c) {
-	    Particle pc = getParticleByNumber(c);
+	for (int c = 0; c < species; ++c) {
+	    Particle pc = speciesParticle[c];
 	    for (int t = -mutateRange; t <= mutateRange; ++t)
 		if (t != 0)
 		    {
-			int mutant = ((c - 1 + t + species) % species) + 1;
-			Particle pm = getParticleByNumber(mutant);
+			int mutant = (c - 1 + t + species) % species;
+			Particle pm = speciesParticle[mutant];
 			double mutProb = Math.pow (gasMultiplyRate, Math.abs(t) - 1);
 			addPattern (mutatorParticle, pc, spaceParticle, pm, mutProb);  // fecundity particle makes species mutate into random other species
 		    }
@@ -439,7 +439,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    Particle pc = getParticleByNumber(c);
 	    boolean isWall = false;
 	    for (int w2 = 0; w2 < wallDecayStates; ++w2)
-		if (pc == wallParticles[w2]) {
+		if (pc == wallParticle[w2]) {
 		    isWall = true;
 		    break;
 		}
@@ -795,25 +795,24 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     protected void plotCounts() {
 	int h = 0;
 	int cellsOnBoard = size * size;
-	double[] p = new double[species + 1];
 	entropy = 0;
 
 	int maxCount = 0, totalCount = 0;
-	for (int c = 1; c <= species; ++c) {
-	    int cc = getParticleByNumber(c).count;
+	for (int c = 0; c < species; ++c) {
+	    int cc = speciesParticle[c].count;
 	    if (cc > maxCount)
 		maxCount = cc;
 	    totalCount += cc;
 	}
 
 	if (maxCount > 0)
-	    for (int c = 1; c <= species; ++c) {
-		int cc = getParticleByNumber(c).count;
-		p[c] = ((double) cc) / (double) totalCount;
-		if (p[c] > 0 && p[c] <= 1)
-		    entropy -= p[c] * log2(p[c]);
+	    for (int c = 0; c < species; ++c) {
+		int cc = speciesParticle[c].count;
+		double p = ((double) cc) / (double) totalCount;
+		if (p > 0 && p <= 1)
+		    entropy -= p * log2(p);
 
-		bfGraphics.setColor(getParticleByNumber(c).color);
+		bfGraphics.setColor(speciesParticle[c].color);
 		int b = popChartHeight * cc / totalCount;
 		int w = boardSize * cc / maxCount;
 		if (b < 1 && cc > 0)
@@ -929,8 +928,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 	// number of species
 	int liveSpecies = 0;
-	for (int s = 1; s <= species; ++s)
-	    if (getParticleByNumber(s).count > 0)
+	for (int s = 0; s < species; ++s)
+	    if (speciesParticle[s].count > 0)
 		++liveSpecies;
 
 	Color darkRed = Color.getHSBColor(0,(float).5,(float).5);
@@ -942,7 +941,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 	flashOrHide ("V0ID space", 16, liveSpecies < 1, 0, 1000, false, Color.cyan);
 
-	flashOrHide ("Guests dead", 15, guestParticle.count==0, 0, -1, false, Color.red);
+	flashOrHide ("Guests eaten", 15, guestParticle.count==0, 0, -1, false, Color.red);
 	flashOrHide ("Animals escaped", 17, tripwireParticle.count==0, 0, -1, false, Color.red);
 
 
@@ -1072,7 +1071,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 		    initSprayTools();
 		} else if (c == '9') {
 		    mouseDown = true;
-		    sprayParticle = getParticleByNumber (rnd.nextInt(species) + 1);
+		    sprayParticle = speciesParticle[rnd.nextInt(species)];
 		    sprayReserve.put (sprayParticle, new Double (123456789));
 		} else if (c == '8') {
 		    sprayReserve.put (sprayParticle, new Double (123456789));
