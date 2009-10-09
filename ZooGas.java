@@ -18,9 +18,9 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     int omnivorousness = 11;  // number of species that each species can prey on
     double lifeRate = .1;  // probability of moving, preying, choking or spawning
     double forageEfficiency = .8;  // probability that predation leads successfully to breeding
-    double chokeRate = .01;  // probability of dying due to overcrowding
+    double chokeRate = .05;  // probability of dying due to overcrowding
     double birthRate = .02;  // probability of breeding
-    double guestMoveRate = .05;  // move rate of zoo guests
+    double guestMoveRate = .01;  // move rate of zoo guests
 
     // tool particle params
     int wallDecayStates = 5;
@@ -370,7 +370,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 		// adjacent to prey
 		for (int t = aversion; t < aversion + omnivorousness; ++t) {
-		    int prey = (ns - 1 + t) % species;
+		    int prey = (ns + t) % species;
 		    Particle pp = speciesParticle[prey];
 		    addPattern (s, pp, s, s, lifeRate*forageEfficiency);  // eat + breed (i.e. convert)
 		    addPattern (s, pp, s, spaceParticle, lifeRate*(1 - forageEfficiency));  // eat + don't breed
@@ -379,7 +379,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 		// adjacent to other species
 		for (int t = 1; t < species; ++t)
 		    if (t < aversion || t >= aversion + omnivorousness) {
-			int other = (ns - 1 + t) % species;
+			int other = (ns + t) % species;
 			Particle po = speciesParticle[other];
 			addPattern (s, po, spaceParticle, po, lifeRate*chokeRate);  // spontaneous death due to overcrowding
 		    }
@@ -977,10 +977,10 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	flashOrHide ("Online", 18, boardServer != null, 0, -1, false, Color.blue);
 	flashOrHide ("Connected", 19, remoteCell.size() > 0, 0, -1, false, Color.cyan);
 
-	if (getCursorPos()) {
-	    Particle cursorParticle = cell[cursorPos.x][cursorPos.y].particle;
-	    printOrHide (cursorParticle.visibleName(), 20, true, cursorParticle.color);
-	}
+	// identify particle that cursor is currently over
+	boolean cursorOnBoard = getCursorPos();
+	Particle cursorParticle = cursorOnBoard ? cell[cursorPos.x][cursorPos.y].particle : null;
+	printOrHide (cursorOnBoard ? cursorParticle.visibleName() : "", 20, cursorOnBoard, cursorOnBoard ? cursorParticle.color : Color.white);
 
     }
 
