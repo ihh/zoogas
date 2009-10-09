@@ -19,6 +19,8 @@ public class RandomVariable {
     public final void close (Object o) {
 	if (totalWeight < 1 && size() > 0)
 	    add (o, 1 - totalWeight);
+	else if (totalWeight > 1)
+	    System.err.println ("Warning: closing pattern with totalWeight " + totalWeight);
     }
 
     public final Object sample (Random rnd) {

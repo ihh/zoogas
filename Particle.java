@@ -8,7 +8,7 @@ import java.io.*;
 
 // Particle class, encapsulating the behavior, appearance & summary statistics of a given CA state
 public class Particle {
-    public String name = null;
+    public String name = "Particle";
     public Color color = null;
     protected IdentityHashMap pattern = new IdentityHashMap();  // production rules, indexed by neighbor Particle
     protected int count = 0;  // how many on the board

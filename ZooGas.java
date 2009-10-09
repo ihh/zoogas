@@ -198,6 +198,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    while (iter.hasNext()) {
 		Map.Entry keyval = (Map.Entry)iter.next();
 		Particle target = (Particle) keyval.getKey();
+		//		System.err.println ("Closing pattern " + source.name + " " + target.name + " -> ...");
 		RandomVariable rv =  (RandomVariable) keyval.getValue();
 		if (rv != null)
 		    rv.close(new ParticlePair (source, target));
@@ -452,7 +453,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 		    {
 			int mutant = (c - 1 + t + species) % species;
 			Particle pm = speciesParticle[mutant];
-			double mutProb = Math.pow (gasMultiplyRate, Math.abs(t) - 1);
+			double mutProb = Math.pow (gasMultiplyRate, Math.abs(t));
 			addPattern (mutatorParticle, pc, spaceParticle, pm, mutProb);  // fecundity particle makes species mutate into random other species
 		    }
 	}
@@ -491,7 +492,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    pc_old.pattern.put (nc_old, rv = new RandomVariable());
 	rv.add (new ParticlePair (pc_new, nc_new), prob);
 	// uncomment to print the production rule to stderr
-	//	System.err.println ("P(" + pc_old.name + " " + nc_old.name + " -> " + pc_new.name + " " + nc_new.name + ") = " + prob);
+	// System.err.println ("P(" + pc_old.name + " " + nc_old.name + " -> " + pc_new.name + " " + nc_new.name + ") = " + prob);
     }
 
     // init tools method
