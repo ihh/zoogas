@@ -19,10 +19,10 @@ import java.io.*;
 //  $1,$2,$3... => groups in A and B regexps (c.f. Perl)
 //  $S,$T => full names for old source,target states
 //  $F,$L,$R,$B => directions relative to neighbor direction ($F=forward, $L=left, $R=right, $B=back)
-//  $<1 is equivalent to a one-character cyclic left-permutation of string $1, e.g. if $1="ABC" then $<1="BCA" (and similarly for $<S, $<T etc.)
-//  $<<1 is equivalent to a two-character cyclic left-permutation of string $1 (and $<<<1 is a three-character rotation, etc.)
-//  $>1 is equivalent to a one-character cyclic right-permutation of string $1, e.g. if $1="ABC" then $>1="CAB"
-
+//  $-1 => numerically one less than $1, interpreted as an alphadecimal number (i.e. base 36)
+//  $--1 => numerically two less than $1 (and $---1 is three less, etc.); negative numbers evaluate to the empty string
+//  $+1 => numerically one greater than $1
+// Similarly for $-2, $++3, etc.
 
 // A matching rule should overwrite any previously matched rules, allowing us to create exceptions
 // (e.g. "destroy any particle; DO NOT destroy basalt").
