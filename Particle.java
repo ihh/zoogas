@@ -25,7 +25,8 @@ import java.io.*;
 
 
 // A matching rule should overwrite any previously matched rules, allowing us to create exceptions
-// (e.g. "destroy any particle EXCEPT basalt").
+// (e.g. "destroy any particle; DO NOT destroy basalt").
+// UPDATE: this is now implicit in RandomVariable.add()
 
 // Patterns such as this are to be transmitted in a "Particle definition" packet with the following structure:
 // NAMES (space-separated list of Particle names to which this definition packet applies)
