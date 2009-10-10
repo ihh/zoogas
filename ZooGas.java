@@ -463,6 +463,217 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	// System.err.println ("P(" + pc_old.name + " " + nc_old.name + " -> " + pc_new.name + " " + nc_new.name + ") = " + prob);
     }
 
+    // main game loop
+    private void gameLoop() {
+	// Game logic goes here.
+
+	drawEverything();
+
+	while (true)
+	    {
+		evolveStuff();
+		useTools();
+
+		plotCounts();
+		refreshBuffer();
+	    }
+    }
+
+
+    // main evolution loop
+    private void evolveStuff() {
+	Point p = new Point(), n = new Point();
+	for (int u = 0; u < patternMatchesPerRefresh; ++u)
+	    {
+		getRandomPoint(p);
+		int dir = getRandomNeighbor(p,n);
+		evolvePair(p,n,dir);
+	    }
+	++boardUpdateCount;
+    }
+
+    private boolean onBoard (Point p) { return p.x >= 0 && p.x < size && p.y >= 0 && p.y < size; }
+
+    // evolvePair(sourceCoords,targetCoords,dir) : delegate to appropriate evolve* method.
+    // in what follows, one cell is designated the "source", and its neighbor is the "target".
+    // "dir" is the direction from source to target.
+    private void evolvePair (Point sourceCoords, Point targetCoords, int dir)
+    {
+	if (onBoard (targetCoords)) {
+	    evolveLocalSourceAndLocalTarget (sourceCoords, targetCoords, dir);
+	} else {
+	    // request remote evolveLocalTargetForRemoteSource
+	    RemoteCellCoord remoteCoords = (RemoteCellCoord) remoteCell.get (targetCoords);
+	    if (remoteCoords != null)
+		evolveLocalSourceAndRemoteTarget (sourceCoords, remoteCoords, dir);
+	}
+    }
+
+    // evolveLocalSourceAndRemoteTarget: send an EVOLVE datagram to the network address of a remote cell.
+    protected void evolveLocalSourceAndRemoteTarget (Point sourceCoords, RemoteCellCoord remoteCoords, int dir) {
+	Particle oldSourceState = readCell(sourceCoords);
+	if (oldSourceState.isActive(dir))
+	    BoardServer.sendEvolveDatagram (remoteCoords.addr, remoteCoords.port, remoteCoords.p, oldSourceState, sourceCoords, dir, localhost, boardServerPort, getCellWriteCount(sourceCoords));
+    }
+
+    // SYNCHRONIZED : this is one of two synchronized methods in this class
+    // evolveLocalSourceAndLocalTarget : handle entirely local updates. Strictly in the family, folks
+    synchronized void evolveLocalSourceAndLocalTarget (Point sourceCoords, Point targetCoords, int dir)
+    {
+	writeCell (sourceCoords, evolveTargetForSource (targetCoords, readCell(sourceCoords), dir));
+    }
+
+    // SYNCHRONIZED : this is one of two synchronized methods in this class
+    // evolveLocalSourceAndLocalTarget : handle a remote request for update.
+    // Return the new source state (the caller of this method will send this returned state back over the network as a RETURN datagram).
+    synchronized Particle evolveLocalTargetForRemoteSource (Point targetCoords, Particle oldSourceState, int dir)
+    {
+	return evolveTargetForSource (targetCoords, oldSourceState, dir);
+    }
+
+    // evolveTargetForSource : given a source state, and the co-ords of a target cell,
+    // sample the new (source,target) state configuration, write the new target,
+    // and return the new source state.
+    Particle evolveTargetForSource (Point targetCoords, Particle oldSourceState, int dir)
+    {
+	// get old state-pair
+	Particle oldTargetState = readCell (targetCoords);
+
+	// sample new state-pair
+	Particle newSourceState = oldSourceState;
+	ParticlePair newCellPair = oldSourceState.samplePair (dir, oldTargetState, rnd);
+	if (newCellPair != null) {
+	    newSourceState = newCellPair.source;
+	    Particle newTargetState = newCellPair.target;
+	    // write
+	    writeCell (targetCoords, newTargetState);
+	}
+
+	// return
+	return newSourceState;
+    }
+
+    // method to send requests to establish two-way network connections between cells
+    // (called in the client during initialization)
+    private void connectBorder (Point sourceStart, Point targetStart, Point lineVector, int lineLength, Point remoteOrigin, InetSocketAddress remoteBoard) {
+	String[] connectRequests = new String [lineLength];
+	Point source = new Point (sourceStart);
+	Point target = new Point (targetStart);
+	for (int i = 0; i < lineLength; ++i) {
+	    Point remoteSource = new Point (source.x - remoteOrigin.x, source.y - remoteOrigin.y);
+	    Point remoteTarget = new Point (target.x - remoteOrigin.x, target.y - remoteOrigin.y);
+
+	    addRemoteCellCoord (target, remoteBoard, remoteTarget);
+	    connectRequests[i] = BoardServer.connectString (remoteSource, source, localhost, boardServerPort);
+
+	    source.x += lineVector.x;
+	    source.y += lineVector.y;
+
+	    target.x += lineVector.x;
+	    target.y += lineVector.y;
+	}
+
+	BoardServer.sendTCPPacket (remoteBoard.getAddress(), remoteBoard.getPort(), connectRequests);
+    }
+
+    protected void addRemoteCellCoord (Point p, InetSocketAddress remoteBoard, Point pRemote) {
+	System.err.println("Connecting (" + p.x + "," + p.y + ") to (" + pRemote.x + "," + pRemote.y + ") on " + remoteBoard);
+	remoteCell.put (new Point(p), new RemoteCellCoord (remoteBoard, pRemote));
+    }
+
+    // method to sample a random cell
+    private void getRandomPoint (Point p) {
+	p.x = rnd.nextInt(size);
+	p.y = rnd.nextInt(size);
+    }
+
+    // method to sample a random neighbor of a given cell, returning the directional index
+    private int getRandomNeighbor (Point p, Point n) {
+	int ni = rnd.nextInt(4);
+	n.x = p.x;
+	n.y = p.y;
+	int delta = (ni & 1) == 0 ? -1 : +1;
+	if ((ni & 2) == 0) { n.x += delta; } else { n.y += delta; }
+	return ni;
+    }
+
+    // number of neighbors of any cell (some may be off-board and therefore inaccessible)
+    protected int neighborhoodSize() { return 4; }
+
+    // log2
+    private static double log2(double x) { return Math.log(x) / Math.log(2); }
+
+    // read/write methods for cells
+    protected int getCellWriteCount (Point p) {
+	return cell[p.x][p.y].writeCount;
+    }
+
+    private Particle readCell (Point p) {
+	if (mixPressed) {
+	    int x = rnd.nextInt (size * size);
+	    int rv = 0;
+	    while (rv < particleTypes() - 1) {
+		x -= getParticleByNumber(rv).count;
+		if (x <= 0)
+		    break;
+		++rv;
+	    }
+	    if (getParticleByNumber(rv).count == 0) {
+		for (int k = 0; k < (int) particleTypes(); ++k)
+		    System.err.println (getParticleByNumber(k).name + " " + getParticleByNumber(k).count);
+		System.err.println ("Sampled: " + rv + " " + getParticleByNumber(rv).count);
+		throw new RuntimeException (new String ("Returned a zero-probability cell type"));
+	    }
+	    return getParticleByNumber(rv);
+	}
+	return cell[p.x][p.y].particle;
+    }
+
+    protected void writeCell (Point p, Particle pc) {
+	writeCell (p, pc, readCell(p));
+    }
+
+    private void writeCell (Point p, Particle pc, Particle old_pc) {
+	if (old_pc != pc) {
+	    if (!mixPressed) {
+		cell[p.x][p.y].particle = pc;
+		++cell[p.x][p.y].writeCount;
+		drawCell(p);
+	    }
+	    --old_pc.count;
+	    ++pc.count;
+	}
+    }
+
+    // method to shuffle the board
+    private void randomizeBoard() {
+	// randomize board without changing total cell counts
+	// uses a Fisher-Yates shuffle
+
+	Point p = new Point();
+	for (p.x = 0; p.x < size; ++p.x)
+	    for (p.y = 0; p.y < size; ++p.y)
+		cell[p.x][p.y].particle = spaceParticle;
+
+	int i = 0;
+	for (int c = 1; c < particleTypes(); ++c)
+	    for (int k = 0; k < getParticleByNumber(c).count; ++k)
+		{
+		    cell[i % size][i / size].particle = getParticleByNumber(c);
+		    ++i;
+		}
+
+	for (int k = 0; k < i; ++k)
+	    {
+		int kSwap = k + rnd.nextInt (size*size - k);
+		Particle tmp = cell[kSwap % size][kSwap / size].particle;
+		cell[kSwap % size][kSwap / size].particle = cell[k % size][k / size].particle;
+		cell[k % size][k / size].particle = tmp;
+	    }
+    }
+
+
+
     // init tools method
     private void initSprayTools() {
 	sprayDiameter = 2;
@@ -494,22 +705,6 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	sprayParticle = cementParticle;
 
 	cheatStringPos = 0;
-    }
-
-    // main game loop
-    private void gameLoop() {
-	// Game logic goes here.
-
-	drawEverything();
-
-	while (true)
-	    {
-		evolveStuff();
-		useTools();
-
-		plotCounts();
-		refreshBuffer();
-	    }
     }
 
     // getCursorPos() returns true if cursor is over board, and places cell coords in cursorPos
@@ -570,189 +765,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	}
     }
 
-    protected void refreshBuffer() {
-	// draw border around board
-	bfGraphics.setColor(Color.white);
-	bfGraphics.drawLine(0,0,boardSize,0);
-	bfGraphics.drawLine(0,0,0,boardSize);
-	bfGraphics.drawLine(0,boardSize,boardSize,boardSize);
-	bfGraphics.drawLine(boardSize,0,boardSize,boardSize);
 
-	// update buffer
-	bufferStrategy.show();
-	Toolkit.getDefaultToolkit().sync();	
-    }
-
-    private void evolveStuff() {
-	Point p = new Point(), n = new Point();
-	for (int u = 0; u < patternMatchesPerRefresh; ++u)
-	    {
-		getRandomPoint(p);
-		int dir = getRandomNeighbor(p,n);
-		evolvePair(p,n,dir);
-	    }
-	++boardUpdateCount;
-    }
-
-    private boolean onBoard (Point p) { return p.x >= 0 && p.x < size && p.y >= 0 && p.y < size; }
-
-    private void evolvePair (Point sourceCoords, Point targetCoords, int dir)
-    {
-	if (onBoard (targetCoords)) {
-	    evolveLocalSourceAndLocalTarget (sourceCoords, targetCoords, dir);
-	} else {
-	    // request remote evolveLocalTargetForRemoteSource
-	    RemoteCellCoord remoteCoords = (RemoteCellCoord) remoteCell.get (targetCoords);
-	    if (remoteCoords != null)
-		evolveLocalSourceAndRemoteTarget (sourceCoords, remoteCoords, dir);
-	}
-    }
-
-    protected void evolveLocalSourceAndRemoteTarget (Point sourceCoords, RemoteCellCoord remoteCoords, int dir) {
-	Particle oldSourceState = readCell(sourceCoords);
-	if (oldSourceState.isActive(dir))
-	    BoardServer.sendEvolveDatagram (remoteCoords.addr, remoteCoords.port, remoteCoords.p, oldSourceState, sourceCoords, dir, localhost, boardServerPort, getCellWriteCount(sourceCoords));
-    }
-
-    synchronized void evolveLocalSourceAndLocalTarget (Point sourceCoords, Point targetCoords, int dir)
-    {
-	writeCell (sourceCoords, evolveTargetForSource (targetCoords, readCell(sourceCoords), dir));
-    }
-
-    synchronized Particle evolveLocalTargetForRemoteSource (Point targetCoords, Particle oldSourceState, int dir)
-    {
-	return evolveTargetForSource (targetCoords, oldSourceState, dir);
-    }
-
-    Particle evolveTargetForSource (Point targetCoords, Particle oldSourceState, int dir)
-    {
-	// get old state-pair
-	Particle oldTargetState = readCell (targetCoords);
-
-	// sample new state-pair
-	Particle newSourceState = oldSourceState;
-	ParticlePair newCellPair = oldSourceState.samplePair (dir, oldTargetState, rnd);
-	if (newCellPair != null) {
-	    newSourceState = newCellPair.source;
-	    Particle newTargetState = newCellPair.target;
-	    // write
-	    writeCell (targetCoords, newTargetState);
-	}
-
-	// return
-	return newSourceState;
-    }
-
-    private void connectBorder (Point sourceStart, Point targetStart, Point lineVector, int lineLength, Point remoteOrigin, InetSocketAddress remoteBoard) {
-	String[] connectRequests = new String [lineLength];
-	Point source = new Point (sourceStart);
-	Point target = new Point (targetStart);
-	for (int i = 0; i < lineLength; ++i) {
-	    Point remoteSource = new Point (source.x - remoteOrigin.x, source.y - remoteOrigin.y);
-	    Point remoteTarget = new Point (target.x - remoteOrigin.x, target.y - remoteOrigin.y);
-
-	    addRemoteCellCoord (target, remoteBoard, remoteTarget);
-	    connectRequests[i] = BoardServer.connectString (remoteSource, source, localhost, boardServerPort);
-
-	    source.x += lineVector.x;
-	    source.y += lineVector.y;
-
-	    target.x += lineVector.x;
-	    target.y += lineVector.y;
-	}
-
-	BoardServer.sendTCPPacket (remoteBoard.getAddress(), remoteBoard.getPort(), connectRequests);
-    }
-
-    protected void addRemoteCellCoord (Point p, InetSocketAddress remoteBoard, Point pRemote) {
-	System.err.println("Connecting (" + p.x + "," + p.y + ") to (" + pRemote.x + "," + pRemote.y + ") on " + remoteBoard);
-	remoteCell.put (new Point(p), new RemoteCellCoord (remoteBoard, pRemote));
-    }
-
-    private void getRandomPoint (Point p) {
-	p.x = rnd.nextInt(size);
-	p.y = rnd.nextInt(size);
-    }
-
-    private int getRandomNeighbor (Point p, Point n) {
-	int ni = rnd.nextInt(4);
-	n.x = p.x;
-	n.y = p.y;
-	int delta = (ni & 1) == 0 ? -1 : +1;
-	if ((ni & 2) == 0) { n.x += delta; } else { n.y += delta; }
-	return ni;
-    }
-    protected int neighborhoodSize() { return 4; }
-
-    private static double log2(double x) { return Math.log(x) / Math.log(2); }
-
-    protected int getCellWriteCount (Point p) {
-	return cell[p.x][p.y].writeCount;
-    }
-
-    private Particle readCell (Point p) {
-	if (mixPressed) {
-	    int x = rnd.nextInt (size * size);
-	    int rv = 0;
-	    while (rv < particleTypes() - 1) {
-		x -= getParticleByNumber(rv).count;
-		if (x <= 0)
-		    break;
-		++rv;
-	    }
-	    if (getParticleByNumber(rv).count == 0) {
-		for (int k = 0; k < (int) particleTypes(); ++k)
-		    System.err.println (getParticleByNumber(k).name + " " + getParticleByNumber(k).count);
-		System.err.println ("Sampled: " + rv + " " + getParticleByNumber(rv).count);
-		throw new RuntimeException (new String ("Returned a zero-probability cell type"));
-	    }
-	    return getParticleByNumber(rv);
-	}
-	return cell[p.x][p.y].particle;
-    }
-
-    protected void writeCell (Point p, Particle pc) {
-	writeCell (p, pc, readCell(p));
-    }
-
-    private void writeCell (Point p, Particle pc, Particle old_pc) {
-	if (old_pc != pc) {
-	    if (!mixPressed) {
-		cell[p.x][p.y].particle = pc;
-		++cell[p.x][p.y].writeCount;
-		drawCell(p);
-	    }
-	    --old_pc.count;
-	    ++pc.count;
-	}
-    }
-
-    private void randomizeBoard() {
-	// randomize board without changing total cell counts
-	// uses a Fisher-Yates shuffle
-
-	Point p = new Point();
-	for (p.x = 0; p.x < size; ++p.x)
-	    for (p.y = 0; p.y < size; ++p.y)
-		cell[p.x][p.y].particle = spaceParticle;
-
-	int i = 0;
-	for (int c = 1; c < particleTypes(); ++c)
-	    for (int k = 0; k < getParticleByNumber(c).count; ++k)
-		{
-		    cell[i % size][i / size].particle = getParticleByNumber(c);
-		    ++i;
-		}
-
-	for (int k = 0; k < i; ++k)
-	    {
-		int kSwap = k + rnd.nextInt (size*size - k);
-		Particle tmp = cell[kSwap % size][kSwap / size].particle;
-		cell[kSwap % size][kSwap / size].particle = cell[k % size][k / size].particle;
-		cell[k % size][k / size].particle = tmp;
-	    }
-    }
-
+    // rendering methods
     private void drawCell (Point p) {
 	bfGraphics.setColor(cell[p.x][p.y].particle.color);
 	bfGraphics.fillRect(p.x*pixelsPerCell,p.y*pixelsPerCell,pixelsPerCell,pixelsPerCell);
@@ -778,6 +792,19 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	for (p.x = 0; p.x < size; ++p.x)
 	    for (p.y = 0; p.y < size; ++p.y)
 		drawCell (p);
+    }
+
+    protected void refreshBuffer() {
+	// draw border around board
+	bfGraphics.setColor(Color.white);
+	bfGraphics.drawLine(0,0,boardSize,0);
+	bfGraphics.drawLine(0,0,0,boardSize);
+	bfGraphics.drawLine(0,boardSize,boardSize,boardSize);
+	bfGraphics.drawLine(boardSize,0,boardSize,boardSize);
+
+	// update buffer
+	bufferStrategy.show();
+	Toolkit.getDefaultToolkit().sync();	
     }
 
     // status & tool bars
@@ -1014,6 +1041,9 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	bfGraphics.fillRect (boardSize, center - bh/2, toolReserveBarWidth - w, bh);
     }
 
+
+
+    // UI methods
     // mouse events
     public void mousePressed(MouseEvent e) {
 	mouseDown = true;

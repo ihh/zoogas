@@ -34,13 +34,20 @@ import java.io.*;
 
 // Particle class, encapsulating the behavior, appearance & summary statistics of a given CA state
 public class Particle {
-    public String name = "Particle";
+    // appearance
+    public String name = null;  // this string uniquely identifys this Particle
+    public Color color = null;
+
+    // behavior
+    protected IdentityHashMap[] pattern = null;  // production rules, indexed by neighbor direction & Particle
+
+    // internals
+    protected int count = 0;  // how many of this type on the board
+
+    // static variables
     public static String
 	visibleSeparatorChar = "/",
 	visibleSpaceChar = "_";
-    public Color color = null;
-    protected IdentityHashMap[] pattern = null;  // production rules, indexed by neighbor direction & Particle
-    protected int count = 0;  // how many on the board
 
     // constructor
     public Particle (String name, Color color, ZooGas gas) {
