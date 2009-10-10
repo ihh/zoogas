@@ -29,9 +29,8 @@ import java.io.*;
 // UPDATE: this is now implicit in RandomVariable.add()
 
 // Patterns such as this are to be transmitted in a "Particle definition" packet with the following structure:
-// NAMES (space-separated list of Particle names to which this definition packet applies)
-// COLOR (RGB)
-// RULES (one per line)
+// NAMES & COLORS (one per line, format "NAME R G B", describing appearances of Particles to which this definition packet applies)
+// RULES (one per line, format "A B C D E")
 
 // The class (ParticleDefinition? ParticleTemplate?) encapsulating these definition data
 // is a regexp-based generator for Particles and their production rules.
