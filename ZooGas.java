@@ -323,26 +323,6 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     // builder method for patterns
     private void addPatterns() {
 
-	// For now, we add all production rules manually.
-	// Here is a hypothetical syntax for regexp-based pattern generators:
-	//  A B C D E
-	// where
-	//  A is a regexp that must match the old source state
-	//  B is a regexp that must match the old target state
-	//  C is a string that will expand to the new source state
-	//  D is a string that will expand to the new target state
-	//  E is a numeric constant that is the probability of the rule
-
-	// The following "special variables" will be expanded in {A,B,C,D} as appropriate:
-	//  $1,$2,$3... => groups in A and B regexps
-	//  $S,$T => full names for old source,target states
-	//  $F,$L,$R,$B => directions relative to neighbor direction ($F=forward, $L=left, $R=right, $B=back)
-
-	// A matching rule should overwrite any previously matched rules, allowing us to create exceptions
-	// (e.g. "destroy any particle EXCEPT basalt").
-
-
-	// Now here comes the actual model.
 	// the cyclic ecology
 	for (int ns = 0; ns < species; ++ns)
 	    {

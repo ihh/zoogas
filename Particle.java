@@ -6,6 +6,32 @@ import java.net.*;
 import java.io.*;
 
 
+// Here is a hypothetical syntax for regexp-based pattern generators:
+//  A B C D E
+// where
+//  A is a regexp that must match the old source state
+//  B is a regexp that must match the old target state
+//  C is a string that will expand to the new source state
+//  D is a string that will expand to the new target state
+//  E is a numeric constant that is the probability of the rule
+
+// The following "special variables" will be expanded in {A,B,C,D} as appropriate:
+//  $1,$2,$3... => groups in A and B regexps
+//  $S,$T => full names for old source,target states
+//  $F,$L,$R,$B => directions relative to neighbor direction ($F=forward, $L=left, $R=right, $B=back)
+
+// A matching rule should overwrite any previously matched rules, allowing us to create exceptions
+// (e.g. "destroy any particle EXCEPT basalt").
+
+// Patterns such as this are to be transmitted in a "Particle definition" packet with the following structure:
+// NAMES (space-separated list of Particle names to which this definition packet applies)
+// COLOR (RGB)
+// RULES (one per line)
+
+// The class (ParticleDefinition? ParticleTemplate?) encapsulating these definition data
+// is a regexp-based generator for Particles and their production rules.
+
+
 // Particle class, encapsulating the behavior, appearance & summary statistics of a given CA state
 public class Particle {
     public String name = "Particle";
