@@ -9,16 +9,20 @@ import java.io.*;
 // Here is a hypothetical syntax for regexp-based pattern generators:
 //  A B C D E
 // where
-//  A is a regexp that must match the old source state
-//  B is a regexp that must match the old target state
+//  A is a regexp that must globally match the old source state
+//  B is a regexp that must globally match the old target state
 //  C is a string that will expand to the new source state
 //  D is a string that will expand to the new target state
 //  E is a numeric constant that is the probability of the rule
 
 // The following "special variables" will be expanded in {A,B,C,D} as appropriate:
-//  $1,$2,$3... => groups in A and B regexps
+//  $1,$2,$3... => groups in A and B regexps (c.f. Perl)
 //  $S,$T => full names for old source,target states
 //  $F,$L,$R,$B => directions relative to neighbor direction ($F=forward, $L=left, $R=right, $B=back)
+//  $<1 is equivalent to a one-character cyclic left-permutation of string $1, e.g. if $1="ABC" then $<1="BCA" (and similarly for $<S, $<T etc.)
+//  $<<1 is equivalent to a two-character cyclic left-permutation of string $1 (and $<<<1 is a three-character rotation, etc.)
+//  $>1 is equivalent to a one-character cyclic right-permutation of string $1, e.g. if $1="ABC" then $>1="CAB"
+
 
 // A matching rule should overwrite any previously matched rules, allowing us to create exceptions
 // (e.g. "destroy any particle EXCEPT basalt").
