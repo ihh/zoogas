@@ -167,15 +167,16 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	patternMatchesPerRefresh = (int) (size * size);
 
 	// init particles
-	spaceParticle = newCellType ("/", Color.black);  // empty space
+	String sep = Particle.visibleSeparatorChar, spc = Particle.visibleSpaceChar;
+	spaceParticle = newCellType (sep + "0", Color.black);  // empty space
 	speciesParticle = new Particle[species];
 	for (int s = 0; s < species; ++s)
-	    speciesParticle[s] = newCellType ("critter/" + (s+1), Color.getHSBColor ((float) s / (float) (species+1), 1, 1));
+	    speciesParticle[s] = newCellType ("critter" + sep + (s+1), Color.getHSBColor ((float) s / (float) (species+1), 1, 1));
 
 	wallParticle = new Particle[wallDecayStates];
 	for (int w = 1; w <= wallDecayStates; ++w) {
 	    float gray = (float) w / (float) (wallDecayStates + 1);
-	    wallParticle[w-1] = newCellType ("wall/" + w, new Color (gray, gray, gray));  // walls (in various sequential states of decay)
+	    wallParticle[w-1] = newCellType ("wall" + sep + w, new Color (gray, gray, gray));  // walls (in various sequential states of decay)
 	}
 	cementParticle = newCellType ("cement", Color.white);  // cement (drifts; sets into wall)
 
@@ -184,26 +185,16 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	fecundityParticle = newCellType ("perfume", Color.getHSBColor (gasHue, (float) .5, (float) .5));  // fecundity gas (multiplies; makes animals breed)
 	mutatorParticle = newCellType ("mutator", Color.getHSBColor (gasHue, (float) .5, (float) 1));  // mutator gas (converts animals into nearby species)
 	lavaParticle = newCellType ("lava", Color.lightGray);  // lava (drifts; sets into basalt)
-	basaltParticle = newCellType ("wall/basalt", Color.orange);  // basalt
-	tripwireParticle = newCellType ("/tripwire", new Color(1,1,1));  // tripwire (an invisible, static particle that animals will eat; use as a subtle test of whether animals have escaped)
-	guestParticle = newCellType ("zoo_guest", new Color(254,254,254));  // guest (a visible, mobile particle that animals will eat; use as a test of whether animals have escaped)
+	basaltParticle = newCellType ("wall" + sep + "basalt", Color.orange);  // basalt
+	tripwireParticle = newCellType (sep + "tripwire", new Color(1,1,1));  // tripwire (an invisible, static particle that animals will eat; use as a subtle test of whether animals have escaped)
+	guestParticle = newCellType ("zoo" + spc + "guest", new Color(254,254,254));  // guest (a visible, mobile particle that animals will eat; use as a test of whether animals have escaped)
 
 	// call method to add probabilistic pattern-matching replacement rules
 	addPatterns();
 
 	// "close" all patterns, adding a do-nothing rule for patterns whose RHS probabilities sum to <1
-	for (int c = 0; c < particleTypes(); ++c) {
-	    Particle source = getParticleByNumber(c);
-	    Iterator iter = source.pattern.entrySet().iterator();
-	    while (iter.hasNext()) {
-		Map.Entry keyval = (Map.Entry)iter.next();
-		Particle target = (Particle) keyval.getKey();
-		//		System.err.println ("Closing pattern " + source.name + " " + target.name + " -> ...");
-		RandomVariable rv =  (RandomVariable) keyval.getValue();
-		if (rv != null)
-		    rv.close(new ParticlePair (source, target));
-	    }
-	}
+	for (int c = 0; c < particleTypes(); ++c)
+	    getParticleByNumber(c).closePatterns();
 
 	// init board
 	boolean boardInitialized = false;
@@ -660,13 +651,10 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 	// sample new state-pair
 	Particle newSourceState = oldSourceState;
-	RandomVariable rv = (RandomVariable) oldSourceState.pattern.get (oldTargetState);
-	if (rv != null) {
-	    ParticlePair newCellPair = (ParticlePair) rv.sample(rnd);
-	
+	ParticlePair newCellPair = oldSourceState.samplePair (oldTargetState, rnd);
+	if (newCellPair != null) {
 	    newSourceState = newCellPair.source;
 	    Particle newTargetState = newCellPair.target;
-	
 	    // write
 	    writeCell (targetCoords, newTargetState);
 	}
