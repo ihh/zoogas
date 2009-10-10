@@ -56,15 +56,16 @@ public class BoardServer extends Thread {
 
 		    Point localTarget = new Point(intArgs[1], intArgs[2]);
 		    Particle oldSourceState = gas.getParticleByName (args[3]);
+		    int dir = intArgs[4];
 		    if (oldSourceState == null) {
 			// TODO: request information about oldSourceState from connecting board
 		    } else {
-			Point remoteSource = new Point(intArgs[4], intArgs[5]);
-			InetAddress returnAddr = InetAddress.getByName (args[6]);
-			int returnPort = intArgs[7];
-			int remoteSourceWriteCount = intArgs[8];
+			Point remoteSource = new Point(intArgs[5], intArgs[6]);
+			InetAddress returnAddr = InetAddress.getByName (args[7]);
+			int returnPort = intArgs[8];
+			int remoteSourceWriteCount = intArgs[9];
 
-			Particle newSourceState = gas.evolveLocalTargetForRemoteSource (localTarget, oldSourceState);
+			Particle newSourceState = gas.evolveLocalTargetForRemoteSource (localTarget, oldSourceState, dir);
 
 			sendReturnDatagram (returnAddr, returnPort, remoteSource, newSourceState, remoteSourceWriteCount);
 		    }
@@ -170,8 +171,8 @@ public class BoardServer extends Thread {
 	sendDatagram (addr, port, connectString (remoteCell, localCell, localHost, localPort));
     }
 
-    static void sendEvolveDatagram (InetAddress addr, int port, Point remoteTarget, Particle oldSourceState, Point localSource, String returnHost, int returnPort, int writeCount) {
-	sendDatagram (addr, port, "EVOLVE " + remoteTarget.x + " " + remoteTarget.y + " " + oldSourceState.name + " " + localSource.x + " " + localSource.y + " " + returnHost + " " + returnPort + " " + writeCount);
+    static void sendEvolveDatagram (InetAddress addr, int port, Point remoteTarget, Particle oldSourceState, Point localSource, int dir, String returnHost, int returnPort, int writeCount) {
+	sendDatagram (addr, port, "EVOLVE " + remoteTarget.x + " " + remoteTarget.y + " " + oldSourceState.name + " " + dir + " " + localSource.x + " " + localSource.y + " " + returnHost + " " + returnPort + " " + writeCount);
     }
 
     static void sendReturnDatagram (InetAddress addr, int port, Point remoteSource, Particle newSourceState, int writeCount) {

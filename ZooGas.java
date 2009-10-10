@@ -302,7 +302,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     // builder method for cell types
     private Particle newCellType (String name, Color color) {
-	Particle p = new Particle (name, color);
+	Particle p = new Particle (name, color, this);
 	nameToParticle.put (name, p);
 	particleVec.add (p);
 	return p;
@@ -608,50 +608,50 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	for (int u = 0; u < patternMatchesPerRefresh; ++u)
 	    {
 		getRandomPoint(p);
-		getRandomNeighbor(p,n);
-		evolvePair(p,n);
+		int dir = getRandomNeighbor(p,n);
+		evolvePair(p,n,dir);
 	    }
 	++boardUpdateCount;
     }
 
     private boolean onBoard (Point p) { return p.x >= 0 && p.x < size && p.y >= 0 && p.y < size; }
 
-    private void evolvePair (Point sourceCoords, Point targetCoords)
+    private void evolvePair (Point sourceCoords, Point targetCoords, int dir)
     {
 	if (onBoard (targetCoords)) {
-	    evolveLocalSourceAndLocalTarget (sourceCoords, targetCoords);
+	    evolveLocalSourceAndLocalTarget (sourceCoords, targetCoords, dir);
 	} else {
 	    // request remote evolveLocalTargetForRemoteSource
 	    RemoteCellCoord remoteCoords = (RemoteCellCoord) remoteCell.get (targetCoords);
 	    if (remoteCoords != null)
-		evolveLocalSourceAndRemoteTarget (sourceCoords, remoteCoords);
+		evolveLocalSourceAndRemoteTarget (sourceCoords, remoteCoords, dir);
 	}
     }
 
-    protected void evolveLocalSourceAndRemoteTarget (Point sourceCoords, RemoteCellCoord remoteCoords) {
+    protected void evolveLocalSourceAndRemoteTarget (Point sourceCoords, RemoteCellCoord remoteCoords, int dir) {
 	Particle oldSourceState = readCell(sourceCoords);
-	if (oldSourceState.pattern.size() > 0)
-	    BoardServer.sendEvolveDatagram (remoteCoords.addr, remoteCoords.port, remoteCoords.p, oldSourceState, sourceCoords, localhost, boardServerPort, getCellWriteCount(sourceCoords));
+	if (oldSourceState.isActive(dir))
+	    BoardServer.sendEvolveDatagram (remoteCoords.addr, remoteCoords.port, remoteCoords.p, oldSourceState, sourceCoords, dir, localhost, boardServerPort, getCellWriteCount(sourceCoords));
     }
 
-    synchronized void evolveLocalSourceAndLocalTarget (Point sourceCoords, Point targetCoords)
+    synchronized void evolveLocalSourceAndLocalTarget (Point sourceCoords, Point targetCoords, int dir)
     {
-	writeCell (sourceCoords, evolveTargetForSource (targetCoords, readCell(sourceCoords)));
+	writeCell (sourceCoords, evolveTargetForSource (targetCoords, readCell(sourceCoords), dir));
     }
 
-    synchronized Particle evolveLocalTargetForRemoteSource (Point targetCoords, Particle oldSourceState)
+    synchronized Particle evolveLocalTargetForRemoteSource (Point targetCoords, Particle oldSourceState, int dir)
     {
-	return evolveTargetForSource (targetCoords, oldSourceState);
+	return evolveTargetForSource (targetCoords, oldSourceState, dir);
     }
 
-    Particle evolveTargetForSource (Point targetCoords, Particle oldSourceState)
+    Particle evolveTargetForSource (Point targetCoords, Particle oldSourceState, int dir)
     {
 	// get old state-pair
 	Particle oldTargetState = readCell (targetCoords);
 
 	// sample new state-pair
 	Particle newSourceState = oldSourceState;
-	ParticlePair newCellPair = oldSourceState.samplePair (oldTargetState, rnd);
+	ParticlePair newCellPair = oldSourceState.samplePair (dir, oldTargetState, rnd);
 	if (newCellPair != null) {
 	    newSourceState = newCellPair.source;
 	    Particle newTargetState = newCellPair.target;
@@ -694,19 +694,15 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	p.y = rnd.nextInt(size);
     }
 
-    private void getRandomNeighbor (Point p, Point n) {
+    private int getRandomNeighbor (Point p, Point n) {
 	int ni = rnd.nextInt(4);
 	n.x = p.x;
 	n.y = p.y;
 	int delta = (ni & 1) == 0 ? -1 : +1;
 	if ((ni & 2) == 0) { n.x += delta; } else { n.y += delta; }
-	// Replace previous two lines with the following for periodic boundary conditions:
-	/*
-	  int delta = (ni & 1) == 0 ? size-1 : +1;
-	  if ((ni & 2) == 0) { n.x = (n.x + delta) % size; } else { n.y = (n.y + delta) % size; }
-	*/
+	return ni;
     }
-    private int neighborhoodSize() { return 4; }
+    protected int neighborhoodSize() { return 4; }
 
     private static double log2(double x) { return Math.log(x) / Math.log(2); }
 
