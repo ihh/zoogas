@@ -24,4 +24,13 @@ public class Particle {
 	String[] partsOfName = name.split ("/", 2);
 	return partsOfName[0].replaceAll("_"," ");
     }
+
+    // helper to add a pattern
+    void addPattern (Particle target_old, Particle source_new, Particle target_new, double prob) {
+	RandomVariable rv = (RandomVariable) pattern.get (target_old);
+	if (rv == null)
+	    pattern.put (target_old, rv = new RandomVariable());
+	rv.add (new ParticlePair (source_new, target_new), prob);
+    }
+    
 }

@@ -487,10 +487,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     // helper to add a pattern
     private void addPattern (Particle pc_old, Particle nc_old, Particle pc_new, Particle nc_new, double prob) {
-	RandomVariable rv = (RandomVariable) pc_old.pattern.get (nc_old);
-	if (rv == null)
-	    pc_old.pattern.put (nc_old, rv = new RandomVariable());
-	rv.add (new ParticlePair (pc_new, nc_new), prob);
+	pc_old.addPattern (nc_old, pc_new, nc_new, prob);
 	// uncomment to print the production rule to stderr
 	// System.err.println ("P(" + pc_old.name + " " + nc_old.name + " -> " + pc_new.name + " " + nc_new.name + ") = " + prob);
     }
