@@ -19,41 +19,16 @@ import java.io.*;
 
 public class RulePattern {
     // data
-    Pattern[] A = null;
-    String B = null, C = null, D = null, V = null;
+    String A = null, B = null, C = null, D = null, V = null;
     double P = 0;
-    ZooGas gas = null;  // required for compass points
     
     // constructor
-    public RulePattern (String a, String b, String c, String d, double p, String v, ZooGas g) {
-	gas = g;
-	A = new Pattern[gas.neighborhoodSize()];
-	for (int dir = 0; dir < gas.neighborhoodSize(); ++dir)
-	    A[dir] = Pattern.compile("^" + expandDir(a,dir) + "$");
+    public RulePattern (String a, String b, String c, String d, double p, String v) {
+	A = a;
 	B = b;
 	C = c;
 	D = d;
 	P = p;
 	V = v;
-    }
-
-    // expandDir method
-    static Pattern dirPattern = Pattern.compile("\\$([FBLR])");
-    protected String expandDir (String s, int dir) {
-	Matcher m = dirPattern.matcher(s);
-	StringBuffer sb = new StringBuffer();
-	while (m.find()) {
-	    String var = m.group(1);
-	    if (var.equals("F"))
-		m.appendReplacement(sb,gas.dirString(dir));
-	    else if (var.equals("B"))
-		m.appendReplacement(sb,gas.dirString((dir + 2) % 4));
-	    else if (var.equals("L"))
-		m.appendReplacement(sb,gas.dirString((dir + 1) % 4));
-	    else if (var.equals("R"))
-		m.appendReplacement(sb,gas.dirString((dir + 3) % 4));
-	}
-	m.appendTail(sb);
-	return sb.toString();
     }
 }

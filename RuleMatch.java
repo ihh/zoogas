@@ -38,31 +38,37 @@ import java.io.*;
 
 public class RuleMatch {
     // data
-    RulePattern pattern = null;
-    Pattern bPattern = null;
-    String A = null, B = null;
-    Matcher am = null, bm = null;
-    int dir = -1;
+    private RulePattern pattern = null;
+    private Pattern aPattern = null, bPattern = null;
+    private int dir = -1;
+    private String A = null, B = null;
+    private Matcher am = null, bm = null;
+    private boolean aMatched = false, bMatched = false;
+    ZooGas gas = null;
 
     // constructors
     public RuleMatch(RulePattern p) { pattern = p; }
-    public RuleMatch(RulePattern p,int dir) { this(p); bindDir(dir); }
-    public RuleMatch(RulePattern p,int dir,String a) { this(p,dir); bindSource(a); }
-    public RuleMatch(RulePattern p,int dir,String a,String b) { this(p,dir,a); bindTarget(b); }
+    public RuleMatch(RulePattern p,ZooGas gas,int dir) { this(p); bindDir(gas,dir); }
+    public RuleMatch(RulePattern p,ZooGas gas,int dir,String a) { this(p,gas,dir); bindSource(a); }
+    public RuleMatch(RulePattern p,ZooGas gas,int dir,String a,String b) { this(p,gas,dir,a); bindTarget(b); }
 
     // lhs methods
     // binding
-    void bindDir(int d) {
-	if (dir < 0)
+    void bindDir(ZooGas g,int d) {
+	if (dir < 0) {
+	    gas = g;
 	    dir = d;
+	    aPattern = Pattern.compile(A());
+	}
     }
 
     void bindSource(String a) {
 	if (A == null) {
 	    A = a;
-	    am = pattern.A[dir].matcher(a);
-	    if (matches())
-		bPattern = Pattern.compile(expandLHS(pattern.B));
+	    am = aPattern.matcher(a);
+	    aMatched = am.matches();
+	    if (aMatched)
+		bPattern = Pattern.compile(B());
 	}
     }
 
@@ -70,6 +76,7 @@ public class RuleMatch {
 	if (B == null) {
 	    B = b;
 	    bm = bPattern.matcher(b);
+	    bMatched = bm.matches();
 	}
     }
 
@@ -78,19 +85,21 @@ public class RuleMatch {
 	return
 	    am == null
 	    ? true
-	    : (am.matches() && (bm == null
+	    : (aMatched && (bm == null
 				? true
-				: bm.matches()));
+				: bMatched));
     }
 
-    // rhs methods
+    // expanded string methods
+    String A() { return expandDir(pattern.A); }
+    String B() { return expandLHS(pattern.B); }
     String C() { return expandRHS(pattern.C); }
     String D() { return expandRHS(pattern.D); }
 
     // main expand() methods
     // expansion of B
     protected String expandLHS (String s) {
-	return expandGroup(pattern.expandDir(s,dir));
+	return expandGroupOrSource(expandDir(s));
     }
 
     // expansion of C and D
@@ -98,9 +107,29 @@ public class RuleMatch {
 	return expandMod(expandDec(expandInc(expandTarget(expandLHS(s)))));
     }
 
+    // expansion of $F, $B, $L, $R
+    static Pattern dirPattern = Pattern.compile("\\$([FBLR])");
+    protected String expandDir (String s) {
+	Matcher m = dirPattern.matcher(s);
+	StringBuffer sb = new StringBuffer();
+	while (m.find()) {
+	    String var = m.group(1);
+	    if (var.equals("F"))
+		m.appendReplacement(sb,gas.dirString(dir));
+	    else if (var.equals("B"))
+		m.appendReplacement(sb,gas.dirString((dir + 2) % 4));
+	    else if (var.equals("L"))
+		m.appendReplacement(sb,gas.dirString((dir + 1) % 4));
+	    else if (var.equals("R"))
+		m.appendReplacement(sb,gas.dirString((dir + 3) % 4));
+	}
+	m.appendTail(sb);
+	return sb.toString();
+    }
+
     // expansion of $1, $2, ... and $S
     static Pattern groupPattern = Pattern.compile("\\$(S|[1-9][0-9]*)");
-    protected String expandGroup (String s) {
+    protected String expandGroupOrSource (String s) {
 	Matcher m = groupPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
 	while (m.find()) {
