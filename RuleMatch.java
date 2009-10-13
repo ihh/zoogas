@@ -24,7 +24,9 @@ import java.io.*;
 //  $-1 => numerically one less than $1, interpreted as an alphadecimal number (i.e. base 36)
 //  $--1 => numerically two less than $1 (and $---1 is three less, etc.); negative numbers evaluate to the empty string
 //  $+1 => numerically one greater than $1
-// Similarly for $-2, $++3, etc.
+// (similarly for $-2, $++3, etc.)
+//  $%3++1 => ($1 + 2) mod 3
+//  $%M+{k}N => ($N + k) mod M   ...where +{k} denotes a run of k plus(+) characters
 
 // A matching rule should overwrite any previously matched rules, allowing us to create exceptions
 // (e.g. "destroy any particle; DO NOT destroy basalt").
@@ -33,9 +35,6 @@ import java.io.*;
 // Patterns such as this are to be transmitted in a "Particle definition" packet with the following structure:
 // NAMES & COLORS (one per line, format "NAME R G B", describing appearances of Particles to which this definition packet applies)
 // RULES (one per line, format "A B C D P V")
-
-// The class (ParticleDefinition? ParticleTemplate?) encapsulating these definition data
-// is a regexp-based generator for Particles and their production rules.
 
 public class RuleMatch {
     // data
@@ -78,50 +77,76 @@ public class RuleMatch {
     String C() { return matches() ? expandVars(pattern.C) : null; }
     String D() { return matches() ? expandVars(pattern.D) : null; }
 
-    // main expand() method
-    static Pattern varPattern = Pattern.compile("\\$([\\-]*|[\\+]*)([ST]|[1-9][0-9]*)");
+    // main expand() methods
     protected String expandVars (String s) {
+	return expandMod(expandDec(expandInc(expandVar(s))));
+    }
+
+    String getVar(String var) {
+	String val = null;
+	try {
+	    int n = new Integer(var).intValue();
+	    val = n <= am.groupCount() ? am.group(n) : bm.group(n-am.groupCount()+1);
+	} catch (NumberFormatException e) { }
+	return val;
+    }
+
+    static Pattern varPattern = Pattern.compile("\\$([ST]|[1-9][0-9]*)");
+    protected String expandVar (String s) {
 	Matcher m = varPattern.matcher(pattern.expandDir(s,dir));
 	StringBuffer sb = new StringBuffer();
 	while (m.find()) {
-	    String incdec = m.group(1), var = m.group(2);
-	    boolean replaced = true;
+	    String g = m.group(1);
+	    if (g.equals("S"))
+		m.appendReplacement(sb,A);
+	    else if (g.equals("T"))
+		m.appendReplacement(sb,B);
+	    else
+		m.appendReplacement(sb,getVar(g));
+	}
+	m.appendTail(sb);
+	return sb.toString();
+    }
 
-	    // numeric value?
-	    int n = 0;
-	    try {
-		n = new Integer(var).intValue();
-	    } catch (NumberFormatException e) {
-		n = 0;
-	    }
-	    
-	    if (n >= 1 && n <= am.groupCount() + bm.groupCount()) {
-		String nval = n <= am.groupCount() ? am.group(n) : bm.group(n-am.groupCount()+1);
-		if (incdec.length() == 0)
-		    m.appendReplacement(sb,nval);
-		else {
-		    // increment or decrement nval...
-		    int nvalInt = Integer.parseInt(nval,36);
-		    int amount = incdec.length();
-		    if (incdec.charAt(0) == '+')
-			m.appendReplacement(sb,Integer.toString(nvalInt+amount,36));
-		    else if (nvalInt >= amount)
-			m.appendReplacement(sb,Integer.toString(nvalInt-amount,36));
-		    else
-			replaced = false;
-		}
-	    } else if (incdec.length() == 0) {
-		if (var.equals("S"))
-		    m.appendReplacement(sb,A);
-		else if (var.equals("T"))
-		    m.appendReplacement(sb,B);
-		else
-		    replaced = false;
-	    } else
-		replaced = false;
+    static Pattern incVarPattern = Pattern.compile("\\$([\\+]+)([1-9][0-9]*)");
+    protected String expandInc (String s) {
+	Matcher m = incVarPattern.matcher(pattern.expandDir(s,dir));
+	StringBuffer sb = new StringBuffer();
+	while (m.find()) {
+	    String inc = m.group(1), g = m.group(2);
+	    int n = Integer.parseInt(getVar(g),36);
+	    int delta = inc.length();
+	    m.appendReplacement(sb,Integer.toString(n+delta,36));
+	}
+	m.appendTail(sb);
+	return sb.toString();
+    }
 
-	    if (!replaced)
-		m.appendReplacement(sb,m.group(0));
+    static Pattern decVarPattern = Pattern.compile("\\$([\\-]+)([1-9][0-9]*)");
+    protected String expandDec (String s) {
+	Matcher m = decVarPattern.matcher(pattern.expandDir(s,dir));
+	StringBuffer sb = new StringBuffer();
+	while (m.find()) {
+	    String dec = m.group(1), g = m.group(2);
+	    int n = Integer.parseInt(getVar(g),36);
+	    int delta = dec.length();
+	    if (n >= delta)
+		m.appendReplacement(sb,Integer.toString(n-delta,36));
+	}
+	m.appendTail(sb);
+	return sb.toString();
+    }
+
+    static Pattern modVarPattern = Pattern.compile("\\$%([1-9][0-9]*)([\\+]+)([1-9][0-9]*)");
+    protected String expandMod (String s) {
+	Matcher m = modVarPattern.matcher(pattern.expandDir(s,dir));
+	StringBuffer sb = new StringBuffer();
+	while (m.find()) {
+	    String mod = m.group(1), inc = m.group(2), g = m.group(3);
+	    int n = Integer.parseInt(getVar(g),36);
+	    int M = Integer.parseInt(mod);
+	    int delta = inc.length();
+	    m.appendReplacement(sb,Integer.toString((n+delta)%M,36));
 	}
 	m.appendTail(sb);
 	return sb.toString();
