@@ -42,21 +42,33 @@ public class RuleMatch {
     RulePattern pattern = null;
     String A = null, B = null;
     Matcher am = null, bm = null;
+    int dir = -1;
+    ZooGas gas = null;  // just for dirString
+
+    // static Patterns
+    static Pattern dirPattern = Pattern.compile("\\$([FBLR])");
+    static Pattern srcPattern = Pattern.compile("\\$([\\-]*|[\\+]*)([FBLRS]|[1-9][0-9]*)");
+    static Pattern allPattern = Pattern.compile("\\$([\\-]*|[\\+]*)([FBLRST]|[1-9][0-9]*)");
 
     // constructors
-    public RuleMatch() { }
-    public RuleMatch(String a) { bindA(a); }
-    public RuleMatch(String a,String b) { bindA(a); bindB(b); }
+    public RuleMatch(ZooGas gas) { this.gas = gas; }
+    public RuleMatch(ZooGas gas,int dir) { this.gas = gas; bindDir(dir); }
+    public RuleMatch(ZooGas gas,int dir,String a) { this.gas = gas; bindDir(dir); bindSource(a); }
+    public RuleMatch(ZooGas gas,int dir,String a,String b) { this.gas = gas; bindDir(dir); bindSource(a); bindTarget(b); }
 
     // lhs methods
-    void bindA(String a) {
-	A = a;
-	am = pattern.A.matcher(a);
+    void bindDir(int dir) {
+	this.dir = dir;
     }
 
-    void bindB(String b) {
+    void bindSource(String a) {
+	A = a;
+	am = pattern.A.matcher("^" + expandDir(a) + "$");
+    }
+
+    void bindTarget(String b) {
 	B = b;
-	bm = pattern.B.matcher(b);
+	bm = pattern.B.matcher("^" + expandDir(b) + "$");
     }
 
     boolean matches() {
@@ -69,7 +81,67 @@ public class RuleMatch {
     }
 
     // rhs methods
-    // just placeholders for now (need to expand $1, $2 etc)
-    String C() { return pattern.C; }
-    String D() { return pattern.D; }
+    String C() { return matches() ? expandAll(pattern.C) : null; }
+    String D() { return matches() ? expandAll(pattern.D) : null; }
+
+    // expansion helpers
+    protected String expandDir (String s) { return expand(dirPattern,s); }  // expand $F, $B, $L, $R
+    protected String expandSrc (String s) { return expand(srcPattern,s); }  // expand $S (and $1,$2,... if matched by A)
+    protected String expandAll (String s) { return expand(allPattern,s); }  // expand everything
+
+    // main expand() method is just a placeholder for now (needs to expand $1, $2 etc)
+    protected String expand (Pattern p, String s) {
+	Matcher m = p.matcher(s);
+	StringBuffer sb = new StringBuffer();
+	while (m.find()) {
+	    String incdec = m.group(1), var = m.group(2);
+	    boolean replaced = true;
+
+	    // numeric value?
+	    int n = 0;
+	    try {
+		n = new Integer(var).intValue();
+	    } catch (NumberFormatException e) {
+		n = 0;
+	    }
+	    
+	    if (n >= 1 && n <= am.groupCount() + bm.groupCount()) {
+		String nval = n <= am.groupCount() ? am.group(n) : bm.group(n-am.groupCount()+1);
+		if (incdec.length() == 0)
+		    m.appendReplacement(sb,nval);
+		else {
+		    // increment or decrement nval...
+		    int nvalInt = Integer.parseInt(nval,36);
+		    int amount = incdec.length();
+		    if (incdec.charAt(0) == '+')
+			m.appendReplacement(sb,Integer.toString(nvalInt+amount,36));
+		    else if (nvalInt >= amount)
+			m.appendReplacement(sb,Integer.toString(nvalInt-amount,36));
+		    else
+			replaced = false;
+		}
+	    } else if (incdec.length() == 0) {
+		if (var.equals("F"))
+		    m.appendReplacement(sb,gas.dirString(dir));
+		else if (var.equals("B"))
+		    m.appendReplacement(sb,gas.dirString((dir + 2) % 4));
+		else if (var.equals("L"))
+		    m.appendReplacement(sb,gas.dirString((dir + 1) % 4));
+		else if (var.equals("R"))
+		    m.appendReplacement(sb,gas.dirString((dir + 3) % 4));
+		else if (var.equals("S"))
+		    m.appendReplacement(sb,A);
+		else if (var.equals("T"))
+		    m.appendReplacement(sb,B);
+		else
+		    replaced = false;
+	    } else
+		replaced = false;
+
+	    if (!replaced)
+		m.appendReplacement(sb,m.group(0));
+	}
+	m.appendTail(sb);
+	return sb.toString();
+    }
 }

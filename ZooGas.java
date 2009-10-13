@@ -592,13 +592,17 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	int ni = rnd.nextInt(4);
 	n.x = p.x;
 	n.y = p.y;
-	int delta = (ni & 1) == 0 ? -1 : +1;
-	if ((ni & 2) == 0) { n.x += delta; } else { n.y += delta; }
+	int delta = (ni & 2) == 0 ? -1 : +1;
+	if ((ni & 1) == 0) { n.y += delta; } else { n.x += delta; }
 	return ni;
     }
 
     // number of neighbors of any cell (some may be off-board and therefore inaccessible)
     protected int neighborhoodSize() { return 4; }
+
+    // string representations of cardinal directions
+    private String[] dirStr = { "n", "w", "s", "e" };
+    protected String dirString(int dir) { return dirStr[dir]; }
 
     // log2
     private static double log2(double x) { return Math.log(x) / Math.log(2); }
