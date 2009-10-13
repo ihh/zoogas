@@ -14,9 +14,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     // simulation particle params
     int size = 128;  // size of board in cells
     int species = 18;  // number of species
-    int aversion = 1;  // number of species that species will consider too similar to prey on
-    int omnivorousness = 11;  // number of species that each species can prey on
-    double lifeRate = .1;  // probability of moving, preying, choking or spawning
+    double lifeRate = .03;  // probability of moving, preying, choking or spawning
     double forageEfficiency = .8;  // probability that predation leads successfully to breeding
     double chokeRate = .05;  // probability of dying due to overcrowding
     double birthRate = .02;  // probability of breeding
@@ -24,11 +22,11 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     // tool particle params
     int wallDecayStates = 5;
-    double playDecayRate = .006;  // speed of decay events that drive gameplay
+    double playDecayRate = .001;  // speed of decay events that drive gameplay
     double buriedWallDecayRate = .18, exposedWallDecayRate = .22;  // probability of wall decay when buried/exposed
     double cementSetRate = .2, cementStickRate = .9;  // probability of cement setting into wall (or sticking to existing wall)
     double gasDispersalRate = .1;  // probability that a gas particle will disappear
-    double gasMultiplyRate = .2;  // probability that a surviving fecundity gas particle will multiply (gives illusion of pressure)
+    double gasMultiplyRate = .1;  // probability that an acid or mutator gas particle will survive for further catalysis after effecting their function
     double lavaSeedRate = .01;  // probability that lava will stick to a wall particle (it always sticks to basalt)
     double lavaFlowRate = .3;  // probability that lava will take a random step
     int mutateRange = 2;  // range of species change due to contact w/mutator gas
@@ -327,33 +325,42 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	for (int ns = 0; ns < species; ++ns)
 	    {
 		Particle s = speciesParticle[ns];
+		int type = ns % (species / initialDiversity);
+
+		double myRate = lifeRate;
+		// make some species a bit faster
+		if (type == 2)
+		    myRate *= 2;
+		else if (type == 3)
+		    myRate *= 6;
+		else if (type == 4)
+		    myRate *= 10;
+
 		// adjacent to emptiness
-		addPattern (s, spaceParticle, s, s, lifeRate*birthRate);  // spontaneous birth
-		addPattern (s, spaceParticle, spaceParticle, s, lifeRate*(1-birthRate));  // no birth, so take a random walk step
+		addPattern (s, spaceParticle, s, s, myRate*birthRate);  // spontaneous birth
+		addPattern (s, spaceParticle, spaceParticle, s, myRate*(1-birthRate));  // no birth, so take a random walk step
 
 		// adjacent to self
-		addPattern (s, s, spaceParticle, s, lifeRate*chokeRate);  // spontaneous death due to overcrowding
+		addPattern (s, s, spaceParticle, s, myRate*chokeRate);  // spontaneous death due to overcrowding
 
 		// adjacent to wall
 		for (int w = 0; w < wallDecayStates; ++w) {
-		    addPattern (s, wallParticle[w], spaceParticle, wallParticle[w], lifeRate*chokeRate);  // spontaneous death due to being muthafuckin BURIED ALIVE or CRUSHED AGAINST A BRICK WALL
+		    addPattern (s, wallParticle[w], spaceParticle, wallParticle[w], myRate*chokeRate);  // spontaneous death due to being muthafuckin BURIED ALIVE or CRUSHED AGAINST A BRICK WALL
 		}
 
-		// adjacent to prey
-		for (int t = aversion; t < aversion + omnivorousness; ++t) {
-		    int prey = (ns + t) % species;
-		    Particle pp = speciesParticle[prey];
-		    addPattern (s, pp, s, s, lifeRate*forageEfficiency);  // eat + breed (i.e. convert)
-		    addPattern (s, pp, s, spaceParticle, lifeRate*(1 - forageEfficiency));  // eat + don't breed
-		}
-
-		// adjacent to other species
-		for (int t = 1; t < species; ++t)
-		    if (t < aversion || t >= aversion + omnivorousness) {
-			int other = (ns + t) % species;
-			Particle po = speciesParticle[other];
-			addPattern (s, po, spaceParticle, po, lifeRate*chokeRate);  // spontaneous death due to overcrowding
+		// adjacent to predator
+		for (int t = 1; t <= species; ++t) {
+		    int nt = (ns + t) % species;
+		    Particle pt = speciesParticle[nt];
+		    if (t > (int) (species / 2)) {
+			// predator or self
+			addPattern (s, pt, spaceParticle, pt, myRate*chokeRate);  // spontaneous death due to overcrowding
+		    } else {
+			// prey
+			addPattern (s, pt, s, s, myRate*forageEfficiency);  // eat + breed (i.e. convert)
+			addPattern (s, pt, s, spaceParticle, myRate*(1 - forageEfficiency));  // eat + don't breed
 		    }
+		}
 
 		// adjacent to guest or tripwire: eat'em!
 		addPattern (s, guestParticle, spaceParticle, s, 1);
@@ -412,9 +419,9 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    addPattern (fecundityParticle, pc, pc, pc, 1);  // fecundity particle makes species BREED
 	    addPattern (pc, fecundityParticle, pc, pc, 1);
 	}
-	addPattern (fecundityParticle, spaceParticle, fecundityParticle, fecundityParticle, lifeRate*gasMultiplyRate);  // gas breeds (!? gives illusion of pressure, I guess)
-	addPattern (fecundityParticle, spaceParticle, spaceParticle, fecundityParticle, gasDispersalRate * (1 - lifeRate*gasMultiplyRate));  // gas disperses
-	addPattern (fecundityParticle, spaceParticle, spaceParticle, fecundityParticle, (1 - gasDispersalRate) * (1 - lifeRate*gasMultiplyRate));  // gas does random walk step
+	addPattern (fecundityParticle, spaceParticle, spaceParticle, spaceParticle, gasDispersalRate);  // gas disperses
+	addPattern (fecundityParticle, spaceParticle, fecundityParticle, fecundityParticle, (1-gasDispersalRate) * gasDispersalRate);  // gas breeds (!? gives illusion of pressure, I guess)
+	addPattern (fecundityParticle, spaceParticle, spaceParticle, fecundityParticle, (1 - gasDispersalRate) * (1 - gasDispersalRate));  // gas does random walk step
 
 	// mutator gas
 	for (int c = 0; c < species; ++c) {
@@ -691,8 +698,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 	double baseRefillRate = 0.25 * (double) sprayPower;
 
-	sprayRefillRate.put (cementParticle, new Double (.35 * baseRefillRate));
-	sprayMax.put (cementParticle, new Double (300));
+	sprayRefillRate.put (cementParticle, new Double (.7 * baseRefillRate));
+	sprayMax.put (cementParticle, new Double (600));
 
 	sprayRefillRate.put (acidParticle, new Double (.75 * baseRefillRate));
 	sprayMax.put (acidParticle, new Double (200));

@@ -60,31 +60,40 @@ public class RuleMatch {
     public RuleMatch(RulePattern p,ZooGas gas,int dir,String a,String b) { this(p,gas,dir,a); bindTarget(b); }
 
     // lhs methods
-    // binding
-    void bindDir(ZooGas g,int d) {
+    // binding methods return true for match, false for mismatch or failed binding
+    boolean bindDir(ZooGas g,int d) {
 	if (!dirBound()) {
 	    gas = g;
 	    dir = d;
 	    aPattern = Pattern.compile(A());
+	    return true;
 	}
+	// throw AlreadyBoundException
+	return false;
     }
 
-    void bindSource(String a) {
+    boolean bindSource(String a) {
 	if (!sourceBound()) {
 	    A = a;
 	    am = aPattern.matcher(a);
 	    aMatched = am.matches();
 	    if (aMatched)
 		bPattern = Pattern.compile(B());
+	    return aMatched;
 	}
+	// throw AlreadyBoundException
+	return false;
     }
 
-    void bindTarget(String b) {
+    boolean bindTarget(String b) {
 	if (!targetBound()) {
 	    B = b;
 	    bm = bPattern.matcher(b);
 	    bMatched = bm.matches();
+	    return bMatched;
 	}
+	// throw AlreadyBoundException
+	return false;
     }
 
     // unbinding

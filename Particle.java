@@ -12,7 +12,8 @@ public class Particle {
     public Color color = null;
 
     // behavior
-    protected IdentityHashMap[] pattern = null;  // production rules, indexed by neighbor direction & Particle
+    protected IdentityHashMap[] pattern = null;  // production rules; array is indexed by neighbor direction, Map is indexed by Particle
+    protected RuleMatch[][] patternTemplate = null;  // generators for production rules; outer array is indexed by neighbor direction, inner array is the set of partially-bound rules for that direction
 
     // internals
     protected int count = 0;  // how many of this type on the board
@@ -72,6 +73,7 @@ public class Particle {
 	RandomVariable rv = (RandomVariable) pattern[dir].get (oldTarget);
 	if (rv != null)
 	    return (ParticlePair) rv.sample(rnd);
+	// TODO: use patternTemplate to create the new RandomVariable here
 	return null;
     }
 }

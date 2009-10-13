@@ -13,6 +13,15 @@ import java.io.*;
 
 public class PatternSet {
     // data
-    RulePattern[] rulePattern = null;
-    ParticlePattern[] particlePattern = null;
+    private RulePattern[] rulePattern = null;
+    private ParticlePattern[] particlePattern = null;
+
+    // methods (placeholders for now)
+    Particle createParticle (String particleName, ZooGas gas) {
+	return null;
+    }
+
+    RuleMatch[] getSourceRules (String particleName, ZooGas gas, int dir) {
+	return null;
+    }
 }
