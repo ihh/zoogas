@@ -327,24 +327,24 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 		Particle s = speciesParticle[ns];
 		int type = ns % (species / trophicSymmetry);
 
-		// make some species a bit faster
+		// make some species a bit faster at moving, and some a bit faster at eating/breeding
 		double moveRate = lifeRate, myRate = lifeRate;
 		switch (type) {
 		case 0: break;
-		case 1: moveRate *= 2; break;
-		case 2: moveRate *= 2; myRate *= 2; break;
-		case 3: moveRate *= 6; myRate *= 4; break;
-		case 4: moveRate *= 10; myRate *= 6; break;
-		case 5: moveRate *= 5; myRate *= 7; break;
-		case 6: moveRate *= 4; myRate *= 8; break;
-		case 7: moveRate *= 3; myRate *= 10; break;
+		case 1: moveRate *= 1.5; break;
+		case 2: moveRate *= 2; myRate *= 1.5; break;
+		case 3: moveRate *= 6; myRate *= 2; break;
+		case 4: moveRate *= 10; myRate *= 2.5; break;
+		case 5: moveRate *= 3; myRate *= 3; break;
+		case 6: moveRate *= .5; myRate *= 3.5; break;
+		case 7: moveRate *= .2; myRate *= 4; break;
 		case 8: break;
 		default: break;
 		}
 
 		// adjacent to emptiness
 		addPattern (s, spaceParticle, s, s, myRate*birthRate);  // spontaneous birth
-		addPattern (s, spaceParticle, spaceParticle, s, myRate*(1-birthRate));  // no birth, so take a random walk step
+		addPattern (s, spaceParticle, spaceParticle, s, moveRate*(1-myRate*birthRate));  // no birth, so take a random walk step
 
 		// adjacent to self
 		addPattern (s, s, spaceParticle, s, myRate*chokeRate);  // spontaneous death due to overcrowding
