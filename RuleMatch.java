@@ -21,7 +21,7 @@ import java.io.*;
 //  $1,$2,$3... => groups in A and B regexps (c.f. Perl)
 //  $S,$T => full names for old source,target states
 //  $F,$L,$R,$B => directions relative to neighbor direction ($F=forward, $L=left, $R=right, $B=back)
-//  $-1 => numerically one less than $1, interpreted as an alphadecimal number (i.e. base 36)
+//  $-1 => numerically one less than $1
 //  $--1 => numerically two less than $1 (and $---1 is three less, etc.); negative numbers evaluate to the empty string
 //  $+1 => numerically one greater than $1
 // (similarly for $-2, $++3, etc.)
@@ -39,6 +39,7 @@ import java.io.*;
 public class RuleMatch {
     // data
     RulePattern pattern = null;
+    Pattern bPattern = null;
     String A = null, B = null;
     Matcher am = null, bm = null;
     int dir = -1;
@@ -50,20 +51,29 @@ public class RuleMatch {
     public RuleMatch(RulePattern p,int dir,String a,String b) { this(p,dir,a); bindTarget(b); }
 
     // lhs methods
+    // binding
     void bindDir(int d) {
-	dir = d;
+	if (dir < 0)
+	    dir = d;
     }
 
     void bindSource(String a) {
-	A = a;
-	am = pattern.A[dir].matcher(a);
+	if (A == null) {
+	    A = a;
+	    am = pattern.A[dir].matcher(a);
+	    if (matches())
+		bPattern = Pattern.compile(expandLHS(pattern.B));
+	}
     }
 
     void bindTarget(String b) {
-	B = b;
-	bm = pattern.B[dir].matcher(b);
+	if (B == null) {
+	    B = b;
+	    bm = bPattern.matcher(b);
+	}
     }
 
+    // rule matching
     boolean matches() {
 	return
 	    am == null
@@ -74,81 +84,107 @@ public class RuleMatch {
     }
 
     // rhs methods
-    String C() { return matches() ? expandVars(pattern.C) : null; }
-    String D() { return matches() ? expandVars(pattern.D) : null; }
+    String C() { return expandRHS(pattern.C); }
+    String D() { return expandRHS(pattern.D); }
 
     // main expand() methods
-    protected String expandVars (String s) {
-	return expandMod(expandDec(expandInc(expandVar(s))));
+    // expansion of B
+    protected String expandLHS (String s) {
+	return expandGroup(pattern.expandDir(s,dir));
     }
 
-    String getVar(String var) {
-	String val = null;
-	try {
-	    int n = new Integer(var).intValue();
-	    val = n <= am.groupCount() ? am.group(n) : bm.group(n-am.groupCount()+1);
-	} catch (NumberFormatException e) { }
-	return val;
+    // expansion of C and D
+    protected String expandRHS (String s) {
+	return expandMod(expandDec(expandInc(expandTarget(expandLHS(s)))));
     }
 
-    static Pattern varPattern = Pattern.compile("\\$([ST]|[1-9][0-9]*)");
-    protected String expandVar (String s) {
-	Matcher m = varPattern.matcher(pattern.expandDir(s,dir));
+    // expansion of $1, $2, ... and $S
+    static Pattern groupPattern = Pattern.compile("\\$(S|[1-9][0-9]*)");
+    protected String expandGroup (String s) {
+	Matcher m = groupPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
 	while (m.find()) {
 	    String g = m.group(1);
 	    if (g.equals("S"))
 		m.appendReplacement(sb,A);
-	    else if (g.equals("T"))
-		m.appendReplacement(sb,B);
 	    else
-		m.appendReplacement(sb,getVar(g));
+		m.appendReplacement(sb,getGroup(g));
 	}
 	m.appendTail(sb);
 	return sb.toString();
     }
 
-    static Pattern incVarPattern = Pattern.compile("\\$([\\+]+)([1-9][0-9]*)");
+    // expansion of $T
+    static Pattern targetPattern = Pattern.compile("\\$T");
+    protected String expandTarget (String s) {
+	Matcher m = targetPattern.matcher(s);
+	StringBuffer sb = new StringBuffer();
+	while (m.find())
+	    m.appendReplacement(sb,B);
+	m.appendTail(sb);
+	return sb.toString();
+    }
+
+    // expansion of $+++1
+    static Pattern incGroupPattern = Pattern.compile("\\$([\\+]+)([1-9][0-9]*)");
     protected String expandInc (String s) {
-	Matcher m = incVarPattern.matcher(pattern.expandDir(s,dir));
+	Matcher m = incGroupPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
 	while (m.find()) {
 	    String inc = m.group(1), g = m.group(2);
-	    int n = Integer.parseInt(getVar(g),36);
+	    int n = Integer.parseInt(getGroup(g));
 	    int delta = inc.length();
-	    m.appendReplacement(sb,Integer.toString(n+delta,36));
+	    m.appendReplacement(sb,Integer.toString(n+delta));
 	}
 	m.appendTail(sb);
 	return sb.toString();
     }
 
-    static Pattern decVarPattern = Pattern.compile("\\$([\\-]+)([1-9][0-9]*)");
+    // expansion of $--1
+    static Pattern decGroupPattern = Pattern.compile("\\$([\\-]+)([1-9][0-9]*)");
     protected String expandDec (String s) {
-	Matcher m = decVarPattern.matcher(pattern.expandDir(s,dir));
+	Matcher m = decGroupPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
 	while (m.find()) {
 	    String dec = m.group(1), g = m.group(2);
-	    int n = Integer.parseInt(getVar(g),36);
+	    int n = Integer.parseInt(getGroup(g));
 	    int delta = dec.length();
 	    if (n >= delta)
-		m.appendReplacement(sb,Integer.toString(n-delta,36));
+		m.appendReplacement(sb,Integer.toString(n-delta));
 	}
 	m.appendTail(sb);
 	return sb.toString();
     }
 
-    static Pattern modVarPattern = Pattern.compile("\\$%([1-9][0-9]*)([\\+]+)([1-9][0-9]*)");
+    // expansion of $%3++1
+    static Pattern modGroupPattern = Pattern.compile("\\$%([1-9][0-9]*)([\\+]+)([1-9][0-9]*)");
     protected String expandMod (String s) {
-	Matcher m = modVarPattern.matcher(pattern.expandDir(s,dir));
+	Matcher m = modGroupPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
 	while (m.find()) {
 	    String mod = m.group(1), inc = m.group(2), g = m.group(3);
-	    int n = Integer.parseInt(getVar(g),36);
+	    int n = Integer.parseInt(getGroup(g));
 	    int M = Integer.parseInt(mod);
 	    int delta = inc.length();
-	    m.appendReplacement(sb,Integer.toString((n+delta)%M,36));
+	    m.appendReplacement(sb,Integer.toString((n+delta)%M));
 	}
 	m.appendTail(sb);
 	return sb.toString();
+    }
+
+    // helper method to get a group ($1,$2,...) from AB
+    String getGroup(String group) {
+	String val = "";
+	try {
+	    int n = new Integer(group).intValue();
+	    if (n <= am.groupCount())
+		val = am.group(n);
+	    else if (bm != null) {
+		n -= am.groupCount();
+		if (n <= bm.groupCount())
+		    val = bm.group(n);
+	    }
+	} catch (NumberFormatException e) { }
+	return val;
     }
 }

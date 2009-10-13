@@ -20,23 +20,21 @@ import java.io.*;
 public class RulePattern {
     // data
     Pattern[] A = null;
-    Pattern[] B = null;
-    String C = null, D = null, V = null;
+    String B = null, C = null, D = null, V = null;
     double P = 0;
     ZooGas gas = null;  // required for compass points
     
     // constructor
-    public RulePattern (String a, String b, String c, String d, double p, ZooGas gas) {
-	this.gas = gas;
+    public RulePattern (String a, String b, String c, String d, double p, String v, ZooGas g) {
+	gas = g;
 	A = new Pattern[gas.neighborhoodSize()];
-	B = new Pattern[gas.neighborhoodSize()];
-	for (int dir = 0; dir < gas.neighborhoodSize(); ++dir) {
+	for (int dir = 0; dir < gas.neighborhoodSize(); ++dir)
 	    A[dir] = Pattern.compile("^" + expandDir(a,dir) + "$");
-	    B[dir] = Pattern.compile("^" + expandDir(b,dir) + "$");
-	}
+	B = b;
 	C = c;
 	D = d;
 	P = p;
+	V = v;
     }
 
     // expandDir method

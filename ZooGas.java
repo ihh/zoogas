@@ -168,7 +168,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 	// init particles
 	String sep = Particle.visibleSeparatorChar, spc = Particle.visibleSpaceChar;
-	spaceParticle = newCellType (sep + "0", Color.black);  // empty space
+	spaceParticle = newCellType (spc, Color.black);  // empty space
 	speciesParticle = new Particle[species];
 	for (int s = 0; s < species; ++s)
 	    speciesParticle[s] = newCellType ("critter" + sep + (s+1), Color.getHSBColor ((float) s / (float) (species+1), 1, 1));
