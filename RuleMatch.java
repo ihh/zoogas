@@ -43,32 +43,26 @@ public class RuleMatch {
     String A = null, B = null;
     Matcher am = null, bm = null;
     int dir = -1;
-    ZooGas gas = null;  // just for dirString
-
-    // static Patterns
-    static Pattern dirPattern = Pattern.compile("\\$([FBLR])");
-    static Pattern srcPattern = Pattern.compile("\\$([\\-]*|[\\+]*)([FBLRS]|[1-9][0-9]*)");
-    static Pattern allPattern = Pattern.compile("\\$([\\-]*|[\\+]*)([FBLRST]|[1-9][0-9]*)");
 
     // constructors
-    public RuleMatch(ZooGas gas) { this.gas = gas; }
-    public RuleMatch(ZooGas gas,int dir) { this.gas = gas; bindDir(dir); }
-    public RuleMatch(ZooGas gas,int dir,String a) { this.gas = gas; bindDir(dir); bindSource(a); }
-    public RuleMatch(ZooGas gas,int dir,String a,String b) { this.gas = gas; bindDir(dir); bindSource(a); bindTarget(b); }
+    public RuleMatch(RulePattern p) { pattern = p; }
+    public RuleMatch(RulePattern p,int dir) { this(p); bindDir(dir); }
+    public RuleMatch(RulePattern p,int dir,String a) { this(p,dir); bindSource(a); }
+    public RuleMatch(RulePattern p,int dir,String a,String b) { this(p,dir,a); bindTarget(b); }
 
     // lhs methods
-    void bindDir(int dir) {
-	this.dir = dir;
+    void bindDir(int d) {
+	dir = d;
     }
 
     void bindSource(String a) {
 	A = a;
-	am = pattern.A.matcher("^" + expandDir(a) + "$");
+	am = pattern.A[dir].matcher(a);
     }
 
     void bindTarget(String b) {
 	B = b;
-	bm = pattern.B.matcher("^" + expandDir(b) + "$");
+	bm = pattern.B[dir].matcher(b);
     }
 
     boolean matches() {
@@ -81,17 +75,13 @@ public class RuleMatch {
     }
 
     // rhs methods
-    String C() { return matches() ? expandAll(pattern.C) : null; }
-    String D() { return matches() ? expandAll(pattern.D) : null; }
+    String C() { return matches() ? expandVars(pattern.C) : null; }
+    String D() { return matches() ? expandVars(pattern.D) : null; }
 
-    // expansion helpers
-    protected String expandDir (String s) { return expand(dirPattern,s); }  // expand $F, $B, $L, $R
-    protected String expandSrc (String s) { return expand(srcPattern,s); }  // expand $S (and $1,$2,... if matched by A)
-    protected String expandAll (String s) { return expand(allPattern,s); }  // expand everything
-
-    // main expand() method is just a placeholder for now (needs to expand $1, $2 etc)
-    protected String expand (Pattern p, String s) {
-	Matcher m = p.matcher(s);
+    // main expand() method
+    static Pattern varPattern = Pattern.compile("\\$([\\-]*|[\\+]*)([ST]|[1-9][0-9]*)");
+    protected String expandVars (String s) {
+	Matcher m = varPattern.matcher(pattern.expandDir(s,dir));
 	StringBuffer sb = new StringBuffer();
 	while (m.find()) {
 	    String incdec = m.group(1), var = m.group(2);
@@ -121,15 +111,7 @@ public class RuleMatch {
 			replaced = false;
 		}
 	    } else if (incdec.length() == 0) {
-		if (var.equals("F"))
-		    m.appendReplacement(sb,gas.dirString(dir));
-		else if (var.equals("B"))
-		    m.appendReplacement(sb,gas.dirString((dir + 2) % 4));
-		else if (var.equals("L"))
-		    m.appendReplacement(sb,gas.dirString((dir + 1) % 4));
-		else if (var.equals("R"))
-		    m.appendReplacement(sb,gas.dirString((dir + 3) % 4));
-		else if (var.equals("S"))
+		if (var.equals("S"))
 		    m.appendReplacement(sb,A);
 		else if (var.equals("T"))
 		    m.appendReplacement(sb,B);

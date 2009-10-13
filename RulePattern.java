@@ -39,16 +39,43 @@ import java.io.*;
 
 public class RulePattern {
     // data
-    Pattern A = null, B = null;
+    Pattern[] A = null;
+    Pattern[] B = null;
     String C = null, D = null, V = null;
     double P = 0;
+    ZooGas gas = null;
     
     // constructor
-    public RulePattern (String a, String b, String c, String d, double p) {
-	A = Pattern.compile(a);
-	B = Pattern.compile(b);
+    public RulePattern (String a, String b, String c, String d, double p, ZooGas gas) {
+	this.gas = gas;
+	A = new Pattern[gas.neighborhoodSize()];
+	B = new Pattern[gas.neighborhoodSize()];
+	for (int dir = 0; dir < gas.neighborhoodSize(); ++dir) {
+	    A[dir] = Pattern.compile("^" + expandDir(a,dir) + "$");
+	    B[dir] = Pattern.compile("^" + expandDir(b,dir) + "$");
+	}
 	C = c;
 	D = d;
 	P = p;
+    }
+
+    // expandDir method
+    static Pattern dirPattern = Pattern.compile("\\$([FBLR])");
+    protected String expandDir (String s, int dir) {
+	Matcher m = dirPattern.matcher(s);
+	StringBuffer sb = new StringBuffer();
+	while (m.find()) {
+	    String var = m.group(1);
+	    if (var.equals("F"))
+		m.appendReplacement(sb,gas.dirString(dir));
+	    else if (var.equals("B"))
+		m.appendReplacement(sb,gas.dirString((dir + 2) % 4));
+	    else if (var.equals("L"))
+		m.appendReplacement(sb,gas.dirString((dir + 1) % 4));
+	    else if (var.equals("R"))
+		m.appendReplacement(sb,gas.dirString((dir + 3) % 4));
+	}
+	m.appendTail(sb);
+	return sb.toString();
     }
 }
