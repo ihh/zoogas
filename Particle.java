@@ -13,7 +13,7 @@ public class Particle {
 
     // behavior
     protected IdentityHashMap[] pattern = null;  // production rules; array is indexed by neighbor direction, Map is indexed by Particle
-    protected RuleMatch[][] patternTemplate = null;  // generators for production rules; outer array is indexed by neighbor direction, inner array is the set of partially-bound rules for that direction
+    //    protected RuleMatch[][] patternTemplate = null;  // generators for production rules; outer array is indexed by neighbor direction, inner array is the set of partially-bound rules for that direction
 
     // internals
     protected int count = 0;  // how many of this type on the board
