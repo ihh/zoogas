@@ -35,7 +35,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     String initImageFilename = "TheZoo.bmp";  // if non-null, initialization loads a seed image from this filename
     // String initImageFilename = null;
     double initialDensity = .1;  // initial density of species-containing cells
-    int initialDiversity = 3;  // initial number of species (can be increased with mutator gas)
+    int trophicSymmetry = 3;  // initial number of species (can be increased with mutator gas)
 
     // view
     int pixelsPerCell = 4;  // width & height of each cell in pixels
@@ -212,7 +212,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    for (int x = 0; x < size; ++x)
 		for (int y = 0; y < size; ++y)
 		    if (rnd.nextDouble() < initialDensity) {
-			int s = rnd.nextInt(initialDiversity) * (species/initialDiversity);
+			int s = rnd.nextInt(trophicSymmetry) * (species/trophicSymmetry);
 			Particle p = speciesParticle[s];
 			cell[x][y].particle = p;
 		    } else
@@ -231,7 +231,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	statusBarHeight = popChartHeight + popBarHeight * (species + 1) + entropyBarHeight;
 	toolBarWidth = toolKeyWidth + toolReserveBarWidth;
 
-	entropy = log2(initialDiversity);
+	entropy = log2(trophicSymmetry);
 	bestEntropy = minEntropyOverCycle = bestMinEntropyOverCycle = entropy;
 	maxEntropy = log2(species);
 
@@ -325,16 +325,22 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	for (int ns = 0; ns < species; ++ns)
 	    {
 		Particle s = speciesParticle[ns];
-		int type = ns % (species / initialDiversity);
+		int type = ns % (species / trophicSymmetry);
 
-		double myRate = lifeRate;
 		// make some species a bit faster
-		if (type == 2)
-		    myRate *= 2;
-		else if (type == 3)
-		    myRate *= 6;
-		else if (type == 4)
-		    myRate *= 10;
+		double moveRate = lifeRate, myRate = lifeRate;
+		switch (type) {
+		case 0: break;
+		case 1: moveRate *= 2; break;
+		case 2: moveRate *= 2; myRate *= 2; break;
+		case 3: moveRate *= 6; myRate *= 4; break;
+		case 4: moveRate *= 10; myRate *= 6; break;
+		case 5: moveRate *= 5; myRate *= 7; break;
+		case 6: moveRate *= 4; myRate *= 8; break;
+		case 7: moveRate *= 3; myRate *= 10; break;
+		case 8: break;
+		default: break;
+		}
 
 		// adjacent to emptiness
 		addPattern (s, spaceParticle, s, s, myRate*birthRate);  // spontaneous birth

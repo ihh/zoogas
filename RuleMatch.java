@@ -21,7 +21,7 @@ import java.io.*;
 //  $1,$2,$3... => groups in A and B regexps (c.f. Perl)
 //  $S,$T => full names for old source,target states
 //  $F,$L,$R,$B => directions relative to neighbor direction ($F=forward, $L=left, $R=right, $B=back)
-//  $-1 => numerically one less than $1
+//  $-1 => numerically one less than $1 interpreted as an alphadecimal number (base 36)
 //  $--1 => numerically two less than $1 (and $---1 is three less, etc.); negative numbers evaluate to the empty string
 //  $+1 => numerically one greater than $1
 // (similarly for $-2, $++3, etc.)
@@ -205,9 +205,9 @@ public class RuleMatch {
 	StringBuffer sb = new StringBuffer();
 	while (m.find()) {
 	    String inc = m.group(1), g = m.group(2);
-	    int n = Integer.parseInt(getGroup(g));
+	    int n = string2int(getGroup(g));
 	    int delta = inc.length();
-	    m.appendReplacement(sb,Integer.toString(n+delta));
+	    m.appendReplacement(sb,int2string(n+delta));
 	}
 	m.appendTail(sb);
 	return sb.toString();
@@ -220,26 +220,26 @@ public class RuleMatch {
 	StringBuffer sb = new StringBuffer();
 	while (m.find()) {
 	    String dec = m.group(1), g = m.group(2);
-	    int n = Integer.parseInt(getGroup(g));
+	    int n = string2int(g);
 	    int delta = dec.length();
 	    if (n >= delta)
-		m.appendReplacement(sb,Integer.toString(n-delta));
+		m.appendReplacement(sb,int2string(n-delta));
 	}
 	m.appendTail(sb);
 	return sb.toString();
     }
 
     // expansion of $%3++1
-    static Pattern modGroupPattern = Pattern.compile("\\$%([1-9][0-9]*)([\\+]+)([1-9][0-9]*)");
+    static Pattern modGroupPattern = Pattern.compile("\\$%([1-9A-Za-z][0-9A-Za-z]*)([\\+]+)([1-9][0-9]*)");
     protected String expandMod (String s) {
 	Matcher m = modGroupPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
 	while (m.find()) {
 	    String mod = m.group(1), inc = m.group(2), g = m.group(3);
-	    int n = Integer.parseInt(getGroup(g));
-	    int M = Integer.parseInt(mod);
+	    int n = string2int(getGroup(g));
+	    int M = string2int(mod);
 	    int delta = inc.length();
-	    m.appendReplacement(sb,Integer.toString((n+delta)%M));
+	    m.appendReplacement(sb,int2string((n+delta)%M));
 	}
 	m.appendTail(sb);
 	return sb.toString();
@@ -260,4 +260,9 @@ public class RuleMatch {
 	} catch (NumberFormatException e) { }
 	return val;
     }
+
+    // helper methods to encode/decode alphadecimal
+    static private int base = 36;
+    String int2string(int n) { return Integer.toString(n,base); }
+    int string2int(String s) { return Integer.parseInt(s,base); }
 }
