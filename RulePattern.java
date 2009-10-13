@@ -22,7 +22,7 @@ public class RulePattern {
     String A = null, B = null, C = null, D = null, V = null;
     double P = 0;
     
-    // constructor
+    // constructors
     public RulePattern (String a, String b, String c, String d, double p, String v) {
 	A = a;
 	B = b;
@@ -30,5 +30,15 @@ public class RulePattern {
 	D = d;
 	P = p;
 	V = v;
+    }
+
+    public RulePattern (String abcdpv) {
+	String[] args = abcdpv.split(" ");
+	A = args[0];
+	B = args[1];
+	C = args[2];
+	D = args[3];
+	P = Double.parseDouble(args[4]);
+	V = args[5];
     }
 }

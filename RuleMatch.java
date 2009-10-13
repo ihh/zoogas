@@ -36,6 +36,17 @@ import java.io.*;
 // NAMES & COLORS (one per line, format "NAME R G B", describing appearances of Particles to which this definition packet applies)
 // RULES (one per line, format "A B C D P V")
 
+
+// RuleMatch - a partially- or fully-bound RulePattern.
+// Use as follows:
+//   RulePattern rp ("critter/(\d+) _ $T $S .098 move");
+//   RuleMatch rm = new RuleMatch(rp);
+//   rm.bindDir(0);
+//   rm.bindSource("critter/1");
+//   rm.bindTarget("_");
+//   String newSource = rm.C(), newTarget = rm.D(), verb = rm.V();
+//   double prob = rm.P();
+//   rm.unbind();
 public class RuleMatch {
     // data
     private RulePattern pattern = null;
@@ -55,7 +66,7 @@ public class RuleMatch {
     // lhs methods
     // binding
     void bindDir(ZooGas g,int d) {
-	if (dir < 0) {
+	if (!dirBound()) {
 	    gas = g;
 	    dir = d;
 	    aPattern = Pattern.compile(A());
@@ -63,7 +74,7 @@ public class RuleMatch {
     }
 
     void bindSource(String a) {
-	if (A == null) {
+	if (!sourceBound()) {
 	    A = a;
 	    am = aPattern.matcher(a);
 	    aMatched = am.matches();
@@ -73,14 +84,35 @@ public class RuleMatch {
     }
 
     void bindTarget(String b) {
-	if (B == null) {
+	if (!targetBound()) {
 	    B = b;
 	    bm = bPattern.matcher(b);
 	    bMatched = bm.matches();
 	}
     }
 
-    // rule matching
+    // unbinding
+    void unbindTarget() {
+	bm = null;
+	B = null;
+	bMatched = false;
+    }
+
+    void unbindSource() {
+	unbindTarget();
+	am = null;
+	A = null;
+	bPattern = null;
+	aMatched = false;
+    }
+
+    void unbind() {
+	unbindSource();
+	aPattern = null;
+	dir = -1;
+    }
+
+    // matches() returns true if the rule has matched *so far*
     boolean matches() {
 	return
 	    am == null
@@ -90,11 +122,18 @@ public class RuleMatch {
 				: bMatched));
     }
 
-    // expanded string methods
+    // methods to test if the rule is fully or partly bound
+    boolean targetBound() { return B != null; }
+    boolean sourceBound() { return A != null; }
+    boolean dirBound() { return dir >= 0; }
+
+    // expanded pattern methods
     String A() { return expandDir(pattern.A); }
     String B() { return expandLHS(pattern.B); }
     String C() { return expandRHS(pattern.C); }
     String D() { return expandRHS(pattern.D); }
+    String V() { return expandRHS(pattern.V); }
+    double P() { return pattern.P; }
 
     // main expand() methods
     // expansion of B
