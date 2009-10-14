@@ -328,19 +328,22 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 		int type = ns % (species / trophicSymmetry);
 
 		// make some species a bit faster at moving, and some a bit faster at eating/breeding
+		double mul = 1;
 		double moveRate = lifeRate, myRate = lifeRate;
 		switch (type) {
 		case 0: break;
-		case 1: moveRate *= 1.5; break;
-		case 2: moveRate *= 2; myRate *= 1.5; break;
-		case 3: moveRate *= 6; myRate *= 2; break;
-		case 4: moveRate *= 10; myRate *= 2.5; break;
-		case 5: moveRate *= 3; myRate *= 3; break;
-		case 6: moveRate *= .5; myRate *= 3.5; break;
-		case 7: moveRate *= .2; myRate *= 4; break;
-		case 8: break;
+		case 1: mul = 1.2; break;
+		case 2: mul = 1.5; break;
+		case 3: mul = 1.3; break;
+		case 4: mul /= 1.2; break;
+		case 5: mul /= 1.5; break;
+		case 6: mul /= 1.3; break;
+		case 7: moveRate *= 1.1; myRate *= 1.2; break;
+		case 8: moveRate *= 1.2; myRate *= 1.1; break;
 		default: break;
 		}
+		moveRate *= mul;
+		myRate /= Math.sqrt(mul);
 
 		// adjacent to emptiness
 		addPattern (s, spaceParticle, s, s, myRate*birthRate);  // spontaneous birth
