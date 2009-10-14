@@ -46,6 +46,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     // tools
     int sprayDiameter, sprayPower;  // diameter & power of spraypaint tool
     Map sprayRefillRate = new IdentityHashMap(), sprayReserve = new IdentityHashMap(), sprayMax = new IdentityHashMap();
+    Particle[] sprayByRow = null;
 
     // cheat c0d3z
     String cheatString = "boosh";
@@ -724,6 +725,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 	sprayParticle = cementParticle;
 
+	sprayByRow = new Particle[5];
+
 	cheatStringPos = 0;
     }
 
@@ -1038,6 +1041,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     }
 
     private void plotReserve (char c, int row, Particle particle, double scale) {
+	sprayByRow[row] = particle;
+
 	char[] ca = new char[1];
 	ca[0] = c;
 	int center = toolYCenter(row);
@@ -1051,14 +1056,19 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	bfGraphics.setColor (particle.color);
 	bfGraphics.drawChars (ca, 0, 1, boardSize + toolReserveBarWidth + toolKeyWidth/2 - cw/2, center + ch/2);
 
-	int w = (int) (scale * (double) (toolReserveBarWidth * count / max));
+	int td = 4;
+	int tw = toolReserveBarWidth - td;
+	int w = (int) (scale * (double) (tw * count / max));
 	if (w > toolReserveBarWidth)
 	    w = toolReserveBarWidth;
 
 	int bh = toolHeight * 3 / 4;
 	bfGraphics.fillRect (boardSize + toolReserveBarWidth - w, center - bh/2, w, bh);
 	bfGraphics.setColor (Color.black);
-	bfGraphics.fillRect (boardSize, center - bh/2, toolReserveBarWidth - w, bh);
+	bfGraphics.fillRect (boardSize + td, center - bh/2, tw - w, bh);
+
+	bfGraphics.setColor (particle == sprayParticle ? Color.white : Color.black);
+	bfGraphics.drawRect (boardSize + 2, center - toolHeight/2 + 2, toolBarWidth - 4, toolHeight - 4);
     }
 
 
@@ -1067,6 +1077,16 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     // mouse events
     public void mousePressed(MouseEvent e) {
 	mouseDown = true;
+
+	Point mousePos = getMousePosition();
+	mousePos.x -= insets.left;
+	mousePos.y -= insets.top;
+	if (mousePos.x >= boardSize && mousePos.y < toolHeight * sprayByRow.length) {
+	    int row = mousePos.y / toolHeight;
+	    Particle p = sprayByRow[row];
+	    if (p != null)
+		sprayParticle = p;
+	}
     }
 
     public void mouseReleased(MouseEvent e) {
