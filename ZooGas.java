@@ -173,12 +173,12 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	spaceParticle = newParticle (spc, Color.black);  // empty space
 	speciesParticle = new Particle[species];
 	for (int s = 0; s < species; ++s)
-	    speciesParticle[s] = newParticle ("critter" + sep + (s+1), Color.getHSBColor ((float) s / (float) (species+1), 1, 1));
+	    speciesParticle[s] = newParticle ("critter" + sep + "s" + RuleMatch.int2string(s), Color.getHSBColor ((float) s / (float) (species+1), 1, 1));
 
 	wallParticle = new Particle[wallDecayStates];
 	for (int w = 1; w <= wallDecayStates; ++w) {
 	    float gray = (float) w / (float) (wallDecayStates + 1);
-	    wallParticle[w-1] = newParticle ("wall" + sep + w, new Color (gray, gray, gray));  // walls (in various sequential states of decay)
+	    wallParticle[w-1] = newParticle ("wall" + sep + RuleMatch.int2string(w), new Color (gray, gray, gray));  // walls (in various sequential states of decay)
 	}
 	cementParticle = newParticle ("cement", Color.white);  // cement (drifts; sets into wall)
 
@@ -189,7 +189,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	lavaParticle = newParticle ("lava", Color.lightGray);  // lava (drifts; sets into basalt)
 	basaltParticle = newParticle ("wall" + sep + "basalt", Color.orange);  // basalt
 	tripwireParticle = newParticle (sep + "tripwire", new Color(1,1,1));  // tripwire (an invisible, static particle that animals will eat; use as a subtle test of whether animals have escaped)
-	guestParticle = newParticle ("zoo" + spc + "guest", new Color(254,254,254));  // guest (a visible, mobile particle that animals will eat; use as a test of whether animals have escaped)
+	guestParticle = newParticle ("zoo_guest", new Color(254,254,254));  // guest (a visible, mobile particle that animals will eat; use as a test of whether animals have escaped)
 
 	// call method to add probabilistic pattern-matching replacement rules
 	addPatterns();
@@ -401,9 +401,17 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 			}
 
 		    double decayRate = playDecayRate * (isWall ? buriedWallDecayRate : (pc == acidParticle ? 1 : exposedWallDecayRate));
-		    addPattern (pw, pc, (w == 0) ? spaceParticle : wallParticle[w-1], pc, decayRate);  // wall decays
+		    //		    addPattern (pw, pc, (w == 0) ? spaceParticle : wallParticle[w-1], pc, decayRate);  // wall decays
 		}
 	}
+
+	addPattern ("wall/([2-9a-z]) .* wall/$-1 $T " + playDecayRate * exposedWallDecayRate + " decay");
+	addPattern ("wall/([2-9a-z]) wall.* wall/$-1 $T " + playDecayRate * buriedWallDecayRate + " decay");
+	addPattern ("wall/([2-9a-z]) acid wall/$-1 $T " + playDecayRate + " decay");
+
+	addPattern ("wall/1 .* _ $T " + playDecayRate * exposedWallDecayRate + " decay");
+	addPattern ("wall/1 wall.* _ $T " + playDecayRate * buriedWallDecayRate + " decay");
+	addPattern ("wall/1 acid _ $T " + playDecayRate + " decay");
 
 	// drifting & setting cement
 	for (int c = 1; c < particleTypes(); ++c) {
@@ -416,9 +424,14 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 		}
 
 	    double setRate = (isWall ? cementStickRate : cementSetRate);
-	    addPattern (cementParticle, pc, wallParticle[wallDecayStates - 1], pc, setRate);  // cement sets into wall
+	    //	    addPattern (cementParticle, pc, wallParticle[wallDecayStates - 1], pc, setRate);  // cement sets into wall
 	}
-	addPattern (cementParticle, spaceParticle, spaceParticle, cementParticle, 1);  // liquid cement always does random walk step
+	//	addPattern (cementParticle, spaceParticle, spaceParticle, cementParticle, 1);  // liquid cement always does random walk step
+
+	String newWall = "wall/" + RuleMatch.int2string(wallDecayStates-1);
+	addPattern ("cement [^_].* " + newWall + " $T " + cementSetRate + " set");
+	addPattern ("cement wall.* " + newWall + " $T " + cementStickRate + " stick");
+	addPattern ("cement _ $T $S 1 drift");
 
 	// death gas
 	// as an initial test of regex rules, have commented these out and added equivalent regexes below
@@ -444,12 +457,19 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	// fecundity gas
 	for (int c = 0; c < species; ++c) {
 	    Particle pc = speciesParticle[c];
-	    addPattern (fecundityParticle, pc, pc, pc, 1);  // fecundity particle makes species BREED
-	    addPattern (pc, fecundityParticle, pc, pc, 1);
+	    //	    addPattern (fecundityParticle, pc, pc, pc, 1);  // fecundity particle makes species BREED
+	    //	    addPattern (pc, fecundityParticle, pc, pc, 1);
 	}
-	addPattern (fecundityParticle, spaceParticle, spaceParticle, spaceParticle, gasDispersalRate);  // gas disperses
-	addPattern (fecundityParticle, spaceParticle, fecundityParticle, fecundityParticle, (1-gasDispersalRate) * gasDispersalRate);  // gas breeds (!? gives illusion of pressure, I guess)
-	addPattern (fecundityParticle, spaceParticle, spaceParticle, fecundityParticle, (1 - gasDispersalRate) * (1 - gasDispersalRate));  // gas does random walk step
+	//	addPattern (fecundityParticle, spaceParticle, spaceParticle, spaceParticle, gasDispersalRate);  // gas disperses
+	//	addPattern (fecundityParticle, spaceParticle, fecundityParticle, fecundityParticle, (1-gasDispersalRate) * gasDispersalRate);  // gas breeds (!? gives illusion of pressure, I guess)
+	//	addPattern (fecundityParticle, spaceParticle, spaceParticle, fecundityParticle, (1 - gasDispersalRate) * (1 - gasDispersalRate));  // gas does random walk step
+
+	addPattern("perfume .*/s.* $T $T 1 hornify");
+	addPattern(".*/s.* perfume $S $S 1 breed");
+
+	addPattern("perfume _ _ $T " + gasDispersalRate + " disperse");
+	addPattern("perfume _ $S $S " + (1-gasDispersalRate)*gasDispersalRate + " billow");
+	addPattern("perfume _ $T $S " + (1-gasDispersalRate)*(1-gasDispersalRate) + " drift");
 
 	// mutator gas
 	for (int c = 0; c < species; ++c) {
@@ -492,23 +512,27 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     }
 
     // helpers to add a pattern
-    private void addPattern (Particle pc_old, Particle nc_old, Particle pc_new, Particle nc_new, double prob) {
-	addPattern (pc_old.name, nc_old.name, pc_new.name, nc_new.name, prob, "verb");
+    // the main method
+    private void addPattern (String abcdpv) {
+	patternSet.addRulePattern (abcdpv);
+	// uncomment to print the production rule to stderr
+	//	System.err.println (abcdpv);
     }
 
+    // lots of other ways to call it
     private void addPattern (String A, String B, String C, String D, double P, String V) {
 	addPattern (A + " " + B + " " + C + " " + D + " " + P + " " + V);
-	// uncomment to print the production rule to stderr
-	//	System.err.println ("P(" + V + ": " + A + " " + B + " -> " + C + " " + D + ") = " + P);
+    }
+
+    private void addPattern (Particle pc_old, Particle nc_old, Particle pc_new, Particle nc_new, double prob) {
+	addPattern (pc_old.name, nc_old.name, pc_new.name, nc_new.name, prob, "verb");
     }
 
     private void addPattern (String abcd, double prob) {
 	addPattern (abcd + " " + prob + " verb");
     }
 
-    private void addPattern (String abcdpv) {
-	patternSet.addRulePattern (abcdpv);
-    }
+
 
     // main game loop
     private void gameLoop() {
@@ -592,8 +616,11 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	if (newCellPair != null) {
 	    newSourceState = newCellPair.source;
 	    Particle newTargetState = newCellPair.target;
-	    // write
-	    writeCell (targetCoords, newTargetState);
+	    // test for null
+	    if (newSourceState == null || newTargetState == null) {
+		throw new RuntimeException ("Null outcome of rule: " + oldSourceState.name + " " + oldTargetState.name + " -> " + (newSourceState == null ? "[null]" : newSourceState.name) + " " + (newTargetState == null ? "[null]" : newTargetState.name));
+	    } else
+		writeCell (targetCoords, newTargetState);  // write
 	}
 
 	// return
@@ -673,7 +700,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 		for (int k = 0; k < (int) particleTypes(); ++k)
 		    System.err.println (getParticleByNumber(k).name + " " + getParticleByNumber(k).count);
 		System.err.println ("Sampled: " + rv + " " + getParticleByNumber(rv).count);
-		throw new RuntimeException (new String ("Returned a zero-probability cell type"));
+		throw new RuntimeException ("Returned a zero-probability cell type");
 	    }
 	    return getParticleByNumber(rv);
 	}
@@ -923,7 +950,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	float entropyBarLevel = (float) (entropy / maxEntropy);
 	if (entropyBarLevel < 0 || entropyBarLevel > 1) {
 	    System.err.println ("entropyBarLevel: " + entropyBarLevel);
-	    throw new RuntimeException (new String ("Entropy outside permitted range"));
+	    throw new RuntimeException ("Entropy outside permitted range");
 	}
 	int entropyBarWidth = (int) (entropyBarLevel * (float) boardSize);
 

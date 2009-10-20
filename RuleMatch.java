@@ -45,7 +45,7 @@ import java.io.*;
 //   rm.unbind();
 public class RuleMatch {
     // data
-    private RulePattern pattern = null;
+    protected RulePattern pattern = null;
     private Pattern aPattern = null, bPattern = null;
     private int dir = -1;
     private String A = null, B = null;
@@ -222,7 +222,7 @@ public class RuleMatch {
 	StringBuffer sb = new StringBuffer();
 	while (m.find()) {
 	    String dec = m.group(1), g = m.group(2);
-	    int n = string2int(g);
+	    int n = string2int(getGroup(g));
 	    int delta = dec.length();
 	    if (n >= delta)
 		m.appendReplacement(sb,int2string(n-delta));
@@ -265,6 +265,6 @@ public class RuleMatch {
 
     // helper methods to encode/decode alphadecimal
     static private int base = 36;
-    String int2string(int n) { return Integer.toString(n,base); }
-    int string2int(String s) { return Integer.parseInt(s,base); }
+    static String int2string(int n) { return Integer.toString(n,base); }
+    static int string2int(String s) { return Integer.parseInt(s,base); }
 }

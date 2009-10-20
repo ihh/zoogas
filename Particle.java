@@ -43,8 +43,12 @@ public class Particle {
     // methods
     // part of name visible to player
     String visibleName() {
+	// Uncomment to hide invisible metainfo from player
+	/*
 	String[] partsOfName = name.split (visibleSeparatorChar, 2);
 	return partsOfName[0].replaceAll (visibleSpaceChar, " ");
+	*/
+	return name;
     }
 
     // helper to "close" all patterns, adding a do-nothing rule for patterns whose RHS probabilities sum to <1
@@ -70,27 +74,8 @@ public class Particle {
     ParticlePair samplePair (int dir, Particle oldTarget, Random rnd, ZooGas gas) {
 	RandomVariable rv = (RandomVariable) pattern[dir].get (oldTarget);
 	// if no RV, look for rule generator(s) that match this neighbor, and use them to create a set of rules
-	if (rv == null) {
-	    rv = new RandomVariable();
-	    if (patternSet != null) {
-		if (patternTemplate[dir] == null)
-		    patternTemplate[dir] = patternSet.getSourceRules (name, gas, dir);
-		for (int n = 0; n < patternTemplate[dir].length; ++n) {
-		    RuleMatch rm = patternTemplate[dir][n];
-		    //		    System.err.println ("Particle " + name + ": trying to match " + patternTemplate[dir][n]);
-		    if (rm.bindTarget(oldTarget.name)) {
-			Particle
-			    newSource = gas.getOrCreateParticle (rm.C()),
-			    newTarget = gas.getOrCreateParticle (rm.D());
-			ParticlePair pp = new ParticlePair (newSource, newTarget);
-			rv.add (pp, rm.P());
-		    }
-		    rm.unbindTarget();
-		}
-		rv.close (new ParticlePair (this, oldTarget));
-		pattern[dir].put (oldTarget, rv);
-	    }
-	}
+	if (rv == null && patternSet != null)
+	    rv = patternSet.compileTargetRules(dir,this,oldTarget,gas);
 	// have we got an RV?
 	if (rv != null)
 	    return (ParticlePair) rv.sample(rnd);

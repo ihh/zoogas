@@ -39,6 +39,37 @@ public class PatternSet {
 	return p;
     }
 
+    // method to compile new target rules for a Particle
+    RandomVariable compileTargetRules (int dir, Particle source, Particle target, ZooGas gas) {
+	RandomVariable rv = new RandomVariable();
+	if (source.patternTemplate[dir] == null)
+	    source.patternTemplate[dir] = getSourceRules (source.name, gas, dir);
+	for (int n = 0; n < source.patternTemplate[dir].length; ++n) {
+	    RuleMatch rm = source.patternTemplate[dir][n];
+	    //		    System.err.println ("Particle " + source.name + ": trying to match " + source.patternTemplate[dir][n]);
+	    if (rm.bindTarget(target.name)) {
+		Particle
+		    newSource = gas.getOrCreateParticle (rm.C()),
+		    newTarget = gas.getOrCreateParticle (rm.D());
+		if (newSource == null || newTarget == null) {
+		    System.err.println ("Null outcome of rule '" + rm.pattern + "': "
+					+ source.name + " " + target.name + " -> "
+					+ (newSource == null ? ("[null: " + rm.C() + "]") : newSource.name) + " "
+					+ (newTarget == null ? ("[null: " + rm.D() + "]") : newTarget.name));
+		} else {
+		    ParticlePair pp = new ParticlePair (newSource, newTarget);
+		    rv.add (pp, rm.P());
+		}
+	    }
+	    rm.unbindTarget();
+	}
+	rv.close (new ParticlePair (source, target));
+	source.pattern[dir].put (target, rv);
+	return rv;
+    }
+
+
+    // helper to get a set of rules
     protected RuleMatch[] getSourceRules (String particleName, ZooGas gas, int dir) {
 	//	System.err.println ("Trying to match particle " + particleName + " to rule generators");
 	Vector v = new Vector();
