@@ -411,8 +411,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	// death gas
 	addPattern("acid .* $S _ " + gasMultiplyRate + " dissolve");
 	addPattern("acid .* _ _ " + (1 - gasMultiplyRate) + " dissolve");
-	addPattern("acid (/tripwire|basalt|lava|_) $S _ 0 dissolve");
-	addPattern("acid (/tripwire|basalt|lava|_) _ _ 0 dissolve");
+	addPattern("acid /tripwire|wall/basalt|lava|_ $S _ 0 dissolve");
+	addPattern("acid /tripwire|wall/basalt|lava|_ _ _ 0 dissolve");
 	addPattern("acid _ $T $S 1 drift");
 
 	// fecundity gas
@@ -440,12 +440,12 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	addPattern("mutator perfume $T $T " + 1 + " react");
 
 	// flowing & setting lava
-	addPattern("lava .* basalt $T " + lavaSeedRate + " set");
-	addPattern("lava wall.*|basalt basalt $T 1 set");
+	addPattern("lava wall/. wall/basalt $T " + lavaSeedRate + " set");
+	addPattern("lava wall/basalt $T $T 1 set");
 	addPattern("lava _ $T $S " + lavaFlowRate + " flow");
 
 	// basalt
-	addPattern("basalt acid _ lava " + lavaFlowRate + " dissolve");
+	addPattern("wall/basalt acid _ lava " + lavaFlowRate + " dissolve");
 
 	// guests
 	addPattern("guest _ $T $S " + guestMoveRate + " perambulate");
