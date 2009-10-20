@@ -13,15 +13,45 @@ import java.io.*;
 
 public class PatternSet {
     // data
-    private RulePattern[] rulePattern = null;
-    private ParticlePattern[] particlePattern = null;
+    private Vector rulePattern = new Vector();
+    private Vector particlePattern = new Vector();
 
-    // methods (placeholders for now)
-    Particle createParticle (String particleName, ZooGas gas) {
-	return null;
+    // method to lay down a template for a rule
+    void addRulePattern (String patternString) {
+	rulePattern.add (new RulePattern(patternString));
     }
 
-    RuleMatch[] getSourceRules (String particleName, ZooGas gas, int dir) {
-	return null;
+    // method to get a Particle from the ZooGas object or create and add one
+    Particle getOrCreateParticle (String particleName, ZooGas gas) {
+	// look for existing particle
+	Particle p = gas.getParticleByName (particleName);
+	// if no such particle, look for a pattern that matches this particle
+	if (p == null) {
+	    for (int n = 0; n < particlePattern.size(); ++n) {
+		ParticlePattern pp = (ParticlePattern) particlePattern.get(n);
+		Matcher m = pp.namePattern.matcher(particleName);
+		if (m.matches()) {
+		    p = new Particle (particleName, pp.color, gas, this);
+		    break;
+		}
+	    }
+	}
+	return p;
+    }
+
+    protected RuleMatch[] getSourceRules (String particleName, ZooGas gas, int dir) {
+	//	System.err.println ("Trying to match particle " + particleName + " to rule generators");
+	Vector v = new Vector();
+	for (int n = 0; n < rulePattern.size(); ++n) {
+	    //	    System.err.println ("Trying to match particle " + particleName + " to rule " + (RulePattern) rulePattern.get(n));
+	    RuleMatch rm = new RuleMatch ((RulePattern) rulePattern.get(n), gas, dir, particleName);
+	    if (rm.matches())
+		v.add (rm);
+	}
+	Object[] a = v.toArray();
+	RuleMatch[] rm = new RuleMatch[a.length];
+	for (int n = 0; n < a.length; ++n)
+	    rm[n] = (RuleMatch) a[n];
+	return rm;
     }
 }

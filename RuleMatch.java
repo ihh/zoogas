@@ -65,7 +65,7 @@ public class RuleMatch {
 	if (!dirBound()) {
 	    gas = g;
 	    dir = d;
-	    aPattern = Pattern.compile(A());
+	    aPattern = Pattern.compile(regexA());
 	    return true;
 	}
 	// throw AlreadyBoundException
@@ -78,7 +78,7 @@ public class RuleMatch {
 	    am = aPattern.matcher(a);
 	    aMatched = am.matches();
 	    if (aMatched)
-		bPattern = Pattern.compile(B());
+		bPattern = Pattern.compile(regexB());
 	    return aMatched;
 	}
 	// throw AlreadyBoundException
@@ -133,8 +133,10 @@ public class RuleMatch {
     boolean dirBound() { return dir >= 0; }
 
     // expanded pattern methods
-    String A() { return expandDir(pattern.A); }
-    String B() { return expandLHS(pattern.B); }
+    String regexA() { return expandDir(pattern.A); }
+    String regexB() { return expandLHS(pattern.B); }
+    String A() { return A; }
+    String B() { return B; }
     String C() { return expandRHS(pattern.C); }
     String D() { return expandRHS(pattern.D); }
     String V() { return expandRHS(pattern.V); }

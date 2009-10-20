@@ -64,8 +64,11 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     String localhost = null;
 
     // cellular automata state dictionary
-    Map nameToParticle = new HashMap();
-    Vector particleVec = new Vector();
+    protected Map nameToParticle = new HashMap();  // updated by Particle constructor
+    private Vector particleVec = new Vector();  // internal to this class
+
+    // cellular automata rule/particle generator
+    PatternSet patternSet = new PatternSet();
 
     // constant helper vars
     Particle spaceParticle, cementParticle, acidParticle, fecundityParticle, mutatorParticle, lavaParticle, basaltParticle, tripwireParticle, guestParticle;
@@ -167,26 +170,26 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 	// init particles
 	String sep = Particle.visibleSeparatorChar, spc = Particle.visibleSpaceChar;
-	spaceParticle = newCellType (spc, Color.black);  // empty space
+	spaceParticle = newParticle (spc, Color.black);  // empty space
 	speciesParticle = new Particle[species];
 	for (int s = 0; s < species; ++s)
-	    speciesParticle[s] = newCellType ("critter" + sep + (s+1), Color.getHSBColor ((float) s / (float) (species+1), 1, 1));
+	    speciesParticle[s] = newParticle ("critter" + sep + (s+1), Color.getHSBColor ((float) s / (float) (species+1), 1, 1));
 
 	wallParticle = new Particle[wallDecayStates];
 	for (int w = 1; w <= wallDecayStates; ++w) {
 	    float gray = (float) w / (float) (wallDecayStates + 1);
-	    wallParticle[w-1] = newCellType ("wall" + sep + w, new Color (gray, gray, gray));  // walls (in various sequential states of decay)
+	    wallParticle[w-1] = newParticle ("wall" + sep + w, new Color (gray, gray, gray));  // walls (in various sequential states of decay)
 	}
-	cementParticle = newCellType ("cement", Color.white);  // cement (drifts; sets into wall)
+	cementParticle = newParticle ("cement", Color.white);  // cement (drifts; sets into wall)
 
 	float gasHue = (float) species / (float) (species+1);
-	acidParticle = newCellType ("acid", Color.darkGray);  // acid (destroys most things; dissolves basalt into lava)
-	fecundityParticle = newCellType ("perfume", Color.getHSBColor (gasHue, (float) .5, (float) .5));  // fecundity gas (multiplies; makes animals breed)
-	mutatorParticle = newCellType ("mutator", Color.getHSBColor (gasHue, (float) .5, (float) 1));  // mutator gas (converts animals into nearby species)
-	lavaParticle = newCellType ("lava", Color.lightGray);  // lava (drifts; sets into basalt)
-	basaltParticle = newCellType ("wall" + sep + "basalt", Color.orange);  // basalt
-	tripwireParticle = newCellType (sep + "tripwire", new Color(1,1,1));  // tripwire (an invisible, static particle that animals will eat; use as a subtle test of whether animals have escaped)
-	guestParticle = newCellType ("zoo" + spc + "guest", new Color(254,254,254));  // guest (a visible, mobile particle that animals will eat; use as a test of whether animals have escaped)
+	acidParticle = newParticle ("acid", Color.darkGray);  // acid (destroys most things; dissolves basalt into lava)
+	fecundityParticle = newParticle ("perfume", Color.getHSBColor (gasHue, (float) .5, (float) .5));  // fecundity gas (multiplies; makes animals breed)
+	mutatorParticle = newParticle ("mutator", Color.getHSBColor (gasHue, (float) .5, (float) 1));  // mutator gas (converts animals into nearby species)
+	lavaParticle = newParticle ("lava", Color.lightGray);  // lava (drifts; sets into basalt)
+	basaltParticle = newParticle ("wall" + sep + "basalt", Color.orange);  // basalt
+	tripwireParticle = newParticle (sep + "tripwire", new Color(1,1,1));  // tripwire (an invisible, static particle that animals will eat; use as a subtle test of whether animals have escaped)
+	guestParticle = newParticle ("zoo" + spc + "guest", new Color(254,254,254));  // guest (a visible, mobile particle that animals will eat; use as a test of whether animals have escaped)
 
 	// call method to add probabilistic pattern-matching replacement rules
 	addPatterns();
@@ -300,11 +303,14 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     }
 
     // builder method for cell types
-    private Particle newCellType (String name, Color color) {
-	Particle p = new Particle (name, color, this);
-	nameToParticle.put (name, p);
+    private Particle newParticle (String name, Color color) {
+	Particle p = new Particle (name, color, this, patternSet);
 	particleVec.add (p);
 	return p;
+    }
+
+    protected void registerParticle (String name, Particle p) {
+	nameToParticle.put (name, p);
     }
 
     public Particle getParticleByName (String name) {
@@ -317,6 +323,10 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     private int particleTypes() {
 	return particleVec.size();
+    }
+
+    protected Particle getOrCreateParticle (String name) {
+	return patternSet.getOrCreateParticle (name, this);
     }
 
     // builder method for patterns
@@ -411,17 +421,25 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	addPattern (cementParticle, spaceParticle, spaceParticle, cementParticle, 1);  // liquid cement always does random walk step
 
 	// death gas
+	// as an initial test of regex rules, have commented these out and added equivalent regexes below
 	for (int c = 1; c < particleTypes(); ++c) {
 	    Particle pc = getParticleByNumber(c);
 	    // exceptions to "acid melts everything" rule:
 	    //  - tripwire (can only be destroyed by escaping animals)
 	    //  - basalt (not destroyed; melts back into lava instead)
 	    if (pc != tripwireParticle && pc != basaltParticle) {
-		addPattern (acidParticle, pc, acidParticle, spaceParticle, gasMultiplyRate);  // acid lives
-		addPattern (acidParticle, pc, spaceParticle, spaceParticle, 1 - gasMultiplyRate);  // acid dies
+		//		addPattern (acidParticle, pc, acidParticle, spaceParticle, gasMultiplyRate);  // acid lives
+		//		addPattern (acidParticle, pc, spaceParticle, spaceParticle, 1 - gasMultiplyRate);  // acid dies
 	    }
 	}
-	addPattern (acidParticle, spaceParticle, spaceParticle, acidParticle, 1);  // acid always does random walk step, doesn't disperse
+	//	addPattern (acidParticle, spaceParticle, spaceParticle, acidParticle, 1);  // acid always does random walk step, doesn't disperse
+
+	// here are the regexes. note the use of overriding
+	addPattern("acid .* $S _", gasMultiplyRate);
+	addPattern("acid .* _ _", 1 - gasMultiplyRate);
+	addPattern("acid (/tripwire|basalt|_) $S _", 0);
+	addPattern("acid (/tripwire|basalt|_) _ _", 0);
+	addPattern("acid _ $T $S 1 verb");
 
 	// fecundity gas
 	for (int c = 0; c < species; ++c) {
@@ -473,11 +491,23 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	addPattern (guestParticle, spaceParticle, spaceParticle, guestParticle, guestMoveRate);
     }
 
-    // helper to add a pattern
+    // helpers to add a pattern
     private void addPattern (Particle pc_old, Particle nc_old, Particle pc_new, Particle nc_new, double prob) {
-	pc_old.addPattern (nc_old, pc_new, nc_new, prob);
+	addPattern (pc_old.name, nc_old.name, pc_new.name, nc_new.name, prob, "verb");
+    }
+
+    private void addPattern (String A, String B, String C, String D, double P, String V) {
+	addPattern (A + " " + B + " " + C + " " + D + " " + P + " " + V);
 	// uncomment to print the production rule to stderr
-	// System.err.println ("P(" + pc_old.name + " " + nc_old.name + " -> " + pc_new.name + " " + nc_new.name + ") = " + prob);
+	//	System.err.println ("P(" + V + ": " + A + " " + B + " -> " + C + " " + D + ") = " + P);
+    }
+
+    private void addPattern (String abcd, double prob) {
+	addPattern (abcd + " " + prob + " verb");
+    }
+
+    private void addPattern (String abcdpv) {
+	patternSet.addRulePattern (abcdpv);
     }
 
     // main game loop
@@ -558,7 +588,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 	// sample new state-pair
 	Particle newSourceState = oldSourceState;
-	ParticlePair newCellPair = oldSourceState.samplePair (dir, oldTargetState, rnd);
+	ParticlePair newCellPair = oldSourceState.samplePair (dir, oldTargetState, rnd, this);
 	if (newCellPair != null) {
 	    newSourceState = newCellPair.source;
 	    Particle newTargetState = newCellPair.target;

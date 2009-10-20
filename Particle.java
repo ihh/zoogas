@@ -13,7 +13,8 @@ public class Particle {
 
     // behavior
     protected IdentityHashMap[] pattern = null;  // production rules; array is indexed by neighbor direction, Map is indexed by Particle
-    //    protected RuleMatch[][] patternTemplate = null;  // generators for production rules; outer array is indexed by neighbor direction, inner array is the set of partially-bound rules for that direction
+    protected RuleMatch[][] patternTemplate = null;  // generators for production rules; outer array is indexed by neighbor direction, inner array is the set of partially-bound rules for that direction
+    PatternSet patternSet = null;
 
     // internals
     protected int count = 0;  // how many of this type on the board
@@ -23,11 +24,18 @@ public class Particle {
 	visibleSeparatorChar = "/",
 	visibleSpaceChar = "_";
 
-    // constructor
+    // constructors
+    public Particle (String name, Color color, ZooGas gas, PatternSet ps) {
+	this(name,color,gas);
+	patternSet = ps;
+    }
+
     public Particle (String name, Color color, ZooGas gas) {
 	this.name = name;
 	this.color = color;
+	gas.registerParticle (name, this);
 	pattern = new IdentityHashMap[gas.neighborhoodSize()];
+	patternTemplate = new RuleMatch[gas.neighborhoodSize()][];
 	for (int n = 0; n < pattern.length; ++n)
 	    pattern[n] = new IdentityHashMap();
     }
@@ -37,16 +45,6 @@ public class Particle {
     String visibleName() {
 	String[] partsOfName = name.split (visibleSeparatorChar, 2);
 	return partsOfName[0].replaceAll (visibleSpaceChar, " ");
-    }
-
-    // helper to add a pattern
-    void addPattern (Particle oldTarget, Particle newSource, Particle newTarget, double prob) {
-	for (int dir = 0; dir < pattern.length; ++dir) {
-	    RandomVariable rv = (RandomVariable) pattern[dir].get (oldTarget);
-	    if (rv == null)
-		pattern[dir].put (oldTarget, rv = new RandomVariable());
-	    rv.add (new ParticlePair (newSource, newTarget), prob);
-	}
     }
 
     // helper to "close" all patterns, adding a do-nothing rule for patterns whose RHS probabilities sum to <1
@@ -69,11 +67,34 @@ public class Particle {
 
     // helper to sample a new (source,target) pair
     // returns null if no rule found
-    ParticlePair samplePair (int dir, Particle oldTarget, Random rnd) {
+    ParticlePair samplePair (int dir, Particle oldTarget, Random rnd, ZooGas gas) {
 	RandomVariable rv = (RandomVariable) pattern[dir].get (oldTarget);
+	// if no RV, look for rule generator(s) that match this neighbor, and use them to create a set of rules
+	if (rv == null) {
+	    rv = new RandomVariable();
+	    if (patternSet != null) {
+		if (patternTemplate[dir] == null)
+		    patternTemplate[dir] = patternSet.getSourceRules (name, gas, dir);
+		for (int n = 0; n < patternTemplate[dir].length; ++n) {
+		    RuleMatch rm = patternTemplate[dir][n];
+		    //		    System.err.println ("Particle " + name + ": trying to match " + patternTemplate[dir][n]);
+		    if (rm.bindTarget(oldTarget.name)) {
+			Particle
+			    newSource = gas.getOrCreateParticle (rm.C()),
+			    newTarget = gas.getOrCreateParticle (rm.D());
+			ParticlePair pp = new ParticlePair (newSource, newTarget);
+			rv.add (pp, rm.P());
+		    }
+		    rm.unbindTarget();
+		}
+		rv.close (new ParticlePair (this, oldTarget));
+		pattern[dir].put (oldTarget, rv);
+	    }
+	}
+	// have we got an RV?
 	if (rv != null)
 	    return (ParticlePair) rv.sample(rnd);
-	// TODO: use patternTemplate to create the new RandomVariable here
+	// no RV; return null
 	return null;
     }
 }

@@ -33,7 +33,7 @@ public class RulePattern {
     }
 
     public RulePattern (String abcdpv) {
-	String[] args = abcdpv.split(" ");
+	String[] args = abcdpv.split(" ",6);
 	A = args[0];
 	B = args[1];
 	C = args[2];
