@@ -450,7 +450,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	addPattern("wall/basalt acid _ lava " + lavaFlowRate + " dissolve");
 
 	// guests
-	addPattern("guest _ $T $S " + guestMoveRate + " perambulate");
+	addPattern("zoo_guest _ $T $S " + guestMoveRate + " perambulate");
     }
 
     // helpers to add a pattern
