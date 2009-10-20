@@ -341,11 +341,6 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	// the cyclic ecology
 	int types = species / trophicSymmetry;
 	for (int type = 0; type < types; ++type) {
-	    StringBuffer typeRegex = new StringBuffer (".*/s([");
-	    for (int cyc = 0; cyc < trophicSymmetry; ++cyc) {
-		typeRegex.append (RuleMatch.int2string (cyc * types + type));
-	    }
-	    typeRegex.append ("])");
 
 	    // make some species a bit faster at moving, and some a bit faster at eating/breeding
 	    double mul = 1;
@@ -365,6 +360,27 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    moveRate *= mul;
 	    myRate /= Math.sqrt(mul);
 
+	    // do species-specific ecology rules and build a general regex for this type
+	    StringBuffer typeRegex = new StringBuffer (".*/s([");
+	    for (int cyc = 0; cyc < trophicSymmetry; ++cyc) {
+		int s = cyc * types + type;
+		String sid = RuleMatch.int2string(s);
+		typeRegex.append(sid);
+
+		// predation
+		StringBuffer preyRegex = new StringBuffer ("");
+		StringBuffer predRegex = new StringBuffer ("");
+		for (int t = 1; t <= (int) species/2; ++t)
+		    preyRegex.append(RuleMatch.int2string((s+t)%species));
+		for (int t = ((int) species/2) + 1; t < species; ++t)
+		    predRegex.append(RuleMatch.int2string((s+t)%species));
+
+		addPattern (".*/s" + sid + " .*/s[" + predRegex + sid + "] _ $T " + myRate*chokeRate + " choke");
+		addPattern (".*/s" + sid + " .*/s[" + preyRegex + "] $S $S " + myRate*forageEfficiency + " eat");
+		addPattern (".*/s" + sid + " .*/s[" + preyRegex + "] $S _ " + myRate*(1-forageEfficiency) + " kill");
+	    }
+	    typeRegex.append ("])");
+
 	    // adjacent to emptiness
 	    addPattern (typeRegex + " _ $S $S " + myRate*birthRate + " birth");  // spontaneous birth
 	    addPattern (typeRegex + " _ $T $S " + moveRate*(1-myRate*birthRate) + " step");  // no birth, so take a random walk step
@@ -374,20 +390,6 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 	    // adjacent to wall
 	    addPattern (typeRegex + " wall.* _ $T " + myRate*chokeRate + " choke");
-
-	    // predators
-	    StringBuffer otherRegex = new StringBuffer (".*/s$%" + RuleMatch.int2string(species));
-	    for (int t = 1; t < species; ++t) {
-		otherRegex.append("+");
-		if (t <= (int) (species/2)) {
-		    // predator or self
-		    addPattern (typeRegex + " " + otherRegex + "1 _ $T " + myRate*chokeRate + " choke");  // spontaneous death due to overcrowding
-		} else {
-		    // prey
-		    addPattern (typeRegex + " " + otherRegex + "1 $S $S " + myRate*forageEfficiency + " eat");  // eat + breed (i.e. convert)
-		    addPattern (typeRegex + " " + otherRegex + "1 $S _ " + myRate*(1-forageEfficiency) + " kill");  // eat + don't breed
-		}
-	    }
 	}
 
 	// adjacent to guest or tripwire: eat'em!
