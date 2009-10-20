@@ -332,6 +332,12 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     // builder method for patterns
     private void addPatterns() {
 
+	// Uncomment this for a super-fast game :-)
+	/*
+	  playDecayRate *= 10;
+	  lifeRate *= 10;
+	*/
+
 	// the cyclic ecology
 	int types = species / trophicSymmetry;
 	for (int type = 0; type < types; ++type) {
