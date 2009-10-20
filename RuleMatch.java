@@ -145,12 +145,12 @@ public class RuleMatch {
     // main expand() methods
     // expansion of B
     protected String expandLHS (String s) {
-	return expandGroupOrSource(expandDir(s));
+	return expandMod(expandDec(expandInc(expandGroupOrSource(expandDir(s)))));
     }
 
     // expansion of C and D
     protected String expandRHS (String s) {
-	return expandMod(expandDec(expandInc(expandTarget(expandLHS(s)))));
+	return expandTarget(expandLHS(s));
     }
 
     // expansion of $F, $B, $L, $R

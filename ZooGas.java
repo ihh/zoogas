@@ -333,78 +333,61 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     private void addPatterns() {
 
 	// the cyclic ecology
-	for (int ns = 0; ns < species; ++ns)
-	    {
-		Particle s = speciesParticle[ns];
-		int type = ns % (species / trophicSymmetry);
-
-		// make some species a bit faster at moving, and some a bit faster at eating/breeding
-		double mul = 1;
-		double moveRate = lifeRate, myRate = lifeRate;
-		switch (type) {
-		case 0: break;
-		case 1: mul = 1.2; break;
-		case 2: mul = 1.5; break;
-		case 3: mul = 1.3; break;
-		case 4: mul /= 1.2; break;
-		case 5: mul /= 1.5; break;
-		case 6: mul /= 1.3; break;
-		case 7: moveRate *= 1.1; myRate *= 1.2; break;
-		case 8: moveRate *= 1.2; myRate *= 1.1; break;
-		default: break;
-		}
-		moveRate *= mul;
-		myRate /= Math.sqrt(mul);
-
-		// adjacent to emptiness
-		addPattern (s, spaceParticle, s, s, myRate*birthRate);  // spontaneous birth
-		addPattern (s, spaceParticle, spaceParticle, s, moveRate*(1-myRate*birthRate));  // no birth, so take a random walk step
-
-		// adjacent to self
-		addPattern (s, s, spaceParticle, s, myRate*chokeRate);  // spontaneous death due to overcrowding
-
-		// adjacent to wall
-		for (int w = 0; w < wallDecayStates; ++w) {
-		    addPattern (s, wallParticle[w], spaceParticle, wallParticle[w], myRate*chokeRate);  // spontaneous death due to being muthafuckin BURIED ALIVE or CRUSHED AGAINST A BRICK WALL
-		}
-
-		// adjacent to predator
-		for (int t = 1; t <= species; ++t) {
-		    int nt = (ns + t) % species;
-		    Particle pt = speciesParticle[nt];
-		    if (t > (int) (species / 2)) {
-			// predator or self
-			addPattern (s, pt, spaceParticle, pt, myRate*chokeRate);  // spontaneous death due to overcrowding
-		    } else {
-			// prey
-			addPattern (s, pt, s, s, myRate*forageEfficiency);  // eat + breed (i.e. convert)
-			addPattern (s, pt, s, spaceParticle, myRate*(1 - forageEfficiency));  // eat + don't breed
-		    }
-		}
-
-		// adjacent to guest or tripwire: eat'em!
-		addPattern (s, guestParticle, spaceParticle, s, 1);
-		addPattern (s, tripwireParticle, spaceParticle, s, 1);
+	int types = species / trophicSymmetry;
+	for (int type = 0; type < types; ++type) {
+	    StringBuffer typeRegex = new StringBuffer (".*/s([");
+	    for (int cyc = 0; cyc < trophicSymmetry; ++cyc) {
+		typeRegex.append (RuleMatch.int2string (cyc * types + type));
 	    }
+	    typeRegex.append ("])");
 
-	// decaying walls
-	for (int w = 0; w < wallDecayStates; ++w) {
-	    Particle pw = wallParticle[w];
-	    for (int c = 0; c < particleTypes(); ++c)
-		{
-		    Particle pc = getParticleByNumber(c);
-		    boolean isWall = false;
-		    for (int w2 = 0; w2 < wallDecayStates; ++w2)
-			if (pc == wallParticle[w2]) {
-			    isWall = true;
-			    break;
-			}
+	    // make some species a bit faster at moving, and some a bit faster at eating/breeding
+	    double mul = 1;
+	    double moveRate = lifeRate, myRate = lifeRate;
+	    switch (type) {
+	    case 0: break;
+	    case 1: mul = 1.2; break;
+	    case 2: mul = 1.5; break;
+	    case 3: mul = 1.3; break;
+	    case 4: mul /= 1.2; break;
+	    case 5: mul /= 1.5; break;
+	    case 6: mul /= 1.3; break;
+	    case 7: moveRate *= 1.1; myRate *= 1.2; break;
+	    case 8: moveRate *= 1.2; myRate *= 1.1; break;
+	    default: break;
+	    }
+	    moveRate *= mul;
+	    myRate /= Math.sqrt(mul);
 
-		    double decayRate = playDecayRate * (isWall ? buriedWallDecayRate : (pc == acidParticle ? 1 : exposedWallDecayRate));
-		    //		    addPattern (pw, pc, (w == 0) ? spaceParticle : wallParticle[w-1], pc, decayRate);  // wall decays
+	    // adjacent to emptiness
+	    addPattern (typeRegex + " _ $S $S " + myRate*birthRate + " birth");  // spontaneous birth
+	    addPattern (typeRegex + " _ $T $S " + moveRate*(1-myRate*birthRate) + " step");  // no birth, so take a random walk step
+
+	    // adjacent to self
+	    addPattern (typeRegex + " $S _ $T " + myRate*chokeRate + " choke");  // spontaneous death due to overcrowding
+
+	    // adjacent to wall
+	    addPattern (typeRegex + " wall.* _ $T " + myRate*chokeRate + " choke");
+
+	    // predators
+	    StringBuffer otherRegex = new StringBuffer (".*/s$%" + RuleMatch.int2string(species));
+	    for (int t = 1; t < species; ++t) {
+		otherRegex.append("+");
+		if (t <= (int) (species/2)) {
+		    // predator or self
+		    addPattern (typeRegex + " " + otherRegex + "1 _ $T " + myRate*chokeRate + " choke");  // spontaneous death due to overcrowding
+		} else {
+		    // prey
+		    addPattern (typeRegex + " " + otherRegex + "1 $S $S " + myRate*forageEfficiency + " eat");  // eat + breed (i.e. convert)
+		    addPattern (typeRegex + " " + otherRegex + "1 $S _ " + myRate*(1-forageEfficiency) + " kill");  // eat + don't breed
 		}
+	    }
 	}
 
+	// adjacent to guest or tripwire: eat'em!
+	addPattern (".*s/ /tripwire|zoo_guest _ $S 1 eat");
+
+	// decaying walls
 	addPattern ("wall/([2-9a-z]) .* wall/$-1 $T " + playDecayRate * exposedWallDecayRate + " decay");
 	addPattern ("wall/([2-9a-z]) wall.* wall/$-1 $T " + playDecayRate * buriedWallDecayRate + " decay");
 	addPattern ("wall/([2-9a-z]) acid wall/$-1 $T " + playDecayRate + " decay");
@@ -414,56 +397,19 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	addPattern ("wall/1 acid _ $T " + playDecayRate + " decay");
 
 	// drifting & setting cement
-	for (int c = 1; c < particleTypes(); ++c) {
-	    Particle pc = getParticleByNumber(c);
-	    boolean isWall = false;
-	    for (int w2 = 0; w2 < wallDecayStates; ++w2)
-		if (pc == wallParticle[w2]) {
-		    isWall = true;
-		    break;
-		}
-
-	    double setRate = (isWall ? cementStickRate : cementSetRate);
-	    //	    addPattern (cementParticle, pc, wallParticle[wallDecayStates - 1], pc, setRate);  // cement sets into wall
-	}
-	//	addPattern (cementParticle, spaceParticle, spaceParticle, cementParticle, 1);  // liquid cement always does random walk step
-
 	String newWall = "wall/" + RuleMatch.int2string(wallDecayStates-1);
 	addPattern ("cement [^_].* " + newWall + " $T " + cementSetRate + " set");
 	addPattern ("cement wall.* " + newWall + " $T " + cementStickRate + " stick");
 	addPattern ("cement _ $T $S 1 drift");
 
 	// death gas
-	// as an initial test of regex rules, have commented these out and added equivalent regexes below
-	for (int c = 1; c < particleTypes(); ++c) {
-	    Particle pc = getParticleByNumber(c);
-	    // exceptions to "acid melts everything" rule:
-	    //  - tripwire (can only be destroyed by escaping animals)
-	    //  - basalt (not destroyed; melts back into lava instead)
-	    if (pc != tripwireParticle && pc != basaltParticle) {
-		//		addPattern (acidParticle, pc, acidParticle, spaceParticle, gasMultiplyRate);  // acid lives
-		//		addPattern (acidParticle, pc, spaceParticle, spaceParticle, 1 - gasMultiplyRate);  // acid dies
-	    }
-	}
-	//	addPattern (acidParticle, spaceParticle, spaceParticle, acidParticle, 1);  // acid always does random walk step, doesn't disperse
-
-	// here are the regexes. note the use of overriding
-	addPattern("acid .* $S _", gasMultiplyRate);
-	addPattern("acid .* _ _", 1 - gasMultiplyRate);
-	addPattern("acid (/tripwire|basalt|lava|_) $S _", 0);
-	addPattern("acid (/tripwire|basalt|lava|_) _ _", 0);
-	addPattern("acid _ $T $S 1 verb");
+	addPattern("acid .* $S _ " + gasMultiplyRate + " dissolve");
+	addPattern("acid .* _ _ " + (1 - gasMultiplyRate) + " dissolve");
+	addPattern("acid (/tripwire|basalt|lava|_) $S _ 0 dissolve");
+	addPattern("acid (/tripwire|basalt|lava|_) _ _ 0 dissolve");
+	addPattern("acid _ $T $S 1 drift");
 
 	// fecundity gas
-	for (int c = 0; c < species; ++c) {
-	    Particle pc = speciesParticle[c];
-	    //	    addPattern (fecundityParticle, pc, pc, pc, 1);  // fecundity particle makes species BREED
-	    //	    addPattern (pc, fecundityParticle, pc, pc, 1);
-	}
-	//	addPattern (fecundityParticle, spaceParticle, spaceParticle, spaceParticle, gasDispersalRate);  // gas disperses
-	//	addPattern (fecundityParticle, spaceParticle, fecundityParticle, fecundityParticle, (1-gasDispersalRate) * gasDispersalRate);  // gas breeds (!? gives illusion of pressure, I guess)
-	//	addPattern (fecundityParticle, spaceParticle, spaceParticle, fecundityParticle, (1 - gasDispersalRate) * (1 - gasDispersalRate));  // gas does random walk step
-
 	addPattern("perfume .*/s.* $T $T 1 hornify");
 	addPattern(".*/s.* perfume $S $S 1 breed");
 
@@ -472,43 +418,31 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	addPattern("perfume _ $T $S " + (1-gasDispersalRate)*(1-gasDispersalRate) + " drift");
 
 	// mutator gas
-	for (int c = 0; c < species; ++c) {
-	    Particle pc = speciesParticle[c];
-	    for (int t = -mutateRange; t <= mutateRange; ++t)
-		if (t != 0)
-		    {
-			int mutant = (c - 1 + t + species) % species;
-			Particle pm = speciesParticle[mutant];
-			double mutProb = Math.pow (gasMultiplyRate, Math.abs(t));
-			addPattern (mutatorParticle, pc, spaceParticle, pm, mutProb);  // fecundity particle makes species mutate into random other species
-		    }
+	StringBuffer mutateFwd = new StringBuffer("$1$%" + RuleMatch.int2string(species));
+	StringBuffer mutateBack = new StringBuffer("$1$%" + RuleMatch.int2string(species));
+	for (int t = 0; t < species; ++t)
+	    mutateBack.append("+");
+	for (int t = 1; t <= mutateRange; ++t) {
+	    double mutProb = Math.pow (gasMultiplyRate, t-1);
+	    mutateFwd.append("+");
+	    mutateBack.deleteCharAt(mutateBack.length()-1);
+	    addPattern("mutator (.*/s)([0-9a-z]) _ " + mutateFwd + "2 " + mutProb + " mutate");
+	    addPattern("mutator (.*/s)([0-9a-z]) _ " + mutateBack + "2 " + mutProb + " mutate");
 	}
-	addPattern (mutatorParticle, spaceParticle, spaceParticle, spaceParticle, gasDispersalRate);  // gas disperses
-	addPattern (mutatorParticle, spaceParticle, spaceParticle, mutatorParticle, 1 - gasDispersalRate);  // gas does random walk step
-	addPattern (mutatorParticle, fecundityParticle, mutatorParticle, mutatorParticle, 1);  // fecundity gas reacts with mutator to produce MORE mutator
+	addPattern("mutator _ _ _ " + gasDispersalRate + " disperse");
+	addPattern("mutator _ $T $S " + (1-gasDispersalRate) + " drift");
+	addPattern("mutator perfume $T $T " + 1 + " react");
 
 	// flowing & setting lava
-	for (int c = 1; c < particleTypes(); ++c) {
-	    Particle pc = getParticleByNumber(c);
-	    boolean isWall = false;
-	    for (int w2 = 0; w2 < wallDecayStates; ++w2)
-		if (pc == wallParticle[w2]) {
-		    isWall = true;
-		    break;
-		}
-
-	    if (pc == basaltParticle || isWall) {
-		double setRate = (pc == basaltParticle ? 1 : lavaSeedRate);
-		addPattern (lavaParticle, pc, basaltParticle, pc, setRate);  // lava sets into basalt
-	    }
-	}
-	addPattern (lavaParticle, spaceParticle, spaceParticle, lavaParticle, lavaFlowRate);  // lava does random walk step
+	addPattern("lava .* basalt $T " + lavaSeedRate + " set");
+	addPattern("lava wall.*|basalt basalt $T 1 set");
+	addPattern("lava _ $T $S " + lavaFlowRate + " flow");
 
 	// basalt
-	addPattern (basaltParticle, acidParticle, spaceParticle, lavaParticle, lavaFlowRate);  // acid melts basalt
+	addPattern("basalt acid _ lava " + lavaFlowRate + " dissolve");
 
 	// guests
-	addPattern (guestParticle, spaceParticle, spaceParticle, guestParticle, guestMoveRate);
+	addPattern("guest _ $T $S " + guestMoveRate + " perambulate");
     }
 
     // helpers to add a pattern
@@ -518,21 +452,6 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	// uncomment to print the production rule to stderr
 	//	System.err.println (abcdpv);
     }
-
-    // lots of other ways to call it
-    private void addPattern (String A, String B, String C, String D, double P, String V) {
-	addPattern (A + " " + B + " " + C + " " + D + " " + P + " " + V);
-    }
-
-    private void addPattern (Particle pc_old, Particle nc_old, Particle pc_new, Particle nc_new, double prob) {
-	addPattern (pc_old.name, nc_old.name, pc_new.name, nc_new.name, prob, "verb");
-    }
-
-    private void addPattern (String abcd, double prob) {
-	addPattern (abcd + " " + prob + " verb");
-    }
-
-
 
     // main game loop
     private void gameLoop() {
