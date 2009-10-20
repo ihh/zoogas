@@ -437,8 +437,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	// here are the regexes. note the use of overriding
 	addPattern("acid .* $S _", gasMultiplyRate);
 	addPattern("acid .* _ _", 1 - gasMultiplyRate);
-	addPattern("acid (/tripwire|basalt|_) $S _", 0);
-	addPattern("acid (/tripwire|basalt|_) _ _", 0);
+	addPattern("acid (/tripwire|basalt|lava|_) $S _", 0);
+	addPattern("acid (/tripwire|basalt|lava|_) _ _", 0);
 	addPattern("acid _ $T $S 1 verb");
 
 	// fecundity gas
