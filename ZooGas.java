@@ -304,6 +304,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     // builder method for cell types
     private Particle newParticle (String name, Color color) {
+	patternSet.addParticlePattern (name, color);
 	Particle p = new Particle (name, color, this, patternSet);
 	particleVec.add (p);
 	return p;

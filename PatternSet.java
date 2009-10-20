@@ -16,6 +16,11 @@ public class PatternSet {
     private Vector rulePattern = new Vector();
     private Vector particlePattern = new Vector();
 
+    // method to lay down a template for a Particle
+    void addParticlePattern (String patternString, Color col) {
+	particlePattern.add (new ParticlePattern(patternString,col));
+    }
+
     // method to lay down a template for a rule
     void addRulePattern (String patternString) {
 	rulePattern.add (new RulePattern(patternString));
