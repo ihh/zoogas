@@ -1,7 +1,12 @@
-
+CLASSFILES = $(subst .java,.class,$(wildcard *.java))
 
 all zoogas: classfiles
 	java ZooGas
+
+classfiles class: $(CLASSFILES)
+
+clean:
+	rm $(CLASSFILES)
 
 ECOLOGY.txt: TestEcology.class
 	java TestEcology
@@ -12,9 +17,7 @@ testserver: classfiles
 testclient: classfiles
 	java ZooGas 4445 localhost 4444
 
-classfiles class: $(subst .java,.class,$(wildcard *.java))
-
 %.class: %.java
-	javac $<
+	javac -Xlint:unchecked $<
 
 .SECONDARY:
