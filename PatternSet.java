@@ -31,15 +31,9 @@ public class PatternSet {
 	// look for existing particle
 	Particle p = board.getParticleByName (particleName);
 	// if no such particle, look for a pattern that matches this particle
-	if (p == null) {
-	    for (int n = 0; n < particlePattern.size(); ++n) {
-		ParticlePattern pp = (ParticlePattern) particlePattern.get(n);
-		Matcher m = pp.namePattern.matcher(particleName);
-		if (m.matches()) {
-		    p = new Particle (particleName, pp.color, board, this);
-		    break;
-		}
-	    }
+	for (int n = 0; p == null && n < particlePattern.size(); ++n) {
+	    ParticlePattern pp = (ParticlePattern) particlePattern.get(n);
+	    p = pp.makeParticle(particleName,board,this);  // returns null if fails to match
 	}
 	return p;
     }
