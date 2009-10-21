@@ -20,6 +20,9 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     int wallDecayStates = 5;
     String patternSetFilename = "ECOLOGY.txt";
 
+    // board
+    Board board = null;
+
     // initial conditions
     String initImageFilename = "TheZoo.bmp";  // if non-null, initialization loads a seed image from this filename
     // String initImageFilename = null;
@@ -45,30 +48,13 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     int boardUpdateCount = 0;
     int[] timeFirstTrue = new int[100];   // indexed by row: tracks the first time when various conditions are true, so that the messages flash at first
 
-    // networking
-    BoardServer boardServer = null;  // board servers field UDP requests for cross-border interactions
-    ConnectionServer connectServer = null;   // connectionServer runs over TCP (otherwise requests to establish connections can get lost amongst the flood of UDP traffic)
-    int boardServerPort = 4444;
-    String localhost = null;
-
-    // cellular automata state dictionary
-    protected Map nameToParticle = new HashMap();  // updated by Particle constructor
+    // cellular automata state list
     private Vector particleVec = new Vector();  // internal to this class
-
-    // cellular automata rule/particle generator
-    PatternSet patternSet = new PatternSet();
 
     // constant helper vars
     Particle spaceParticle, cementParticle, acidParticle, fecundityParticle, mutatorParticle, lavaParticle, basaltParticle, tripwireParticle, guestParticle;
     Particle[] wallParticle, speciesParticle;
     int patternMatchesPerRefresh;
-
-    // main board data
-    Cell[][] cell;
-    HashMap remoteCell;  // map of connections from off-board Point's to RemoteCellCoord's
-
-    // random number generator
-    Random rnd;
 
     // Swing
     Insets insets;
@@ -118,51 +104,26 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     // networked constructor (client)
     public ZooGas (int port, InetSocketAddress remote) {
 	this(port);
-
-	connectBorder (new Point(0,0), new Point(-1,0), new Point(0,1), 128, new Point(-size,0), remote);  // west
-	connectBorder (new Point(127,0), new Point(128,0), new Point(0,1), 128, new Point(+size,0), remote);  // east
-	connectBorder (new Point(0,0), new Point(0,-1), new Point(1,0), 128, new Point(0,-size), remote);  // north
-	connectBorder (new Point(0,127), new Point(0,128), new Point(1,0), 128, new Point(0,+size), remote);  // south
+	board.initServer(remote);
     }
 
     // networked constructor (server)
     public ZooGas (int port) {
 	this();
-	this.boardServerPort = port;
-
-	try {
-	    boardServer = new BoardServer (this, boardServerPort);
-	    boardServer.start();
-
-	    connectServer = new ConnectionServer (this, boardServerPort);
-	    connectServer.start();
-
-	} catch (IOException e) {
-	    e.printStackTrace();
-	}
+	board.initClient(port);
     }
 
     // default constructor
     public ZooGas() {
 
 	// set helpers, etc.
-	rnd = new Random();
-	cell = new Cell[size][size];
-	for (int x = 0; x < size; ++x)
-	    for (int y = 0; y < size; ++y)
-		cell[x][y] = new Cell();
-	remoteCell = new HashMap();
+	board = new Board(size);
 	boardSize = size * pixelsPerCell;
 
 	patternMatchesPerRefresh = (int) (size * size);
 
 	// load patternSet
-	try {
-	    FileInputStream fis = new FileInputStream(patternSetFilename);
-	    patternSet = PatternSet.fromStream(fis);
-	} catch (Exception e) {
-	    e.printStackTrace();
-	}
+	board.loadPatternSetFromFile(patternSetFilename);
 
 	// init particles
 	// we should not really need to do this, since we have already read the particle defs from a rule file.
@@ -197,7 +158,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 	    try {
 		BufferedImage img = ImageIO.read(new File(initImageFilename));
-		initBoard (img);
+		board.initFromImage(img,this);
 		boardInitialized = true;
 
 	    } catch (IOException e) {
@@ -208,18 +169,15 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	if (!boardInitialized)  // fallback: randomize board
 	    for (int x = 0; x < size; ++x)
 		for (int y = 0; y < size; ++y)
-		    if (rnd.nextDouble() < initialDensity) {
-			int s = rnd.nextInt(trophicSymmetry) * (species/trophicSymmetry);
+		    if (board.rnd.nextDouble() < initialDensity) {
+			int s = board.rnd.nextInt(trophicSymmetry) * (species/trophicSymmetry);
 			Particle p = speciesParticle[s];
-			cell[x][y].particle = p;
+			board.cell[x][y].particle = p;
 		    } else
-			cell[x][y].particle = spaceParticle;
+			board.cell[x][y].particle = spaceParticle;
 
 	// init cell counts
-	for (int x = 0; x < size; ++x)
-	    for (int y = 0; y < size; ++y) {
-		++cell[x][y].particle.count;
-	    }
+	board.incCounts();
 
 	// init spray tools
 	initSprayTools();
@@ -259,67 +217,22 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
         addMouseListener(this);
         addKeyListener(this);
-
-	// net init
-	try {
-	    localhost = InetAddress.getLocalHost().getHostAddress();
-	} catch (Exception e) {
-	    e.printStackTrace();
-	}
-    }
-
-    private void initBoard (BufferedImage img) {
-	for (int x = 0; x < size; ++x)
-	    for (int y = 0; y < size; ++y) {
-		int c = img.getRGB(x,y);
-		int red = (c & 0x00ff0000) >> 16;
-		int green = (c & 0x0000ff00) >> 8;
-		int blue = c & 0x000000ff;
-
-		// find state with closest color
-		int dmin = 0;
-		Particle s = null;
-		for (int t = 0; t < particleTypes(); ++t) {
-		    Particle pt = getParticleByNumber(t);
-		    Color ct = pt.color;
-		    int rdist = red - ct.getRed(), gdist = green - ct.getGreen(), bdist = blue - ct.getBlue();
-		    int dist = rdist*rdist + gdist*gdist + bdist*bdist;
-		    if (s == null || dist < dmin) {
-			s = pt;
-			dmin = dist;
-			if (dist == 0)
-			    break;
-		    }
-		}
-		cell[x][y].particle = s;
-	    }
     }
 
     // builder method for cell types
     private Particle newParticle (String name, Color color) {
-	Particle p = new Particle (name, color, this, patternSet);
+	Particle p = new Particle (name, color, board, board.patternSet);
 	particleVec.add (p);
 	return p;
     }
 
-    protected void registerParticle (String name, Particle p) {
-	nameToParticle.put (name, p);
-    }
-
-    public Particle getParticleByName (String name) {
-	return (Particle) nameToParticle.get (name);
-    }
-
-    private Particle getParticleByNumber (int n) {
+    // TODO: eliminate deprecated methods getParticleByNumber and particleTypes
+    protected Particle getParticleByNumber (int n) {
 	return (Particle) particleVec.get (n);
     }
 
-    private int particleTypes() {
+    protected int particleTypes() {
 	return particleVec.size();
-    }
-
-    protected Particle getOrCreateParticle (String name) {
-	return patternSet.getOrCreateParticle (name, this);
     }
 
 
@@ -342,142 +255,18 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     // main evolution loop
     private void evolveStuff() {
-	Point p = new Point(), n = new Point();
-	for (int u = 0; u < patternMatchesPerRefresh; ++u)
-	    {
-		getRandomPoint(p);
-		int dir = getRandomNeighbor(p,n);
-		evolvePair(p,n,dir);
-	    }
+	board.update(patternMatchesPerRefresh,bfGraphics,pixelsPerCell);
 	++boardUpdateCount;
     }
-
-    private boolean onBoard (Point p) { return p.x >= 0 && p.x < size && p.y >= 0 && p.y < size; }
-
-    // evolvePair(sourceCoords,targetCoords,dir) : delegate to appropriate evolve* method.
-    // in what follows, one cell is designated the "source", and its neighbor is the "target".
-    // "dir" is the direction from source to target.
-    private void evolvePair (Point sourceCoords, Point targetCoords, int dir)
-    {
-	if (onBoard (targetCoords)) {
-	    evolveLocalSourceAndLocalTarget (sourceCoords, targetCoords, dir);
-	} else {
-	    // request remote evolveLocalTargetForRemoteSource
-	    RemoteCellCoord remoteCoords = (RemoteCellCoord) remoteCell.get (targetCoords);
-	    if (remoteCoords != null)
-		evolveLocalSourceAndRemoteTarget (sourceCoords, remoteCoords, dir);
-	}
-    }
-
-    // evolveLocalSourceAndRemoteTarget: send an EVOLVE datagram to the network address of a remote cell.
-    protected void evolveLocalSourceAndRemoteTarget (Point sourceCoords, RemoteCellCoord remoteCoords, int dir) {
-	Particle oldSourceState = readCell(sourceCoords);
-	if (oldSourceState.isActive(dir))
-	    BoardServer.sendEvolveDatagram (remoteCoords.addr, remoteCoords.port, remoteCoords.p, oldSourceState, sourceCoords, dir, localhost, boardServerPort, getCellWriteCount(sourceCoords));
-    }
-
-    // SYNCHRONIZED : this is one of two synchronized methods in this class
-    // evolveLocalSourceAndLocalTarget : handle entirely local updates. Strictly in the family, folks
-    synchronized void evolveLocalSourceAndLocalTarget (Point sourceCoords, Point targetCoords, int dir)
-    {
-	writeCell (sourceCoords, evolveTargetForSource (targetCoords, readCell(sourceCoords), dir));
-    }
-
-    // SYNCHRONIZED : this is one of two synchronized methods in this class
-    // evolveLocalSourceAndLocalTarget : handle a remote request for update.
-    // Return the new source state (the caller of this method will send this returned state back over the network as a RETURN datagram).
-    synchronized Particle evolveLocalTargetForRemoteSource (Point targetCoords, Particle oldSourceState, int dir)
-    {
-	return evolveTargetForSource (targetCoords, oldSourceState, dir);
-    }
-
-    // evolveTargetForSource : given a source state, and the co-ords of a target cell,
-    // sample the new (source,target) state configuration, write the new target,
-    // and return the new source state.
-    Particle evolveTargetForSource (Point targetCoords, Particle oldSourceState, int dir)
-    {
-	// get old state-pair
-	Particle oldTargetState = readCell (targetCoords);
-
-	// sample new state-pair
-	Particle newSourceState = oldSourceState;
-	ParticlePair newCellPair = oldSourceState.samplePair (dir, oldTargetState, rnd, this);
-	if (newCellPair != null) {
-	    newSourceState = newCellPair.source;
-	    Particle newTargetState = newCellPair.target;
-	    // test for null
-	    if (newSourceState == null || newTargetState == null) {
-		throw new RuntimeException ("Null outcome of rule: " + oldSourceState.name + " " + oldTargetState.name + " -> " + (newSourceState == null ? "[null]" : newSourceState.name) + " " + (newTargetState == null ? "[null]" : newTargetState.name));
-	    } else
-		writeCell (targetCoords, newTargetState);  // write
-	}
-
-	// return
-	return newSourceState;
-    }
-
-    // method to send requests to establish two-way network connections between cells
-    // (called in the client during initialization)
-    private void connectBorder (Point sourceStart, Point targetStart, Point lineVector, int lineLength, Point remoteOrigin, InetSocketAddress remoteBoard) {
-	String[] connectRequests = new String [lineLength];
-	Point source = new Point (sourceStart);
-	Point target = new Point (targetStart);
-	for (int i = 0; i < lineLength; ++i) {
-	    Point remoteSource = new Point (source.x - remoteOrigin.x, source.y - remoteOrigin.y);
-	    Point remoteTarget = new Point (target.x - remoteOrigin.x, target.y - remoteOrigin.y);
-
-	    addRemoteCellCoord (target, remoteBoard, remoteTarget);
-	    connectRequests[i] = BoardServer.connectString (remoteSource, source, localhost, boardServerPort);
-
-	    source.x += lineVector.x;
-	    source.y += lineVector.y;
-
-	    target.x += lineVector.x;
-	    target.y += lineVector.y;
-	}
-
-	BoardServer.sendTCPPacket (remoteBoard.getAddress(), remoteBoard.getPort(), connectRequests);
-    }
-
-    protected void addRemoteCellCoord (Point p, InetSocketAddress remoteBoard, Point pRemote) {
-	System.err.println("Connecting (" + p.x + "," + p.y + ") to (" + pRemote.x + "," + pRemote.y + ") on " + remoteBoard);
-	remoteCell.put (new Point(p), new RemoteCellCoord (remoteBoard, pRemote));
-    }
-
-    // method to sample a random cell
-    private void getRandomPoint (Point p) {
-	p.x = rnd.nextInt(size);
-	p.y = rnd.nextInt(size);
-    }
-
-    // method to sample a random neighbor of a given cell, returning the directional index
-    private int getRandomNeighbor (Point p, Point n) {
-	int ni = rnd.nextInt(4);
-	n.x = p.x;
-	n.y = p.y;
-	int delta = (ni & 2) == 0 ? -1 : +1;
-	if ((ni & 1) == 0) { n.y += delta; } else { n.x += delta; }
-	return ni;
-    }
-
-    // number of neighbors of any cell (some may be off-board and therefore inaccessible)
-    protected int neighborhoodSize() { return 4; }
-
-    // string representations of cardinal directions
-    private String[] dirStr = { "n", "w", "s", "e" };
-    protected String dirString(int dir) { return dirStr[dir]; }
 
     // log2
     private static double log2(double x) { return Math.log(x) / Math.log(2); }
 
-    // read/write methods for cells
-    protected int getCellWriteCount (Point p) {
-	return cell[p.x][p.y].writeCount;
-    }
-
+    // Board.readCell wrapper
+    // randomizes board to simulate a mean-field model if mixPressed==true
     private Particle readCell (Point p) {
 	if (mixPressed) {
-	    int x = rnd.nextInt (size * size);
+	    int x = board.rnd.nextInt (size * size);
 	    int rv = 0;
 	    while (rv < particleTypes() - 1) {
 		x -= getParticleByNumber(rv).count;
@@ -493,23 +282,13 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    }
 	    return getParticleByNumber(rv);
 	}
-	return cell[p.x][p.y].particle;
+	return board.readCell(p);
     }
 
-    protected void writeCell (Point p, Particle pc) {
-	writeCell (p, pc, readCell(p));
-    }
-
-    private void writeCell (Point p, Particle pc, Particle old_pc) {
-	if (old_pc != pc) {
-	    if (!mixPressed) {
-		cell[p.x][p.y].particle = pc;
-		++cell[p.x][p.y].writeCount;
-		drawCell(p);
-	    }
-	    --old_pc.count;
-	    ++pc.count;
-	}
+    // Board.writeCell wrapper
+    public void writeCell (Point p, Particle pc) {
+	board.writeCell (p, pc);
+	board.drawCell (p,bfGraphics,pixelsPerCell);
     }
 
     // method to shuffle the board
@@ -520,22 +299,22 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	Point p = new Point();
 	for (p.x = 0; p.x < size; ++p.x)
 	    for (p.y = 0; p.y < size; ++p.y)
-		cell[p.x][p.y].particle = spaceParticle;
+		board.cell[p.x][p.y].particle = spaceParticle;
 
 	int i = 0;
 	for (int c = 1; c < particleTypes(); ++c)
 	    for (int k = 0; k < getParticleByNumber(c).count; ++k)
 		{
-		    cell[i % size][i / size].particle = getParticleByNumber(c);
+		    board.cell[i % size][i / size].particle = getParticleByNumber(c);
 		    ++i;
 		}
 
 	for (int k = 0; k < i; ++k)
 	    {
-		int kSwap = k + rnd.nextInt (size*size - k);
-		Particle tmp = cell[kSwap % size][kSwap / size].particle;
-		cell[kSwap % size][kSwap / size].particle = cell[k % size][k / size].particle;
-		cell[k % size][k / size].particle = tmp;
+		int kSwap = k + board.rnd.nextInt (size*size - k);
+		Particle tmp = board.cell[kSwap % size][kSwap / size].particle;
+		board.cell[kSwap % size][kSwap / size].particle = board.cell[k % size][k / size].particle;
+		board.cell[k % size][k / size].particle = tmp;
 	    }
     }
 
@@ -583,7 +362,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    cursorPos.x = (int) ((mousePos.x - insets.left) / pixelsPerCell);
 	    cursorPos.y = (int) ((mousePos.y - insets.top) / pixelsPerCell);
 
-	    return onBoard(cursorPos);
+	    return board.onBoard(cursorPos);
 	}
 	return false;
     }
@@ -608,13 +387,13 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 			Point sprayCell = new Point();
 
-			sprayCell.x = cursorPos.x + rnd.nextInt(sprayDiameter) - sprayDiameter / 2;
-			sprayCell.y = cursorPos.y + rnd.nextInt(sprayDiameter) - sprayDiameter / 2;
+			sprayCell.x = cursorPos.x + board.rnd.nextInt(sprayDiameter) - sprayDiameter / 2;
+			sprayCell.y = cursorPos.y + board.rnd.nextInt(sprayDiameter) - sprayDiameter / 2;
 
-			if (onBoard(sprayCell)) {
+			if (board.onBoard(sprayCell)) {
 			    Particle oldCell = readCell (sprayCell);
 			    if (oldCell == spaceParticle) {
-				writeCell (sprayCell, sprayParticle, oldCell);
+				writeCell (sprayCell, sprayParticle);
 				sprayReserve.put (sprayParticle, ((Double) sprayReserve.get(sprayParticle)).doubleValue() - 1);
 			    }
 			}
@@ -637,18 +416,14 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     // rendering methods
     private void drawCell (Point p) {
-	bfGraphics.setColor(cell[p.x][p.y].particle.color);
-	bfGraphics.fillRect(p.x*pixelsPerCell,p.y*pixelsPerCell,pixelsPerCell,pixelsPerCell);
+	board.drawCell(p,bfGraphics,pixelsPerCell);
     }
 
     private void drawEverything() {
 	bfGraphics.setColor(Color.black);
 	bfGraphics.fillRect(0,0,boardSize+toolBarWidth,boardSize+statusBarHeight);
 
-	Point p = new Point();
-	for (p.x = 0; p.x < size; ++p.x)
-	    for (p.y = 0; p.y < size; ++p.y)
-		drawCell (p);
+	board.drawEverything(bfGraphics,pixelsPerCell);
 
 	refreshBuffer();
     }
@@ -657,10 +432,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	bfGraphics.setColor(Color.black);
 	bfGraphics.fillRect(0,0,boardSize,boardSize);
 
-	Point p = new Point();
-	for (p.x = 0; p.x < size; ++p.x)
-	    for (p.y = 0; p.y < size; ++p.y)
-		drawCell (p);
+	board.drawEverything(bfGraphics,pixelsPerCell);
     }
 
     protected void refreshBuffer() {
@@ -800,7 +572,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	flashOrHide ("Z00 GAS", 5, true, 0, 400, true, Color.white);
 
 	// cheat mode
-	printOrHide (cheatString, 6, cheating(), Color.getHSBColor ((float) rnd.nextDouble(), 1, 1));
+	printOrHide (cheatString, 6, cheating(), Color.getHSBColor ((float) board.rnd.nextDouble(), 1, 1));
 
 	// entropy: positive feedback
 	double dScore = Math.pow(2,entropy);
@@ -831,12 +603,12 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 
 	// networking
-	flashOrHide ("Online", 18, boardServer != null, 0, -1, false, Color.blue);
-	flashOrHide ("Connected", 19, remoteCell.size() > 0, 0, -1, false, Color.cyan);
+	flashOrHide ("Online", 18, board.boardServer != null, 0, -1, false, Color.blue);
+	flashOrHide ("Connected", 19, board.remoteCell.size() > 0, 0, -1, false, Color.cyan);
 
 	// identify particle that cursor is currently over
 	boolean cursorOnBoard = getCursorPos();
-	Particle cursorParticle = cursorOnBoard ? cell[cursorPos.x][cursorPos.y].particle : null;
+	Particle cursorParticle = cursorOnBoard ? board.readCell(cursorPos) : null;
 	printOrHide (cursorOnBoard ? cursorParticle.visibleName() : "", 20, cursorOnBoard, cursorOnBoard ? cursorParticle.color : Color.white);
 
     }
@@ -980,7 +752,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 		    initSprayTools();
 		} else if (c == '9') {
 		    mouseDown = true;
-		    sprayParticle = speciesParticle[rnd.nextInt(species)];
+		    sprayParticle = speciesParticle[board.rnd.nextInt(species)];
 		    sprayReserve.put (sprayParticle, new Double (123456789));
 		} else if (c == '8') {
 		    sprayReserve.put (sprayParticle, new Double (123456789));

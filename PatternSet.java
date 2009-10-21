@@ -26,17 +26,17 @@ public class PatternSet {
 	rulePattern.add (new RulePattern(patternString));
     }
 
-    // method to get a Particle from the ZooGas object or create and add one
-    Particle getOrCreateParticle (String particleName, ZooGas gas) {
+    // method to get a Particle from the Board object or create and add one
+    Particle getOrCreateParticle (String particleName, Board board) {
 	// look for existing particle
-	Particle p = gas.getParticleByName (particleName);
+	Particle p = board.getParticleByName (particleName);
 	// if no such particle, look for a pattern that matches this particle
 	if (p == null) {
 	    for (int n = 0; n < particlePattern.size(); ++n) {
 		ParticlePattern pp = (ParticlePattern) particlePattern.get(n);
 		Matcher m = pp.namePattern.matcher(particleName);
 		if (m.matches()) {
-		    p = new Particle (particleName, pp.color, gas, this);
+		    p = new Particle (particleName, pp.color, board, this);
 		    break;
 		}
 	    }
@@ -45,17 +45,17 @@ public class PatternSet {
     }
 
     // method to compile new target rules for a Particle
-    RandomVariable compileTargetRules (int dir, Particle source, Particle target, ZooGas gas) {
+    RandomVariable compileTargetRules (int dir, Particle source, Particle target, Board board) {
 	RandomVariable rv = new RandomVariable();
 	if (source.patternTemplate[dir] == null)
-	    source.patternTemplate[dir] = getSourceRules (source.name, gas, dir);
+	    source.patternTemplate[dir] = getSourceRules (source.name, board, dir);
 	for (int n = 0; n < source.patternTemplate[dir].length; ++n) {
 	    RuleMatch rm = source.patternTemplate[dir][n];
 	    //		    System.err.println ("Particle " + source.name + ": trying to match " + source.patternTemplate[dir][n]);
 	    if (rm.bindTarget(target.name)) {
 		Particle
-		    newSource = gas.getOrCreateParticle (rm.C()),
-		    newTarget = gas.getOrCreateParticle (rm.D());
+		    newSource = board.getOrCreateParticle (rm.C()),
+		    newTarget = board.getOrCreateParticle (rm.D());
 		if (newSource == null || newTarget == null) {
 		    System.err.println ("Null outcome of rule '" + rm.pattern + "': "
 					+ source.name + " " + target.name + " -> "
@@ -74,12 +74,12 @@ public class PatternSet {
     }
 
     // helper to get a set of rules
-    protected RuleMatch[] getSourceRules (String particleName, ZooGas gas, int dir) {
+    protected RuleMatch[] getSourceRules (String particleName, Board board, int dir) {
 	//	System.err.println ("Trying to match particle " + particleName + " to rule generators");
 	Vector v = new Vector();
 	for (int n = 0; n < rulePattern.size(); ++n) {
 	    //	    System.err.println ("Trying to match particle " + particleName + " to rule " + (RulePattern) rulePattern.get(n));
-	    RuleMatch rm = new RuleMatch ((RulePattern) rulePattern.get(n), gas, dir, particleName);
+	    RuleMatch rm = new RuleMatch ((RulePattern) rulePattern.get(n), board, dir, particleName);
 	    if (rm.matches())
 		v.add (rm);
 	}
@@ -100,6 +100,17 @@ public class PatternSet {
 	for (Enumeration e = rulePattern.elements(); e.hasMoreElements() ;)
 	    print.println (((RulePattern) e.nextElement()).toString());
 	print.println ("END");
+    }
+
+
+    void toFile(String filename) {
+	try {
+	    FileOutputStream fos = new FileOutputStream(filename);
+	    toStream (fos);
+	    fos.close();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	}
     }
 
     private enum State { unknown, inParticles, inRules, end }
@@ -129,5 +140,15 @@ public class PatternSet {
 	    e.printStackTrace();
 	}
 	return ps;
+    }
+
+    static PatternSet fromFile (String filename) {
+	try {
+	    FileInputStream fis = new FileInputStream(filename);
+	    return fromStream(fis);
+	} catch (Exception e) {
+	    e.printStackTrace();
+	}
+	return null;
     }
 }

@@ -25,17 +25,17 @@ public class Particle {
 	visibleSpaceChar = "_";
 
     // constructors
-    public Particle (String name, Color color, ZooGas gas, PatternSet ps) {
-	this(name,color,gas);
+    public Particle (String name, Color color, Board board, PatternSet ps) {
+	this(name,color,board);
 	patternSet = ps;
     }
 
-    public Particle (String name, Color color, ZooGas gas) {
+    public Particle (String name, Color color, Board board) {
 	this.name = name;
 	this.color = color;
-	gas.registerParticle (name, this);
-	pattern = new IdentityHashMap[gas.neighborhoodSize()];
-	patternTemplate = new RuleMatch[gas.neighborhoodSize()][];
+	board.registerParticle (name, this);
+	pattern = new IdentityHashMap[board.neighborhoodSize()];
+	patternTemplate = new RuleMatch[board.neighborhoodSize()][];
 	for (int n = 0; n < pattern.length; ++n)
 	    pattern[n] = new IdentityHashMap();
     }
@@ -71,11 +71,11 @@ public class Particle {
 
     // helper to sample a new (source,target) pair
     // returns null if no rule found
-    ParticlePair samplePair (int dir, Particle oldTarget, Random rnd, ZooGas gas) {
+    ParticlePair samplePair (int dir, Particle oldTarget, Random rnd, Board board) {
 	RandomVariable rv = (RandomVariable) pattern[dir].get (oldTarget);
 	// if no RV, look for rule generator(s) that match this neighbor, and use them to create a set of rules
 	if (rv == null && patternSet != null)
-	    rv = patternSet.compileTargetRules(dir,this,oldTarget,gas);
+	    rv = patternSet.compileTargetRules(dir,this,oldTarget,board);
 	// have we got an RV?
 	if (rv != null)
 	    return (ParticlePair) rv.sample(rnd);

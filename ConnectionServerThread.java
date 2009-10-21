@@ -2,12 +2,12 @@ import java.net.*;
 import java.io.*;
 
 public class ConnectionServerThread extends Thread {
-    private ZooGas gas = null;
+    private Board board = null;
     private Socket socket = null;
 
-    public ConnectionServerThread(ZooGas gas, Socket socket) {
+    public ConnectionServerThread(Board board, Socket socket) {
 	super("ConnectionServerThread");
-	this.gas = gas;
+	this.board = board;
 	this.socket = socket;
     }
 
@@ -21,7 +21,7 @@ public class ConnectionServerThread extends Thread {
 	    String inputLine;
 	    Boolean listening = true;
 	    while (listening && (inputLine = in.readLine()) != null) {
-		BoardServer.process (gas, inputLine, listening);
+		BoardServer.process (board, inputLine, listening);
 	    }
 	    in.close();
 	    socket.close();

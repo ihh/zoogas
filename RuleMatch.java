@@ -51,19 +51,19 @@ public class RuleMatch {
     private String A = null, B = null;
     private Matcher am = null, bm = null;
     private boolean aMatched = false, bMatched = false;
-    ZooGas gas = null;
+    Board board = null;
 
     // constructors
     public RuleMatch(RulePattern p) { pattern = p; }
-    public RuleMatch(RulePattern p,ZooGas gas,int dir) { this(p); bindDir(gas,dir); }
-    public RuleMatch(RulePattern p,ZooGas gas,int dir,String a) { this(p,gas,dir); bindSource(a); }
-    public RuleMatch(RulePattern p,ZooGas gas,int dir,String a,String b) { this(p,gas,dir,a); bindTarget(b); }
+    public RuleMatch(RulePattern p,Board board,int dir) { this(p); bindDir(board,dir); }
+    public RuleMatch(RulePattern p,Board board,int dir,String a) { this(p,board,dir); bindSource(a); }
+    public RuleMatch(RulePattern p,Board board,int dir,String a,String b) { this(p,board,dir,a); bindTarget(b); }
 
     // lhs methods
     // binding methods return true for match, false for mismatch or failed binding
-    boolean bindDir(ZooGas g,int d) {
+    boolean bindDir(Board g,int d) {
 	if (!dirBound()) {
-	    gas = g;
+	    board = g;
 	    dir = d;
 	    aPattern = Pattern.compile(regexA());
 	    return true;
@@ -161,13 +161,13 @@ public class RuleMatch {
 	while (m.find()) {
 	    String var = m.group(1);
 	    if (var.equals("F"))
-		m.appendReplacement(sb,gas.dirString(dir));
+		m.appendReplacement(sb,board.dirString(dir));
 	    else if (var.equals("B"))
-		m.appendReplacement(sb,gas.dirString((dir + 2) % 4));
+		m.appendReplacement(sb,board.dirString((dir + 2) % 4));
 	    else if (var.equals("L"))
-		m.appendReplacement(sb,gas.dirString((dir + 1) % 4));
+		m.appendReplacement(sb,board.dirString((dir + 1) % 4));
 	    else if (var.equals("R"))
-		m.appendReplacement(sb,gas.dirString((dir + 3) % 4));
+		m.appendReplacement(sb,board.dirString((dir + 3) % 4));
 	}
 	m.appendTail(sb);
 	return sb.toString();

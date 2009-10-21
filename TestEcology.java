@@ -38,13 +38,7 @@ public class TestEcology {
 	eco.addPatterns();
 
 	// save pattern set
-	try {
-	    FileOutputStream fos = new FileOutputStream(eco.patternSetFilename);
-	    eco.patternSet.toStream (fos);
-	    fos.close();
-	} catch (Exception e) {
-	    e.printStackTrace();
-	}
+	eco.patternSet.toFile(eco.patternSetFilename);
     }
 
     // builder method for particles

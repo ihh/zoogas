@@ -3,13 +3,13 @@ import java.io.*;
 import java.awt.*;
 
 public class BoardServer extends Thread {
-    private ZooGas gas = null;
+    private Board board = null;
     private int port = -1;
     private DatagramSocket socket = null;
 
-    BoardServer (ZooGas gas, int port) throws IOException {
+    BoardServer (Board board, int port) throws IOException {
 	super("BoardServer");
-	this.gas = gas;
+	this.board = board;
 	this.port = port;
 	socket = new DatagramSocket(port);
     }
@@ -23,7 +23,7 @@ public class BoardServer extends Thread {
 		socket.receive(packet);
 
 		String packetString = new String (packet.getData());
-		process (gas, packetString, listening);
+		process (board, packetString, listening);
 	    } catch (IOException e) {
 		e.printStackTrace();
 	    }
@@ -32,7 +32,7 @@ public class BoardServer extends Thread {
 	socket.close();
     }
 
-    static void process (ZooGas gas, String data, Boolean listening) {
+    static void process (Board board, String data, Boolean listening) {
 	try {
 	    String[] args = data.split (" ");
 
@@ -55,7 +55,7 @@ public class BoardServer extends Thread {
 		else if (command.equalsIgnoreCase ("EVOLVE")) {
 
 		    Point localTarget = new Point(intArgs[1], intArgs[2]);
-		    Particle oldSourceState = gas.getParticleByName (args[3]);
+		    Particle oldSourceState = board.getParticleByName (args[3]);
 		    int dir = intArgs[4];
 		    if (oldSourceState == null) {
 			// TODO: request information about oldSourceState from connecting board
@@ -65,7 +65,7 @@ public class BoardServer extends Thread {
 			int returnPort = intArgs[8];
 			int remoteSourceWriteCount = intArgs[9];
 
-			Particle newSourceState = gas.evolveLocalTargetForRemoteSource (localTarget, oldSourceState, dir);
+			Particle newSourceState = board.evolveLocalTargetForRemoteSource (localTarget, oldSourceState, dir);
 
 			sendReturnDatagram (returnAddr, returnPort, remoteSource, newSourceState, remoteSourceWriteCount);
 		    }
@@ -73,15 +73,15 @@ public class BoardServer extends Thread {
 		} else if (command.equalsIgnoreCase ("RETURN")) {
 
 		    Point localSource = new Point(intArgs[1], intArgs[2]);
-		    Particle newSourceState = gas.getParticleByName (args[3]);
+		    Particle newSourceState = board.getParticleByName (args[3]);
 		    if (newSourceState == null) {
 			// TODO: create newSourceState as an inert "guest" particle and write it
 			// TODO: request information about newSourceState from connecting board
 		    } else {
 			int oldWriteCount = intArgs[4];
 
-			if (oldWriteCount == gas.getCellWriteCount(localSource))
-			    gas.writeCell (localSource, newSourceState);
+			if (oldWriteCount == board.getCellWriteCount(localSource))
+			    board.writeCell (localSource, newSourceState);
 		    }
 
 		} else if (command.equalsIgnoreCase ("CONNECT")) {
@@ -91,7 +91,7 @@ public class BoardServer extends Thread {
 		    Point remoteCell = new Point(intArgs[3], intArgs[4]);
 		    InetSocketAddress sockAddr = new InetSocketAddress (args[5], intArgs[6]);
 
-		    gas.addRemoteCellCoord (localCell, sockAddr, remoteCell);
+		    board.addRemoteCellCoord (localCell, sockAddr, remoteCell);
 
 		    // debug
 		    // System.err.println (command + " " + localCell + " " + remoteCell + " " + sockAddr);

@@ -2,12 +2,12 @@ import java.net.*;
 import java.io.*;
 
 public class ConnectionServer extends Thread {
-    private ZooGas gas = null;
+    private Board board = null;
     private int port = -1;
 
-    public ConnectionServer (ZooGas gas, int port) {
+    public ConnectionServer (Board board, int port) {
 	super("ConnectionServer");
-	this.gas = gas;
+	this.board = board;
 	this.port = port;
     }
 
@@ -19,7 +19,7 @@ public class ConnectionServer extends Thread {
             serverSocket = new ServerSocket(port);
 
 	    while (listening)
-		new ConnectionServerThread(gas,serverSocket.accept()).start();
+		new ConnectionServerThread(board,serverSocket.accept()).start();
 
 	    serverSocket.close();
 
