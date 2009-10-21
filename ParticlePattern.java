@@ -33,4 +33,9 @@ public class ParticlePattern {
 	    p = new Particle (name, color, gas);
 	return p;
     }
+
+    // toString method
+    public String toString() {
+	return namePattern + " " + color.getRed() + " " + color.getGreen() + " " + color.getBlue();
+    }
 }

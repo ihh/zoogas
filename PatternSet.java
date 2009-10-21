@@ -73,7 +73,6 @@ public class PatternSet {
 	return rv;
     }
 
-
     // helper to get a set of rules
     protected RuleMatch[] getSourceRules (String particleName, ZooGas gas, int dir) {
 	//	System.err.println ("Trying to match particle " + particleName + " to rule generators");
@@ -89,5 +88,46 @@ public class PatternSet {
 	for (int n = 0; n < a.length; ++n)
 	    rm[n] = (RuleMatch) a[n];
 	return rm;
+    }
+
+    // i/o
+    void toStream (OutputStream out) {
+	PrintStream print = new PrintStream(out);
+	print.println ("PARTICLES");
+	for (Enumeration e = particlePattern.elements(); e.hasMoreElements() ;)
+	    print.println (((ParticlePattern) e.nextElement()).toString());
+	print.println ("RULES");
+	for (Enumeration e = rulePattern.elements(); e.hasMoreElements() ;)
+	    print.println (((RulePattern) e.nextElement()).toString());
+	print.println ("END");
+    }
+
+    private enum State { unknown, inParticles, inRules, end }
+    static PatternSet fromStream (InputStream in) {
+	PatternSet ps = new PatternSet();
+	InputStreamReader read = new InputStreamReader(in);
+	BufferedReader buff = new BufferedReader(read);
+	State state = State.unknown;
+	try {
+	    while (buff.ready()) {
+		String s = buff.readLine();
+		if (s.equals("PARTICLES")) {
+		    state = State.inParticles;
+		} else if (s.equals("RULES")) {
+		    state = State.inRules;
+		} else if (s.equals("END")) {
+		    state = State.end;
+		    break;
+		} else if (state == State.inParticles) {
+		    ps.particlePattern.add (new ParticlePattern(s));
+		} else if (state == State.inRules) {
+		    ps.rulePattern.add (new RulePattern(s));
+		} else
+		    System.err.println("Ignoring line: " + s);
+	    }
+	} catch (IOException e) {
+	    e.printStackTrace();
+	}
+	return ps;
     }
 }
