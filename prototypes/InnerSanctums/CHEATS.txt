@@ -1,0 +1,11 @@
+Type the word 'boosh' (five keypresses, all lower-case) to turn on cheat mode.
+
+CHEATS (gameplay-disrupting tools for tinkering and experimentation):
+K - press to shuffle the entire board, randomizing the locations of all the cells.
+L - hold down to shuffle locations at every update step. (This corresponds to the "classic" competitive Lotka-Volterra equations, a mean-field version of the full cellular automaton. Note that it is considerably less stable, implying that mean-field is inappropriate for coarse-grained approximation; pair approximations (c.f. Sato/Matsuda/Sasaki, Ellner, etc.) may work better)
+9 - seed species directly (loops through available species)
+8 - grant infinite spray reserve for current tool
+7 - enlarge spray area
+6 - boost spray power
+0 - turn off cheat mode and reset tools
+
