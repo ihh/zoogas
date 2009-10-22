@@ -36,7 +36,10 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     // tools
     int sprayDiameter, sprayPower;  // diameter & power of spraypaint tool
-    Map sprayRefillRate = new IdentityHashMap(), sprayReserve = new IdentityHashMap(), sprayMax = new IdentityHashMap();
+    Map<Particle,Double>
+	sprayRefillRate = new IdentityHashMap<Particle,Double>(),
+	sprayReserve = new IdentityHashMap<Particle,Double>(),
+	sprayMax = new IdentityHashMap<Particle,Double>();
     Particle[] sprayByRow = null;
 
     // cheat c0d3z
@@ -49,7 +52,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     int[] timeFirstTrue = new int[100];   // indexed by row: tracks the first time when various conditions are true, so that the messages flash at first
 
     // cellular automata state list
-    private Vector particleVec = new Vector();  // internal to this class
+    private Vector<Particle> particleVec = new Vector<Particle>();  // internal to this class
 
     // constant helper vars
     Particle spaceParticle, cementParticle, acidParticle, fecundityParticle, mutatorParticle, lavaParticle, basaltParticle, tripwireParticle, guestParticle;

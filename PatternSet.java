@@ -13,8 +13,8 @@ import java.io.*;
 
 public class PatternSet {
     // data
-    private Vector rulePattern = new Vector();
-    private Vector particlePattern = new Vector();
+    private Vector<RulePattern> rulePattern = new Vector<RulePattern>();
+    private Vector<ParticlePattern> particlePattern = new Vector<ParticlePattern>();
 
     // method to lay down a template for a Particle
     void addParticlePattern (String patternString, Color col) {
@@ -39,8 +39,8 @@ public class PatternSet {
     }
 
     // method to compile new target rules for a Particle
-    RandomVariable compileTargetRules (int dir, Particle source, Particle target, Board board) {
-	RandomVariable rv = new RandomVariable();
+    RandomVariable<ParticlePair> compileTargetRules (int dir, Particle source, Particle target, Board board) {
+	RandomVariable<ParticlePair> rv = new RandomVariable<ParticlePair>();
 	if (source.patternTemplate[dir] == null)
 	    source.patternTemplate[dir] = getSourceRules (source.name, board, dir);
 	for (int n = 0; n < source.patternTemplate[dir].length; ++n) {
@@ -70,7 +70,7 @@ public class PatternSet {
     // helper to get a set of rules
     protected RuleMatch[] getSourceRules (String particleName, Board board, int dir) {
 	//	System.err.println ("Trying to match particle " + particleName + " to rule generators");
-	Vector v = new Vector();
+	Vector<RuleMatch> v = new Vector<RuleMatch>();
 	for (int n = 0; n < rulePattern.size(); ++n) {
 	    //	    System.err.println ("Trying to match particle " + particleName + " to rule " + (RulePattern) rulePattern.get(n));
 	    RuleMatch rm = new RuleMatch ((RulePattern) rulePattern.get(n), board, dir, particleName);

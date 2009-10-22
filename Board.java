@@ -11,7 +11,7 @@ public class Board {
 
     // main board data
     Cell[][] cell = null;
-    HashMap remoteCell = null;  // map of connections from off-board Point's to RemoteCellCoord's
+    HashMap<Point,RemoteCellCoord> remoteCell = null;  // map of connections from off-board Point's to RemoteCellCoord's
 
     // cellular automata rule/particle generator
     PatternSet patternSet = new PatternSet();
@@ -20,7 +20,7 @@ public class Board {
     Random rnd = null;
 
     // name lookups
-    protected Map nameToParticle = new HashMap();  // updated by Particle constructor
+    protected Map<String,Particle> nameToParticle = new HashMap<String,Particle>();  // updated by Particle constructor
 
     // networking
     BoardServer boardServer = null;  // board servers field UDP requests for cross-border interactions
@@ -38,7 +38,7 @@ public class Board {
 		cell[x][y] = new Cell();
 
 	// net init
-	remoteCell = new HashMap();
+	remoteCell = new HashMap<Point,RemoteCellCoord>();
 	try {
 	    localhost = InetAddress.getLocalHost().getHostAddress();
 	} catch (Exception e) {
