@@ -1,3 +1,6 @@
+Z00 G45
+=== ===
+
 Zoo Gas is an educational game that attempts to pose a familiar question in computational ecology -- how are complex food webs stabilized? -- as a real-time game mechanic.
 
 Formally, it is an experimental entropy-maximizing, population-balancing and breeding game set on a cellular automaton model of the Lotka-Volterra equation.
