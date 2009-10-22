@@ -60,6 +60,10 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     BufferStrategy bufferStrategy;
     Graphics bfGraphics;
     Cursor boardCursor, normalCursor;
+    // Uncomment to use "helicopter.png" as a mouse cursor over the board:
+    //    String boardCursorFilename = "helicopter.png";
+    String boardCursorFilename = null;
+    Point boardCursorHotSpot = new Point(50,50);  // ignored unless boardCursorFilename != null
 
     // helper objects
     Point cursorPos;  // co-ordinates of cell beneath current mouse position
@@ -206,6 +210,15 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	// create cursors
 	boardCursor = new Cursor(Cursor.HAND_CURSOR);
 	normalCursor = new Cursor(Cursor.DEFAULT_CURSOR);
+
+	if (boardCursorFilename != null) {
+	    //Get the default toolkit  
+	    Toolkit toolkit = Toolkit.getDefaultToolkit();  
+  
+	    //Load an image for the cursor  
+	    Image image = toolkit.getImage(boardCursorFilename);
+	    boardCursor = toolkit.createCustomCursor(image, boardCursorHotSpot, "ZooGasHelicopter");  
+	}
 
 	// register for mouse & keyboard events
 	cursorPos = new Point();
