@@ -224,7 +224,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	return p;
     }
 
-    // TODO: eliminate deprecated methods getParticleByNumber and particleTypes
+    // TODO: eliminate deprecated member particleVec and deprecated methods getParticleByNumber, particleTypes
     protected Particle getParticleByNumber (int n) {
 	return (Particle) particleVec.get (n);
     }
