@@ -30,6 +30,9 @@ public class TestEcology {
     PatternSet patternSet = new PatternSet();
     String patternSetFilename = "ECOLOGY.txt";
 
+    // ToolBox
+    String toolboxFilename = "TOOLS.txt";
+
     // main()
     public static void main(String[] args) {
 	// create pattern set
@@ -39,6 +42,27 @@ public class TestEcology {
 
 	// save pattern set
 	eco.patternSet.toFile(eco.patternSetFilename);
+
+	// create tools
+	double
+	    sprayDiameter = 2,
+	    sprayPower = 15,
+	    baseRefillRate = 0.25 * (double) sprayPower;
+
+	try {
+	    FileOutputStream fos = new FileOutputStream(eco.toolboxFilename);
+	    PrintStream print = new PrintStream(fos);
+
+	    print.println("cement s " + sprayDiameter + " " + sprayPower + " 600 " + .7*baseRefillRate + " 1 true");
+	    print.println("acid d " + sprayDiameter + " " + sprayPower + " 200 " + .75*baseRefillRate + " .8 true");
+	    print.println("perfume f " + sprayDiameter + " " + sprayPower + " 80 " + .5*baseRefillRate + " .5 true");
+	    print.println("mutator g " + sprayDiameter + " " + sprayPower + " 40 " + .03*baseRefillRate + " .2 true");
+	    print.println("lava b " + sprayDiameter + " " + sprayPower + " 400 " + .5*baseRefillRate + " 1 false");
+
+	    fos.close();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	}
     }
 
     // builder method for particles

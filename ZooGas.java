@@ -35,12 +35,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     int toolKeyWidth = 16, toolReserveBarWidth = 100, toolHeight = 30, toolBarWidth;  // size in pixels of various parts of the tool bar (right of the board)
 
     // tools
-    int sprayDiameter, sprayPower;  // diameter & power of spraypaint tool
-    Map<Particle,Double>
-	sprayRefillRate = new IdentityHashMap<Particle,Double>(),
-	sprayReserve = new IdentityHashMap<Particle,Double>(),
-	sprayMax = new IdentityHashMap<Particle,Double>();
-    Particle[] sprayByRow = null;
+    String toolboxFilename = "TOOLS.txt";
+    ToolBox toolBox = null;
 
     // cheat c0d3z
     String cheatString = "boosh";
@@ -69,8 +65,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     Point cursorPos;  // co-ordinates of cell beneath current mouse position
     boolean mouseDown;  // true if mouse is currently down
     boolean randomPressed;  // true if 'randomize' button was pressed (randomize the model once only)
-    boolean mixPressed;  // true if 'mix' button was pressed (model as a perfectly-mixed gas, i.e. with no spatial fluctuations, using Gillespie algorithm)
-    Particle sprayParticle;  // current spray particle
+    boolean meanFieldPressed;  // true if 'meanField' button was pressed (model using mean field, with no spatial autocorrelation)
 
     int histXPos = 0;  // current x-position of sweeping population graph
 
@@ -216,7 +211,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	cursorPos = new Point();
 	mouseDown = false;
 	randomPressed = false;
-	mixPressed = false;
+	meanFieldPressed = false;
 
         addMouseListener(this);
         addKeyListener(this);
@@ -258,41 +253,14 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     // main evolution loop
     private void evolveStuff() {
+	if (meanFieldPressed)
+	    randomizeBoard();
 	board.update(patternMatchesPerRefresh,bfGraphics,pixelsPerCell);
 	++boardUpdateCount;
     }
 
     // log2
     private static double log2(double x) { return Math.log(x) / Math.log(2); }
-
-    // Board.readCell wrapper
-    // randomizes board to simulate a mean-field model if mixPressed==true
-    private Particle readCell (Point p) {
-	if (mixPressed) {
-	    int x = board.rnd.nextInt (size * size);
-	    int rv = 0;
-	    while (rv < particleTypes() - 1) {
-		x -= getParticleByNumber(rv).count;
-		if (x <= 0)
-		    break;
-		++rv;
-	    }
-	    if (getParticleByNumber(rv).count == 0) {
-		for (int k = 0; k < (int) particleTypes(); ++k)
-		    System.err.println (getParticleByNumber(k).name + " " + getParticleByNumber(k).count);
-		System.err.println ("Sampled: " + rv + " " + getParticleByNumber(rv).count);
-		throw new RuntimeException ("Returned a zero-probability cell type");
-	    }
-	    return getParticleByNumber(rv);
-	}
-	return board.readCell(p);
-    }
-
-    // Board.writeCell wrapper
-    public void writeCell (Point p, Particle pc) {
-	board.writeCell (p, pc);
-	board.drawCell (p,bfGraphics,pixelsPerCell);
-    }
 
     // method to shuffle the board
     private void randomizeBoard() {
@@ -325,36 +293,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     // init tools method
     private void initSprayTools() {
-	sprayDiameter = 2;
-	sprayPower = 15;
-
-	for (int c = 0; c < particleTypes(); ++c) {
-	    sprayReserve.put (getParticleByNumber(c), new Double(0));
-	    sprayMax.put (getParticleByNumber(c), new Double(0));
-	    sprayRefillRate.put (getParticleByNumber(c), new Double(0));
-	}
-
-	double baseRefillRate = 0.25 * (double) sprayPower;
-
-	sprayRefillRate.put (cementParticle, new Double (.7 * baseRefillRate));
-	sprayMax.put (cementParticle, new Double (600));
-
-	sprayRefillRate.put (acidParticle, new Double (.75 * baseRefillRate));
-	sprayMax.put (acidParticle, new Double (200));
-
-	sprayRefillRate.put (fecundityParticle, new Double (.5 * baseRefillRate));
-	sprayMax.put (fecundityParticle, new Double (80));
-
-	sprayRefillRate.put (mutatorParticle, new Double (.03 * baseRefillRate));
-	sprayMax.put (mutatorParticle, new Double (40));
-
-	sprayRefillRate.put (lavaParticle, new Double (.5 * baseRefillRate));
-	sprayMax.put (lavaParticle, new Double (400));
-
-	sprayParticle = cementParticle;
-
-	sprayByRow = new Particle[5];
-
+	toolBox = ToolBox.fromFile(toolboxFilename,board);
 	cheatStringPos = 0;
     }
 
@@ -385,35 +324,9 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	// do spray
 	if (mouseDown) {
 	    if (cursorOnBoard)
-		for (int i = 0; i < sprayPower; ++i) {
-		    if (((Double) sprayReserve.get(sprayParticle)).doubleValue() > 0) {
-
-			Point sprayCell = new Point();
-
-			sprayCell.x = cursorPos.x + board.rnd.nextInt(sprayDiameter) - sprayDiameter / 2;
-			sprayCell.y = cursorPos.y + board.rnd.nextInt(sprayDiameter) - sprayDiameter / 2;
-
-			if (board.onBoard(sprayCell)) {
-			    Particle oldCell = readCell (sprayCell);
-			    if (oldCell == spaceParticle) {
-				writeCell (sprayCell, sprayParticle);
-				sprayReserve.put (sprayParticle, ((Double) sprayReserve.get(sprayParticle)).doubleValue() - 1);
-			    }
-			}
-		    }
-		}
-
-	} else {  // if (mouseDown) ...
-
-	    // not spraying, so refresh spray reserves
-	    for (int c = 0; c < particleTypes(); ++c) {
-		Particle p = getParticleByNumber(c);
-		double refillRate = ((Double) sprayRefillRate.get(p)).doubleValue() * (entropy + 1) / (maxEntropy + 1);
-		double oldReserve = ((Double) sprayReserve.get(p)).doubleValue();
-		if (refillRate > 0. && oldReserve < ((Double) sprayMax.get(p)).doubleValue())
-		    sprayReserve.put (p, new Double (oldReserve + refillRate));
-	    }
-	}
+		toolBox.currentTool.spray(cursorPos,board,spaceParticle);
+	} else
+	    toolBox.refill ((entropy + 1) / (maxEntropy + 1));
     }
 
 
@@ -556,13 +469,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	bfGraphics.drawString (bestEntropyString, boardSize + toolBarWidth - bsw, boardSize + statusBarHeight - ch);
 
 	// spray levels
-	plotReserve ('S', 0, cementParticle, 1);
-	plotReserve ('D', 1, acidParticle, .8);
-	plotReserve ('F', 2, fecundityParticle, .5);
-	plotReserve ('G', 3, mutatorParticle, .2);
-
-	// lava spray (only available in cheat mode)
-	plotOrHide ('B', 4, lavaParticle, .4, cheating());
+	toolBox.plotReserves(bfGraphics,new Point(boardSize,0),toolHeight,toolReserveBarWidth,toolKeyWidth);
 
 	// name of the game
 	flashOrHide ("Z00 GAS", 5, true, 0, 400, true, Color.white);
@@ -644,48 +551,6 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	}
     }
 
-    private void plotOrHide (char c, int row, Particle particle, double scale, boolean show) {
-	if (show)
-	    plotReserve (c, row, particle, scale);
-	else
-	    {
-		bfGraphics.setColor (Color.black);
-		bfGraphics.fillRect (boardSize, toolYCenter(row) - toolHeight/2, toolBarWidth, toolHeight);
-	    }
-    }
-
-    private void plotReserve (char c, int row, Particle particle, double scale) {
-	sprayByRow[row] = particle;
-
-	char[] ca = new char[1];
-	ca[0] = c;
-	int center = toolYCenter(row);
-	int count = (int) ((Double) sprayReserve.get(particle)).doubleValue();
-	int max = (int) ((Double) sprayMax.get(particle)).doubleValue();
-
-	FontMetrics fm = bfGraphics.getFontMetrics();
-	int cw = fm.charWidth(c);
-	int ch = fm.getHeight();
-
-	bfGraphics.setColor (particle.color);
-	bfGraphics.drawChars (ca, 0, 1, boardSize + toolReserveBarWidth + toolKeyWidth/2 - cw/2, center + ch/2);
-
-	int td = 4;
-	int tw = toolReserveBarWidth - td;
-	int w = (int) (scale * (double) (tw * count / max));
-	if (w > toolReserveBarWidth)
-	    w = toolReserveBarWidth;
-
-	int bh = toolHeight * 3 / 4;
-	bfGraphics.fillRect (boardSize + toolReserveBarWidth - w, center - bh/2, w, bh);
-	bfGraphics.setColor (Color.black);
-	bfGraphics.fillRect (boardSize + td, center - bh/2, tw - w, bh);
-
-	bfGraphics.setColor (particle == sprayParticle ? Color.white : Color.black);
-	bfGraphics.drawRect (boardSize + 2, center - toolHeight/2 + 2, toolBarWidth - 4, toolHeight - 4);
-    }
-
-
 
     // UI methods
     // mouse events
@@ -695,11 +560,9 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	Point mousePos = getMousePosition();
 	mousePos.x -= insets.left;
 	mousePos.y -= insets.top;
-	if (mousePos.x >= boardSize && mousePos.y < toolHeight * sprayByRow.length) {
+	if (mousePos.x >= boardSize && mousePos.y < toolHeight * toolBox.tool.size()) {
 	    int row = mousePos.y / toolHeight;
-	    Particle p = sprayByRow[row];
-	    if (p != null)
-		sprayParticle = p;
+	    toolBox.currentTool = toolBox.tool.elementAt(row);
 	}
     }
 
@@ -725,43 +588,26 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     public void keyPressed(KeyEvent e) {
 	char c = e.getKeyChar();
-	if (c == 's' || c == 'S') {
+	boolean foundKey = toolBox.hotKeyPressed(c);
+	if (foundKey) {
 	    mouseDown = true;
-	    sprayParticle = cementParticle;
-	} else if (c == 'd' || c == 'D') {
-	    mouseDown = true;
-	    sprayParticle = acidParticle;
-	} else if (c == 'f' || c == 'F') {
-	    mouseDown = true;
-	    sprayParticle = fecundityParticle;
-	} else if (c == 'g' || c == 'G') {
-	    mouseDown = true;
-	    sprayParticle = mutatorParticle;
-	} else if (cheating())
-	    {
-		// cheats
-		if (c == 'k' || c == 'K') {
-		    randomPressed = true;
-		} else if (c == 'l' || c == 'L') {
-		    mixPressed = true;
-		} else if (c == '0') {
-		    initSprayTools();
-		} else if (c == '9') {
-		    mouseDown = true;
-		    sprayParticle = speciesParticle[board.rnd.nextInt(species)];
-		    sprayReserve.put (sprayParticle, new Double (123456789));
-		} else if (c == '8') {
-		    sprayReserve.put (sprayParticle, new Double (123456789));
-		} else if (c == '7') {
-		    sprayDiameter *= 1.5;
-		    sprayPower *= 2.25;
-		} else if (c == '6') {
-		    sprayPower *= 1.5;
-		} else if (c == 'b' || c == 'B') {
-		    mouseDown = true;
-		    sprayParticle = lavaParticle;
-		}
+	} else if (cheating()) {
+	    // cheats
+	    if (c == 'k' || c == 'K') {
+		randomPressed = true;
+	    } else if (c == 'l' || c == 'L') {
+		meanFieldPressed = true;
+	    } else if (c == '0') {
+		initSprayTools();
+	    } else if (c == '8') {
+		toolBox.currentTool.reserve = toolBox.currentTool.maxReserve = 123456789;
+	    } else if (c == '7') {
+		toolBox.currentTool.sprayDiameter *= 1.5;
+		toolBox.currentTool.sprayPower *= 2.25;
+	    } else if (c == '6') {
+		toolBox.currentTool.sprayPower *= 1.5;
 	    }
+	}
     }
 
     public void keyReleased(KeyEvent e) {
@@ -770,12 +616,14 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    {
 		if (c == cheatString.charAt (cheatStringPos))
 		    ++cheatStringPos;
+		if (cheating())
+		    toolBox.revealHiddenTools();
 	    }
 	else {  // cheating() == true
 	    if (c == 'l' || c == 'L')
-		randomPressed = true;
+		randomPressed = true;  // force one last randomization and redraw
 	}
 	mouseDown = false;
-	mixPressed = false;
+	meanFieldPressed = false;
     }
 }

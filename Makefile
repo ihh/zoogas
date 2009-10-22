@@ -8,7 +8,7 @@ classfiles class: $(CLASSFILES)
 clean:
 	rm $(CLASSFILES)
 
-ECOLOGY.txt: TestEcology.class
+TOOLS.txt ECOLOGY.txt: TestEcology.class
 	java TestEcology
 
 testserver: classfiles
