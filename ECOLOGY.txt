@@ -31,7 +31,13 @@ lava 192 192 192
 wall/basalt 255 200 0
 /tripwire 1 1 1
 zoo_guest 254 254 254
+bullet.* 0 192 0
 RULES
+bullet _ bullet bullet$F .5 fire
+bullet _ _ _ .01 die
+bullet$F _ $T $S 1 move
+bullet$F [^_].* _ $T .9 stop
+bullet$F [^_].* bullet$R $T .1 turn
 .*/s0 .*/s[abcdefgh0] _ $T 0.0015 choke
 .*/s0 .*/s[123456789] $S $S 0.024 eat
 .*/s0 .*/s[123456789] $S _ 0.005999999999999998 kill

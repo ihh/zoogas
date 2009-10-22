@@ -27,6 +27,7 @@ public class ParticlePattern {
 
     // method to match a name and return a Particle, or null if match fails
     Particle makeParticle (String name, Board board, PatternSet ps) {
+	//	System.err.println("Matching "+name+" to "+namePattern.pattern());
 	Particle p = null;
 	Matcher m = namePattern.matcher(name);
 	if (m.matches())
