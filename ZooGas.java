@@ -556,13 +556,6 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	bfGraphics.drawString (bestEntropyString, boardSize + toolBarWidth - bsw, boardSize + statusBarHeight - ch);
 
 	// spray levels
-	double m = 0;
-	for (int c = 0; c < particleTypes(); ++c) {
-	    double cm = ((Double) sprayMax.get(getParticleByNumber(c))).doubleValue();
-	    if (cm > m)
-		m = cm;
-	}
-
 	plotReserve ('S', 0, cementParticle, 1);
 	plotReserve ('D', 1, acidParticle, .8);
 	plotReserve ('F', 2, fecundityParticle, .5);

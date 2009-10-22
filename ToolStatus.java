@@ -35,4 +35,34 @@ public class ToolStatus {
 	    }
 	}
     }
+
+    void plotReserve (Graphics g, Point topLeft, int toolHeight, int toolReserveBarWidth, int toolTextWidth, boolean selected) {
+	int toolBarWidth = toolReserveBarWidth + toolTextWidth;
+	char[] ca = new char[1];
+	ca[0] = desc.hotKey;
+	int xLeft = topLeft.x;
+	int yMid = topLeft.y + toolHeight / 2;
+
+	FontMetrics fm = g.getFontMetrics();
+	int cw = fm.charWidth(desc.hotKey);
+	int ch = fm.getHeight();
+
+	g.setColor (particle.color);
+	g.drawChars (ca, 0, 1, xLeft + toolReserveBarWidth + toolTextWidth/2 - cw/2, yMid + ch/2);
+
+	int td = 4;
+	int tw = toolReserveBarWidth - td;
+	int w = (int) (desc.barWidth * (double) (tw * reserve / desc.maxReserve));
+	if (w > toolReserveBarWidth)
+	    w = toolReserveBarWidth;
+
+	int bh = toolHeight * 3 / 4;
+	g.fillRect (xLeft + toolReserveBarWidth - w, yMid - bh/2, w, bh);
+	g.setColor (Color.black);
+	g.fillRect (xLeft + td, yMid - bh/2, tw - w, bh);
+
+	g.setColor (selected ? Color.white : Color.black);
+	g.drawRect (xLeft + 2, yMid - toolHeight/2 + 2, toolBarWidth - 4, toolHeight - 4);
+    }
+
 }
