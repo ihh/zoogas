@@ -1,22 +1,28 @@
 import java.awt.*;
 import java.util.*;
 
-public class VonNeumannTopology {
+public class MooreTopology {
     // method to sample a random neighbor of a given cell, returning the directional index
     static final public int getRandomNeighbor (Point p, Point n, Random rnd) {
-	int ni = rnd.nextInt(4);
+	int ni = rnd.nextInt(8);
 	n.x = p.x;
 	n.y = p.y;
-	int delta = (ni & 2) == 0 ? -1 : +1;
-	if ((ni & 1) == 0) { n.y += delta; } else { n.x -= delta; }
+	if (ni < 3)
+	    --n.y;
+	else if (ni >= 4 && ni <= 6)
+	    ++n.y;
+	if (ni == 0 || ni >= 6)
+	    --n.x;
+	else if (ni >= 2 && ni <= 4)
+	    ++n.x;
 	return ni;
     }
 
     // number of neighbors of any cell (some may be off-board and therefore inaccessible)
-    static final public int neighborhoodSize() { return 4; }
+    static final public int neighborhoodSize() { return 8; }
 
     // string representations of cardinal directions
-    static private String[] dirStr = { "n", "e", "s", "w" };
+    static private String[] dirStr = { "nw", "n", "ne", "e", "se", "s", "sw", "w" };
     static final public String dirString(int dir) { return dirStr[dir]; }
 
     // method to convert cell coords to graphics coords

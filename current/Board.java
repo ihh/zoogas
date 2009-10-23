@@ -6,7 +6,7 @@ import java.awt.image.*;
 import java.net.*;
 import java.io.*;
 
-public class Board extends VonNeumannTopology {
+public class Board extends HexTopology {
     int size = 0;  // size of board in cells
 
     // main board data

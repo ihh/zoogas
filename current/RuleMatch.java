@@ -160,14 +160,15 @@ public class RuleMatch {
 	StringBuffer sb = new StringBuffer();
 	while (m.find()) {
 	    String var = m.group(1);
+	    int nbrs = board.neighborhoodSize();
 	    if (var.equals("F"))
 		m.appendReplacement(sb,board.dirString(dir));
 	    else if (var.equals("B"))
-		m.appendReplacement(sb,board.dirString((dir + 2) % 4));
+		m.appendReplacement(sb,board.dirString((dir + nbrs/2) % nbrs));
 	    else if (var.equals("L"))
-		m.appendReplacement(sb,board.dirString((dir + 1) % 4));
+		m.appendReplacement(sb,board.dirString((dir + nbrs-1) % nbrs));
 	    else if (var.equals("R"))
-		m.appendReplacement(sb,board.dirString((dir + 3) % 4));
+		m.appendReplacement(sb,board.dirString((dir + 1) % nbrs));
 	}
 	m.appendTail(sb);
 	return sb.toString();
