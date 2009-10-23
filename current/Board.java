@@ -6,7 +6,7 @@ import java.awt.image.*;
 import java.net.*;
 import java.io.*;
 
-public class Board {
+public class Board extends VonNeumannTopology {
     int size = 0;  // size of board in cells
 
     // main board data
@@ -131,7 +131,7 @@ public class Board {
     // rendering methods
     public void drawCell (Point p, Graphics g, int pixelsPerCell) {
 	g.setColor(cell[p.x][p.y].particle.color);
-	g.fillRect(p.x*pixelsPerCell,p.y*pixelsPerCell,pixelsPerCell,pixelsPerCell);
+	drawRect(p,g,pixelsPerCell);
     }
 
     public void drawEverything(Graphics g, int pixelsPerCell) {
@@ -145,6 +145,11 @@ public class Board {
     private void getRandomPoint (Point p) {
 	p.x = rnd.nextInt(size);
 	p.y = rnd.nextInt(size);
+    }
+
+    // wrapper for topology method
+    private int getRandomNeighbor (Point p, Point n) {
+	return getRandomNeighbor(p,n,rnd);
     }
 
     // update methods
@@ -183,23 +188,6 @@ public class Board {
 		drawCell(n,g,pixelsPerCell);
 	}
     }
-
-    // method to sample a random neighbor of a given cell, returning the directional index
-    private int getRandomNeighbor (Point p, Point n) {
-	int ni = rnd.nextInt(4);
-	n.x = p.x;
-	n.y = p.y;
-	int delta = (ni & 2) == 0 ? -1 : +1;
-	if ((ni & 1) == 0) { n.y += delta; } else { n.x += delta; }
-	return ni;
-    }
-
-    // number of neighbors of any cell (some may be off-board and therefore inaccessible)
-    protected int neighborhoodSize() { return 4; }
-
-    // string representations of cardinal directions
-    private String[] dirStr = { "n", "w", "s", "e" };
-    protected String dirString(int dir) { return dirStr[dir]; }
 
     // evolvePair(sourceCoords,targetCoords,dir) : delegate to appropriate evolve* method.
     // in what follows, one cell is designated the "source", and its neighbor is the "target".

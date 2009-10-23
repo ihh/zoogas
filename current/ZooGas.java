@@ -120,7 +120,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 	// set helpers, etc.
 	board = new Board(size);
-	boardSize = size * pixelsPerCell;
+	boardSize = board.getBoardSize(size,pixelsPerCell);
 
 	patternMatchesPerRefresh = (int) (size * size);
 
