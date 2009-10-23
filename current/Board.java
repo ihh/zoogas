@@ -131,7 +131,9 @@ public class Board extends VonNeumannTopology {
     // rendering methods
     public void drawCell (Point p, Graphics g, int pixelsPerCell) {
 	g.setColor(cell[p.x][p.y].particle.color);
-	drawRect(p,g,pixelsPerCell);
+	Point q = new Point();
+	getGraphicsCoords(p,q,pixelsPerCell);
+	g.fillRect(q.x,q.y,pixelsPerCell,pixelsPerCell);
     }
 
     public void drawEverything(Graphics g, int pixelsPerCell) {

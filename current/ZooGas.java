@@ -314,9 +314,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     private boolean getCursorPos() {
 	Point mousePos = getMousePosition();
 	if (mousePos != null) {
-	    cursorPos.x = (int) ((mousePos.x - insets.left) / pixelsPerCell);
-	    cursorPos.y = (int) ((mousePos.y - insets.top) / pixelsPerCell);
-
+	    mousePos.translate(-insets.left,-insets.top);
+	    board.getCellCoords(mousePos,cursorPos,pixelsPerCell);
 	    return board.onBoard(cursorPos);
 	}
 	return false;

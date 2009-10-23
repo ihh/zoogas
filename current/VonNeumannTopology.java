@@ -3,7 +3,7 @@ import java.util.*;
 
 public class VonNeumannTopology {
     // method to sample a random neighbor of a given cell, returning the directional index
-    static public int getRandomNeighbor (Point p, Point n, Random rnd) {
+    static final public int getRandomNeighbor (Point p, Point n, Random rnd) {
 	int ni = rnd.nextInt(4);
 	n.x = p.x;
 	n.y = p.y;
@@ -13,19 +13,26 @@ public class VonNeumannTopology {
     }
 
     // number of neighbors of any cell (some may be off-board and therefore inaccessible)
-    static public int neighborhoodSize() { return 4; }
+    static final public int neighborhoodSize() { return 4; }
 
     // string representations of cardinal directions
     static private String[] dirStr = { "n", "w", "s", "e" };
-    static public String dirString(int dir) { return dirStr[dir]; }
+    static final public String dirString(int dir) { return dirStr[dir]; }
 
-    // method to draw a cell
-    static public void drawRect (Point p, Graphics g, int pixelsPerCell) {
-	g.fillRect(p.x*pixelsPerCell,p.y*pixelsPerCell,pixelsPerCell,pixelsPerCell);
+    // method to convert cell coords to graphics coords
+    static final public void getGraphicsCoords (Point pCell, Point pGraphics, int pixelsPerCell) {
+	pGraphics.x = pCell.x * pixelsPerCell;
+	pGraphics.y = pCell.y * pixelsPerCell;
+    }
+
+    // method to convert graphics coords to cell coords
+    static final public void getCellCoords (Point pGraphics, Point pCell, int pixelsPerCell) {
+	pCell.x = pGraphics.x / pixelsPerCell;
+	pCell.y = pGraphics.y / pixelsPerCell;
     }
 
     // method to return board size for a given number of cells
-    static public int getBoardSize (int size, int pixelsPerCell) {
+    static final public int getBoardSize (int size, int pixelsPerCell) {
 	return size*pixelsPerCell;
     }
 }
