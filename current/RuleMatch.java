@@ -20,13 +20,11 @@ import java.io.*;
 // The following "special variables" will be expanded in {A,B,C,D} as appropriate:
 //  $1,$2,$3... => groups in A and B regexps (c.f. Perl)
 //  $S,$T => full names for old source,target states
-//  $F,$L,$R,$B => directions relative to neighbor direction ($F=forward, $L=left, $R=right, $B=back)
-//  $-1 => numerically one less than $1 interpreted as an alphadecimal number (base 36)
-//  $--1 => numerically two less than $1 (and $---1 is three less, etc.); negative numbers evaluate to the empty string
-//  $+1 => numerically one greater than $1
-// (similarly for $-2, $++3, etc.)
-//  $%3++1 => ($1 + 2) mod 3
-//  $%M+{k}N => ($N + k) mod M   ...where +{k} denotes a run of k plus(+) characters
+//  $F,$L,$R,$B,$+L,$+R,$++L,$++R => directions relative to neighbor direction ($F=forward, $L=left, $R=right, $B=back, $+L=two left, $++L=three left)
+//  $-1 or $-1.1 => numerically one less than $1 interpreted as an alphadecimal number (base 36)
+//  $-2.1 => numerically two less than $1 (and $-a.1 is ten less, i.e. it's alphadecimal)
+//  $+1.1 => numerically one greater than $1
+//  $%3+2.1 => ($1 + 2) mod 3
 
 // A matching rule should overwrite any previously matched rules, allowing us to create exceptions
 // (e.g. "destroy any particle; DO NOT destroy basalt").
@@ -154,7 +152,7 @@ public class RuleMatch {
     }
 
     // expansion of $F, $B, $L, $R
-    static Pattern dirPattern = Pattern.compile("\\$([FBLR])");
+    static Pattern dirPattern = Pattern.compile("\\$(F|B|L|R|\\+L|\\+\\+L|\\+R|\\+\\+R)");
     protected String expandDir (String s) {
 	Matcher m = dirPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
@@ -167,8 +165,16 @@ public class RuleMatch {
 		m.appendReplacement(sb,board.dirString((dir + nbrs/2) % nbrs));
 	    else if (var.equals("L"))
 		m.appendReplacement(sb,board.dirString((dir + nbrs-1) % nbrs));
+	    else if (var.equals("+L"))
+		m.appendReplacement(sb,board.dirString((dir + nbrs-2) % nbrs));
+	    else if (var.equals("++L"))
+		m.appendReplacement(sb,board.dirString((dir + nbrs-3) % nbrs));
 	    else if (var.equals("R"))
 		m.appendReplacement(sb,board.dirString((dir + 1) % nbrs));
+	    else if (var.equals("+R"))
+		m.appendReplacement(sb,board.dirString((dir + 2) % nbrs));
+	    else if (var.equals("++R"))
+		m.appendReplacement(sb,board.dirString((dir + 3) % nbrs));
 	}
 	m.appendTail(sb);
 	return sb.toString();
@@ -202,14 +208,14 @@ public class RuleMatch {
     }
 
     // expansion of $+++1
-    static Pattern incGroupPattern = Pattern.compile("\\$([\\+]+)([1-9][0-9]*)");
+    static Pattern incGroupPattern = Pattern.compile("\\$\\+([0-9A-Za-z]*)\\.?([1-9][0-9]*)");
     protected String expandInc (String s) {
 	Matcher m = incGroupPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
 	while (m.find()) {
 	    String inc = m.group(1), g = m.group(2);
 	    int n = string2int(getGroup(g));
-	    int delta = inc.length();
+	    int delta = inc.length()>0 ? string2int(inc) : 1;
 	    m.appendReplacement(sb,int2string(n+delta));
 	}
 	m.appendTail(sb);
@@ -217,14 +223,14 @@ public class RuleMatch {
     }
 
     // expansion of $--1
-    static Pattern decGroupPattern = Pattern.compile("\\$([\\-]+)([1-9][0-9]*)");
+    static Pattern decGroupPattern = Pattern.compile("\\$\\-([0-9A-Za-z]*)\\.?([1-9][0-9]*)");
     protected String expandDec (String s) {
 	Matcher m = decGroupPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
 	while (m.find()) {
 	    String dec = m.group(1), g = m.group(2);
 	    int n = string2int(getGroup(g));
-	    int delta = dec.length();
+	    int delta = dec.length()>0 ? string2int(dec) : 1;
 	    if (n >= delta)
 		m.appendReplacement(sb,int2string(n-delta));
 	}
@@ -233,7 +239,7 @@ public class RuleMatch {
     }
 
     // expansion of $%3++1
-    static Pattern modGroupPattern = Pattern.compile("\\$%([1-9A-Za-z][0-9A-Za-z]*)([\\+]+)([1-9][0-9]*)");
+    static Pattern modGroupPattern = Pattern.compile("\\$%([1-9A-Za-z][0-9A-Za-z]*)\\+([0-9A-Za-z]*)\\.?([1-9][0-9]*)");
     protected String expandMod (String s) {
 	Matcher m = modGroupPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
@@ -241,7 +247,7 @@ public class RuleMatch {
 	    String mod = m.group(1), inc = m.group(2), g = m.group(3);
 	    int n = string2int(getGroup(g));
 	    int M = string2int(mod);
-	    int delta = inc.length();
+	    int delta = inc.length()>0 ? string2int(inc) : 1;
 	    m.appendReplacement(sb,int2string((n+delta)%M));
 	}
 	m.appendTail(sb);

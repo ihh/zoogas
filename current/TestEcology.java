@@ -187,16 +187,11 @@ public class TestEcology {
 	addPattern("perfume _ $T $S " + (1-gasDispersalRate)*(1-gasDispersalRate) + " drift");
 
 	// mutator gas
-	StringBuffer mutateFwd = new StringBuffer("$1$%" + RuleMatch.int2string(species));
-	StringBuffer mutateBack = new StringBuffer("$1$%" + RuleMatch.int2string(species));
-	for (int t = 0; t < species; ++t)
-	    mutateBack.append("+");
+	String mutateFwd = new String("$1$%" + RuleMatch.int2string(species) + "+");
 	for (int t = 1; t <= mutateRange; ++t) {
 	    double mutProb = Math.pow (gasMultiplyRate, t-1);
-	    mutateFwd.append("+");
-	    mutateBack.deleteCharAt(mutateBack.length()-1);
-	    addPattern("mutator (.*/s)([0-9a-z]) _ " + mutateFwd + "2 " + mutProb + " mutate");
-	    addPattern("mutator (.*/s)([0-9a-z]) _ " + mutateBack + "2 " + mutProb + " mutate");
+	    addPattern("mutator (.*/s)([0-9a-z]) _ " + mutateFwd + RuleMatch.int2string(t) + ".2 " + mutProb + " mutate");
+	    addPattern("mutator (.*/s)([0-9a-z]) _ " + mutateFwd + RuleMatch.int2string(species-t) + ".2 " + mutProb + " mutate");
 	}
 	addPattern("mutator _ _ _ " + gasDispersalRate + " disperse");
 	addPattern("mutator _ $T $S " + (1-gasDispersalRate) + " drift");
