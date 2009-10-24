@@ -1,0 +1,11 @@
+Implementation details:
+
+The game is essentially just a lattice gas simulation on a 4-neighbor square grid.
+The underlying reaction-diffusion model is the cyclic competitive Lotka-Volterra model,
+with a bit of diffusion-limited aggregation thrown in.
+
+For some more cool ecological cellular automata, check out the NANIA example applets:
+http://www2.ph.ed.ac.uk/nania/examples.html
+
+Ian Holmes
+9/22/09

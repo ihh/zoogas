@@ -6,7 +6,7 @@ import java.awt.image.*;
 import java.net.*;
 import java.io.*;
 
-public class Board extends MooreTopology {
+public class Board extends HexTopology {
     int size = 0;  // size of board in cells
 
     // main board data
