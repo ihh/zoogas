@@ -8,8 +8,8 @@ import java.io.*;
 
 
 // Patterns are to be transmitted in a "Particle definition" packet with the following structure:
-// ParticlePatterns (one per line, format "NAME R G B", describing appearances of Particles to which this definition packet applies)
-// RulePatterns (one per line, format "A B C D P V")
+// ParticlePatterns (one per line, format "NOUN NameRegex R G B", describing appearances of Particles to which this definition packet applies)
+// RulePatterns (one per line, format "VERB A B C D P V" - see RuleMatch.java for semantics)
 
 public class PatternSet {
     // data
@@ -87,12 +87,10 @@ public class PatternSet {
     // i/o
     void toStream (OutputStream out) {
 	PrintStream print = new PrintStream(out);
-	print.println ("PARTICLES");
 	for (Enumeration e = particlePattern.elements(); e.hasMoreElements() ;)
-	    print.println (((ParticlePattern) e.nextElement()).toString());
-	print.println ("RULES");
+	    print.println ("NOUN " + ((ParticlePattern) e.nextElement()).toString());
 	for (Enumeration e = rulePattern.elements(); e.hasMoreElements() ;)
-	    print.println (((RulePattern) e.nextElement()).toString());
+	    print.println ("VERB " + ((RulePattern) e.nextElement()).toString());
 	print.println ("END");
     }
 
@@ -107,26 +105,23 @@ public class PatternSet {
 	}
     }
 
-    private enum State { unknown, inParticles, inRules, end }
     static PatternSet fromStream (InputStream in) {
 	PatternSet ps = new PatternSet();
 	InputStreamReader read = new InputStreamReader(in);
 	BufferedReader buff = new BufferedReader(read);
-	State state = State.unknown;
+	Pattern pPat = Pattern.compile("NOUN (.*)");
+	Pattern rPat = Pattern.compile("VERB (.*)");
+	Pattern ePat = Pattern.compile("END.*");
 	try {
 	    while (buff.ready()) {
 		String s = buff.readLine();
-		if (s.equals("PARTICLES")) {
-		    state = State.inParticles;
-		} else if (s.equals("RULES")) {
-		    state = State.inRules;
-		} else if (s.equals("END")) {
-		    state = State.end;
+		Matcher m = null;
+		if ((m = pPat.matcher(s)).matches()) {
+		    ps.particlePattern.add (new ParticlePattern(m.group(1)));
+		} else if ((m = rPat.matcher(s)).matches()) {
+		    ps.rulePattern.add (new RulePattern(m.group(1)));
+		} else if (ePat.matcher(s).matches()) {
 		    break;
-		} else if (state == State.inParticles) {
-		    ps.particlePattern.add (new ParticlePattern(s));
-		} else if (state == State.inRules) {
-		    ps.rulePattern.add (new RulePattern(s));
 		} else
 		    System.err.println("Ignoring line: " + s);
 	    }

@@ -7,7 +7,7 @@ import java.net.*;
 import java.io.*;
 
 
-// Here is a hypothetical syntax for regexp-based pattern generators:
+// Syntax for regexp-based pattern generators:
 //  A B C D P V
 // where
 //  A is a regexp that must globally match the old source state
@@ -25,10 +25,6 @@ import java.io.*;
 //  $-2.1 => numerically two less than $1 (and $-a.1 is ten less, i.e. it's alphadecimal)
 //  $+1.1 => numerically one greater than $1
 //  $%3+2.1 => ($1 + 2) mod 3
-
-// A matching rule should overwrite any previously matched rules, allowing us to create exceptions
-// (e.g. "destroy any particle; DO NOT destroy basalt").
-// UPDATE: this is now implicit in RandomVariable.add()
 
 
 // RuleMatch - a partially- or fully-bound RulePattern.

@@ -17,6 +17,8 @@ import java.io.*;
 //  P is a numeric constant that is the probability of the rule
 //  V is a verb describing the action being carried out by the source when this rule fires (no whitespace)
 
+// See RuleMatch for details
+
 public class RulePattern {
     // data
     String A = null, B = null, C = null, D = null, V = null;
