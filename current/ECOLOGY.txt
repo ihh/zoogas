@@ -100,20 +100,21 @@ VERB cement _ $T $S .99 drift
 VERB cement .* _ $T .01 drain
 
 
-# Cage builders
-# Choose size and orientation
-VERB cage_builder .* cage_builder/len:5 $T .3 choose_small
-VERB cage_builder .* cage_builder/len:b $T .3 choose_medium
-VERB cage_builder .* cage_builder/len:k $T .3 choose_large
+# Cage builders: a simple geometric program with nested loops (bricks/walls).
+NOUN cage_builder.* 128 128 192
+# Choose size and orientation:
+VERB cage_builder .* cage_builder/len:5 $T .3 plan_small_cage
+VERB cage_builder .* cage_builder/len:b $T .3 plan_medium_cage
+VERB cage_builder .* cage_builder/len:k $T .3 plan_large_cage
 VERB cage_builder/len:([^,]*) .* cage_builder/len:$1,dir:$F $T 1 choose_orientation
 # Exclude diagonal cages: animals can escape through the cracks
 VERB cage_builder/len:([^,]*),dir:(ne|nw|se|sw) .* cage_builder/len:$1,dir:$F $T 1 rethink_orientation
-# OK, here's the program that actually builds the cage. It's a simple state machine...
+# OK, here's the program that actually builds the cage. It's a simple state machine: build, turn, stop.
 VERB cage_builder/len:([^,]*),dir:([^,]) .* cage_builder/len:$1,walls:3,steps:$1,dir:$2 $T 1 start
-VERB cage_builder/len:(.*),walls:(.),steps:([^0].*),dir:$F _ wall/5 cage_builder/len:$1,walls:$2,steps:$-3,dir:$F 1 build_wall
-VERB cage_builder/len:(.*),walls:([^0]),steps:0,dir:$F .* cage_builder/len:$1,walls:$-2,steps:$1,dir:$+R $T 1 right_angle_turn
+VERB cage_builder/len:(.*),walls:(.),steps:([^0].*),dir:$F _ wall/5 cage_builder/len:$1,walls:$2,steps:$-3,dir:$F 1 place_next_brick
+VERB cage_builder/len:(.*),walls:([^0]),steps:0,dir:$F .* cage_builder/len:$1,walls:$-2,steps:$1,dir:$+R $T 1 build_next_wall
 VERB cage_builder/len:(.*),walls:0,steps:[01],dir:.* .* wall/5 $T 1 finish
-# Handle collisions gracefully
+# Handle collisions gracefully:
 VERB cage_builder/.*dir:$F wall/.*|cage_builder.* wall/5 $T 1 join_wall
 
 

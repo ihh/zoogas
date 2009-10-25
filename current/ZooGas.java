@@ -283,7 +283,10 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	// identify particle that cursor is currently over
 	boolean cursorOnBoard = getCursorPos();
 	Particle cursorParticle = cursorOnBoard ? board.readCell(cursorPos) : null;
-	printOrHide ("Under cursor:", 13, cursorOnBoard, Color.white);
+	boolean isSpace = cursorParticle == spaceParticle;
+	printOrHide (cursorParticle == null
+		     ? "Mouseover board to identify pixels"
+		     : "Under cursor:", 13, true, Color.white);
 	printOrHide (cursorOnBoard ? cursorParticle.visibleName() : "", 14, cursorOnBoard, cursorOnBoard ? cursorParticle.color : Color.white);
 
     }
