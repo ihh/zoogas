@@ -1,4 +1,6 @@
-# The different colors of species
+# The different colored species particles
+# The species follow a simple (unrealistic) cyclic ecology.
+# The species character (an alphadecimal number from 0 to h, so there are eighteen species in total) is prefixed by "/=".
 NOUN _ 0 0 0
 NOUN .*/=0 255 0 0
 NOUN .*/=1 255 81 0
@@ -29,22 +31,25 @@ NOUN cement 255 255 255
 NOUN acid 64 64 64
 NOUN perfume 128 64 84
 NOUN mutator 255 128 168
-NOUN lava 192 192 192
+NOUN lava 255 96 96
 NOUN wall/basalt 255 200 0
 NOUN zoo_guest 254 254 254
 
+# Beacon: an example directional particle
 NOUN beacon.* 0 192 0
 VERB beacon _ beacon beacon/$F .5 fire
 VERB beacon _ _ _ .01 die
 VERB beacon/$F _ $T $S 1 move
-VERB beacon/$B .* _ $T .001 die
 VERB beacon/$F [^_].* _ $T .9 stop
 VERB beacon/$F [^_].* beacon/$++L $T .1 ricochet
 VERB beacon/$F [^_].* beacon/$++R $T .05 ricochet
+# Without this last rule, beacons at uncrossable borders will never die
+VERB beacon/$B .* _ $T .001 die
 
+# Initial conditions
 VERB /INIT.* _ beacon _ 1 start
 
-
+# Successful predation
 VERB .*/=(.) .*/=$%i+1.1 $S $S .024 eat
 VERB .*/=(.) .*/=$%i+2.1 $S $S .024 eat
 VERB .*/=(.) .*/=$%i+3.1 $S $S .024 eat
@@ -55,6 +60,7 @@ VERB .*/=(.) .*/=$%i+7.1 $S $S .024 eat
 VERB .*/=(.) .*/=$%i+8.1 $S $S .024 eat
 VERB .*/=(.) .*/=$%i+9.1 $S $S .024 eat
 
+# Unsuccessful predation
 VERB .*/=(.) .*/=$%i+1.1 $S _ .006 kill
 VERB .*/=(.) .*/=$%i+2.1 $S _ .006 kill
 VERB .*/=(.) .*/=$%i+3.1 $S _ .006 kill
@@ -65,34 +71,46 @@ VERB .*/=(.) .*/=$%i+7.1 $S _ .006 kill
 VERB .*/=(.) .*/=$%i+8.1 $S _ .006 kill
 VERB .*/=(.) .*/=$%i+9.1 $S _ .006 kill
 
-VERB .*/=. .*/=. _ $T 0.0015 choke
+# Breeding, overcrowding
 VERB .*/=. _ $S $S .0007 spawn
-VERB .*/=. _ $T $S 0.02 step
-VERB .*/=. zoo_guest _ $S 1.0 maul
+VERB .*/=. .*/=. _ $T 0.0015 choke
 
+# Movement
+VERB .*/=. _ $T $S 0.02 step
+
+# Other fun behaviors
+VERB .*/=. zoo_guest _ $S 1.0 maul
+VERB .*imp/=. lava.* _ $T 1 frolic
+
+# Walls and cement
 VERB wall/([2-9a-z]) .* wall/$-1 $T .00022 decay
 VERB wall/([2-9a-z]) wall.* wall/$-1 $T .00018 decay
-VERB wall/([2-9a-z]) acid wall/$-1 $T 0.0010 decay
+VERB wall/([2-9a-z]) acid wall/$-1 $T 0.001 decay
 VERB wall/1 .* _ $T 2.2E-4 decay
 VERB wall/1 wall.* _ $T .00018 decay
-VERB wall/1 acid _ $T 0.0010 decay
+VERB wall/1 acid _ $T 0.001 decay
 VERB cement [^_].* wall/4 $T 0.2 set
 VERB cement wall.* wall/4 $T 0.9 stick
 VERB cement _ $T $S .99 drift
 VERB cement .* _ $T .01 drain
 
+# Acid dissolves everything; usually, it is then "used up"
 VERB acid .* $S _ 0.1 dissolve
 VERB acid .* _ _ 0.9 dissolve
+# Override "Acid dissolves everything" rules for basalt, lava & empty space
 VERB acid wall/basalt|lava|_ $S _ 0.0 dissolve
 VERB acid wall/basalt|lava|_ _ _ 0.0 dissolve
+# Acid does fast Brownian motion
 VERB acid _ $T $S 1.0 drift
 
+# Perfume
 VERB perfume .*/=.* $T $T 1.0 hornify
 VERB .*/=.* perfume $S $S 1.0 breed
 VERB perfume _ _ $T 0.1 disperse
 VERB perfume _ $S $S 0.09 billow
 VERB perfume _ $T $S 0.81 drift
 
+# Mutator gas: change the species number.
 VERB mutator (.*/=)([0-9a-z]) _ $1$%i+1.2 1.0 mutate
 VERB mutator (.*/=)([0-9a-z]) _ $1$%i+h.2 1.0 mutate
 VERB mutator (.*/=)([0-9a-z]) _ $1$%i+2.2 0.1 mutate
@@ -101,9 +119,20 @@ VERB mutator _ _ _ 0.1 disperse
 VERB mutator _ $T $S 0.9 drift
 VERB mutator perfume $T $T 1.0 react
 
-VERB lava wall/. wall/basalt $T 0.01 set
-VERB lava wall/basalt $T $T 1.0 set
-VERB lava _ $T $S 0.3 flow
+VERB lava.* wall/. wall/basalt $T 0.01 set
+VERB lava.* wall/basalt $T $T 1.0 set
+# lava flows...
+VERB lava.* _ $T lava/$F 0.3 flow
+# lava flows slightly faster forwards, and slower backwards
+VERB lava/$F _ $T lava/$F 0.4 flow
+VERB lava/$L _ $T lava/$F 0.01 flow
+VERB lava/$R _ $T lava/$F 0.01 flow
+VERB lava/$+L _ $T lava/$F 0.0001 flow
+VERB lava/$+R _ $T lava/$F 0.0001 flow
+VERB lava/$++L _ $T lava/$F 0 flow
+VERB lava/$++R _ $T lava/$F 0 flow
+VERB lava/$B _ $T lava/$F 0 flow
+VERB lava .* _ $T .00001 drain
 
 VERB wall/basalt acid _ lava 0.3 dissolve
 
