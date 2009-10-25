@@ -37,15 +37,15 @@ NOUN wall/basalt 255 200 0
 NOUN zoo_guest 254 254 254
 
 # Beacon: an example directional particle
-NOUN beacon.* 0 192 0
-VERB beacon _ beacon beacon/$F .5 fire
-VERB beacon _ _ _ .01 die
+NOUN beacon.* 192 192 0
+VERB beacon _ beacon beacon/$F .5 shine
+VERB beacon _ _ _ .01 extinguish
 VERB beacon/$F _ $T $S 1 move
-VERB beacon/$F [^_].* _ $T .9 stop
-VERB beacon/$F [^_].* beacon/$++L $T .1 ricochet
-VERB beacon/$F [^_].* beacon/$++R $T .05 ricochet
+VERB beacon/$F [^_].* _ $T .9 extinguish
+VERB beacon/$F [^_].* beacon/$++L $T .1 reflect
+VERB beacon/$F [^_].* beacon/$++R $T .05 reflect
 # Without this last rule, beacons at uncrossable borders will never die
-VERB beacon/$B .* _ $T .001 die
+VERB beacon/$B .* _ $T .001 extinguish
 
 # Initial conditions
 VERB /INIT.* _ beacon _ 1 start
@@ -107,7 +107,7 @@ VERB cage_builder .* cage_builder/len:5 $T .3 plan_small_cage
 VERB cage_builder .* cage_builder/len:b $T .3 plan_medium_cage
 VERB cage_builder .* cage_builder/len:k $T .3 plan_large_cage
 VERB cage_builder/len:([^,]*) .* cage_builder/len:$1,dir:$F $T 1 choose_orientation
-# Exclude diagonal cages: animals can escape through the cracks
+# Exclude diagonal cages (or animals can escape through the cracks)
 VERB cage_builder/len:([^,]*),dir:(ne|nw|se|sw) .* cage_builder/len:$1,dir:$F $T 1 rethink_orientation
 # OK, here's the program that actually builds the cage. It's a simple state machine: build, turn, stop.
 VERB cage_builder/len:([^,]*),dir:([^,]) .* cage_builder/len:$1,walls:3,steps:$1,dir:$2 $T 1 start
@@ -116,6 +116,10 @@ VERB cage_builder/len:(.*),walls:([^0]),steps:0,dir:$F .* cage_builder/len:$1,wa
 VERB cage_builder/len:(.*),walls:0,steps:[01],dir:.* .* wall/5 $T 1 finish
 # Handle collisions gracefully:
 VERB cage_builder/.*dir:$F wall/.*|cage_builder.* wall/5 $T 1 join_wall
+
+
+# uncomment the following to test for runaway particle names... (cage_builder discovered this bug, that's why it's here)
+# VERB cage_builder/(.*) .* $S$1 $T 1 example_regex_bug
 
 
 # Acid dissolves everything; usually, it is then "used up"
@@ -128,6 +132,7 @@ VERB acid wall/basalt|lava|_ _ _ 0.0 dissolve
 VERB acid wall/basalt $S lava 0.3 dissolve
 # Acid does fast Brownian motion
 VERB acid _ $T $S 1.0 drift
+VERB acid .* _ $T .005 drain
 
 # Perfume
 VERB perfume .*/=.* $T $T 1.0 hornify
