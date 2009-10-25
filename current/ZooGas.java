@@ -246,10 +246,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     protected void refreshBuffer() {
 	// draw border around board
 	bfGraphics.setColor(Color.white);
-	bfGraphics.drawLine(0,0,boardSize,0);
-	bfGraphics.drawLine(0,0,0,boardSize);
-	bfGraphics.drawLine(0,boardSize,boardSize,boardSize);
-	bfGraphics.drawLine(boardSize,0,boardSize,boardSize);
+	bfGraphics.drawRect(0,0,boardSize-1,boardSize-1);
 
 	// update buffer
 	bufferStrategy.show();
@@ -272,7 +269,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	// identify particle that cursor is currently over
 	boolean cursorOnBoard = getCursorPos();
 	Particle cursorParticle = cursorOnBoard ? board.readCell(cursorPos) : null;
-	printOrHide ("Current particle:", 13, cursorOnBoard, Color.white);
+	printOrHide ("Under cursor:", 13, cursorOnBoard, Color.white);
 	printOrHide (cursorOnBoard ? cursorParticle.visibleName() : "", 14, cursorOnBoard, cursorOnBoard ? cursorParticle.color : Color.white);
 
     }

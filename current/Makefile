@@ -8,9 +8,6 @@ classfiles class: $(CLASSFILES)
 clean:
 	rm $(CLASSFILES)
 
-TOOLS.txt ECOLOGY.txt: TestEcology.class
-	java TestEcology
-
 testserver: classfiles
 	java ZooGas 4444
 

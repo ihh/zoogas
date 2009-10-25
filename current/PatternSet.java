@@ -122,8 +122,7 @@ public class PatternSet {
 		    ps.rulePattern.add (new RulePattern(m.group(1)));
 		} else if (ePat.matcher(s).matches()) {
 		    break;
-		} else
-		    System.err.println("Ignoring line: " + s);
+		}
 	    }
 	} catch (IOException e) {
 	    e.printStackTrace();
