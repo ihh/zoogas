@@ -44,6 +44,7 @@ public class PatternSet {
 
     // method to compile new target rules for a Particle
     RandomVariable<ParticlePair> compileTargetRules (int dir, Particle source, Particle target, Board board) {
+	//	System.err.println ("Compiling rules for " + source.name + " " + target.name);
 	RandomVariable<ParticlePair> rv = new RandomVariable<ParticlePair>();
 	if (source.patternTemplate[dir] == null)
 	    source.patternTemplate[dir] = getSourceRules (source.name, board, dir);

@@ -49,6 +49,7 @@ VERB beacon/$B .* _ $T .001 die
 # Initial conditions
 VERB /INIT.* _ beacon _ 1 start
 
+# Animal rules. This is where the ecology actually happens.
 # Successful predation
 VERB .*/=(.) .*/=$%i+1.1 $S $S .024 eat
 VERB .*/=(.) .*/=$%i+2.1 $S $S .024 eat
@@ -78,9 +79,12 @@ VERB .*/=. .*/=. _ $T 0.0015 choke
 # Movement
 VERB .*/=. _ $T $S 0.02 step
 
-# Other fun behaviors
+# Other fun behaviors of animals
 VERB .*/=. zoo_guest _ $S 1.0 maul
+# Only [non-mutant] imps can destroy lava:
 VERB .*imp/=. lava.* _ $T 1 frolic
+
+
 
 # Walls and cement
 VERB wall/([2-9a-z]) .* wall/$-1 $T .00022 decay
@@ -94,12 +98,26 @@ VERB cement wall.* wall/4 $T 0.9 stick
 VERB cement _ $T $S .99 drift
 VERB cement .* _ $T .01 drain
 
+
+# Cage builders
+VERB cage_builder/len:([^,]*) .* cage_builder/len:$1,dir:$F $T 1 choose_direction
+# Hacky way to force ne,nw,se,sw into n,s,e,w
+VERB cage_builder/len:([^,]*),dir:(ne|nw|se|sw) .* cage_builder/len:$1,dir:$F $T 1 rethink_direction
+VERB cage_builder/len:([^,]*),dir:([^,]) .* cage_builder/len:$1,walls:3,steps:$1,dir:$2 $T 1 start
+VERB cage_builder/len:(.*),walls:(.),steps:([^0].*),dir:$F _ wall/5 cage_builder/len:$1,walls:$2,steps:$-3,dir:$F 1 build_wall
+VERB cage_builder/len:(.*),walls:([^0]),steps:0,dir:$F .* cage_builder/len:$1,walls:$-2,steps:$1,dir:$+R $T 1 right_angle_turn
+VERB cage_builder/.*dir:$F wall/.* wall/5 $T 1 join_wall
+VERB cage_builder/len:(.*),walls:0,steps:[01],dir:.* .* wall/5 $T 1 finish
+
+
 # Acid dissolves everything; usually, it is then "used up"
 VERB acid .* $S _ 0.1 dissolve
 VERB acid .* _ _ 0.9 dissolve
 # Override "Acid dissolves everything" rules for basalt, lava & empty space
 VERB acid wall/basalt|lava|_ $S _ 0.0 dissolve
 VERB acid wall/basalt|lava|_ _ _ 0.0 dissolve
+# Instead, acid turns basalt into lava
+VERB acid wall/basalt $S lava 0.3 dissolve
 # Acid does fast Brownian motion
 VERB acid _ $T $S 1.0 drift
 
@@ -111,14 +129,15 @@ VERB perfume _ $S $S 0.09 billow
 VERB perfume _ $T $S 0.81 drift
 
 # Mutator gas: change the species number.
-VERB mutator (.*/=)([0-9a-z]) _ $1$%i+1.2 1.0 mutate
-VERB mutator (.*/=)([0-9a-z]) _ $1$%i+h.2 1.0 mutate
-VERB mutator (.*/=)([0-9a-z]) _ $1$%i+2.2 0.1 mutate
-VERB mutator (.*/=)([0-9a-z]) _ $1$%i+g.2 0.1 mutate
+VERB mutator (.*)/=([0-9a-z]) _ mutant/=$%i+1.2 1.0 mutate
+VERB mutator (.*)/=([0-9a-z]) _ mutant/=$%i+h.2 1.0 mutate
+VERB mutator (.*)/=([0-9a-z]) _ mutant/=$%i+2.2 0.1 mutate
+VERB mutator (.*)/=([0-9a-z]) _ mutant/=$%i+g.2 0.1 mutate
 VERB mutator _ _ _ 0.1 disperse
 VERB mutator _ $T $S 0.9 drift
 VERB mutator perfume $T $T 1.0 react
 
+# Lava. Sticks around longer than cement (long enough to make diffusion-limited aggregation fractals).
 VERB lava.* wall/. wall/basalt $T 0.01 set
 VERB lava.* wall/basalt $T $T 1.0 set
 # lava flows...
@@ -134,8 +153,7 @@ VERB lava/$++R _ $T lava/$F 0 flow
 VERB lava/$B _ $T lava/$F 0 flow
 VERB lava .* _ $T .00001 drain
 
-VERB wall/basalt acid _ lava 0.3 dissolve
-
+# zoo guests do bugger all except stroll around the place and get mauled
 VERB zoo_guest _ $T $S 0.01 perambulate
 
 END

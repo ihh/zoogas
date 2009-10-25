@@ -8,6 +8,7 @@ import java.io.*;
 // Particle class, encapsulating the behavior, appearance & summary statistics of a given CA state
 public class Particle {
     // appearance
+    public static int maxNameLength = 256;  // maximum length of a Particle name. Introduced to stop runaway regex rules from crashing the engine
     public String name = null;  // noun uniquely identifying this Particle (no whitespace)
     public Color color = null;
 
@@ -31,7 +32,7 @@ public class Particle {
     }
 
     public Particle (String name, Color color, Board board) {
-	this.name = name;
+	this.name = name.length() > maxNameLength ? name.substring(0,maxNameLength) : name;
 	this.color = color;
 	board.registerParticle (name, this);
 	// The following is what we really want here, but backward compatibility of Java generics prevents initialization of an array of generics:
@@ -46,11 +47,13 @@ public class Particle {
     // part of name visible to player
     String visibleName() {
 	
-	// Uncomment to reveal invisible metainfo to player
-	//	return name;
-
 	String[] partsOfName = name.split (visibleSeparatorChar, 2);
-	return partsOfName[0].replaceAll (visibleSpaceChar, " ");
+	String viz = partsOfName[0].replaceAll (visibleSpaceChar, " ");
+
+	// Uncomment to reveal invisible metainfo to player
+	//	viz = name;
+
+	return viz;
     }
 
     // helper to "close" all patterns, adding a do-nothing rule for patterns whose RHS probabilities sum to <1

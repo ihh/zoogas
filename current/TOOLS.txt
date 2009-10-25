@@ -8,3 +8,4 @@ rock_imp/=0 1 1 1 1 1 .1
 paper_bird/=6 2 1 1 1 1 .1
 blade_beetle/=c 3 1 1 1 1 .1
 zoo_guest z 1 1 1 1 .1
+cage_builder/len:k c 1 1 1 1 .1

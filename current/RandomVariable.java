@@ -41,8 +41,9 @@ public class RandomVariable<V> {
     public final void close (V o) {
 	if (totalWeight < 1 && size() > 0)
 	    add (o, 1 - totalWeight);
-	else if (totalWeight > 1)
-	    System.err.println ("Warning: closing pattern with totalWeight " + totalWeight);
+	else if (totalWeight > 1) {
+	    //	    System.err.println ("Warning: closing pattern with totalWeight " + totalWeight);
+	}
     }
 
     public final V sample (Random rnd) {
