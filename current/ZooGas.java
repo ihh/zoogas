@@ -263,16 +263,17 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	toolBox.plotReserves(bfGraphics,new Point(boardSize,0),toolHeight,toolReserveBarWidth,toolKeyWidth);
 
 	// name of the game
-	flashOrHide ("Z00 GAS", 5, true, 0, 400, true, Color.white);
+	flashOrHide ("Z00 GAS", 8, true, 0, 400, true, Color.white);
 
 	// networking
-	flashOrHide ("Online", 18, board.boardServer != null, 0, -1, false, Color.blue);
-	flashOrHide ("Connected", 19, board.remoteCell.size() > 0, 0, -1, false, Color.cyan);
+	flashOrHide ("Online", 10, board.boardServer != null, 0, -1, false, Color.blue);
+	flashOrHide ("Connected", 11, board.remoteCell.size() > 0, 0, -1, false, Color.cyan);
 
 	// identify particle that cursor is currently over
 	boolean cursorOnBoard = getCursorPos();
 	Particle cursorParticle = cursorOnBoard ? board.readCell(cursorPos) : null;
-	printOrHide (cursorOnBoard ? cursorParticle.visibleName() : "", 20, cursorOnBoard, cursorOnBoard ? cursorParticle.color : Color.white);
+	printOrHide ("Current particle:", 13, cursorOnBoard, Color.white);
+	printOrHide (cursorOnBoard ? cursorParticle.visibleName() : "", 14, cursorOnBoard, cursorOnBoard ? cursorParticle.color : Color.white);
 
     }
 
