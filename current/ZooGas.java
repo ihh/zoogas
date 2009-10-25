@@ -226,8 +226,11 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 	// do spray
 	if (mouseDown) {
-	    if (cursorOnBoard)
-		toolBox.currentTool.spray(cursorPos,board,spaceParticle);
+	    if (cursorOnBoard) {
+		Set<Point> sprayCellSet = toolBox.currentTool.spray(cursorPos,board,spaceParticle);
+		for (Iterator<Point> iter = sprayCellSet.iterator(); iter.hasNext(); )
+		    drawCell (iter.next());
+	    }
 	} else
 	    toolBox.refill(1);
     }

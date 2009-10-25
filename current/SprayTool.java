@@ -1,4 +1,5 @@
 import java.awt.*;
+import java.util.*;
 
 public class SprayTool {
     // data
@@ -33,7 +34,8 @@ public class SprayTool {
 	    reserve = Math.min (reserve + refillAmount, maxReserve);
     }
 
-    void spray(Point cursorPos,Board board,Particle spaceParticle) {
+    Set<Point> spray(Point cursorPos,Board board,Particle spaceParticle) {
+	Set<Point> sprayCellSet = new HashSet<Point>();
 	Point sprayCell = new Point();
 	for (int n = 0; reserve >= 1 && n < sprayPower; ++n) {
 
@@ -45,9 +47,11 @@ public class SprayTool {
 		if (spaceParticle == null || oldCell == spaceParticle) {
 		    board.writeCell (sprayCell, particle);
 		    reserve -= 1;
+		    sprayCellSet.add (new Point(sprayCell));
 		}
 	    }
 	}
+	return sprayCellSet;
     }
 
     void plotReserve (Graphics g, Point topLeft, int toolHeight, int toolReserveBarWidth, int toolTextWidth, boolean selected) {
