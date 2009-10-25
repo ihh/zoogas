@@ -35,6 +35,10 @@ public class PatternSet {
 	    ParticlePattern pp = (ParticlePattern) particlePattern.get(n);
 	    p = pp.makeParticle(particleName,board,this);  // returns null if fails to match
 	}
+	// if still no such particle, create a bright white default with this PatternSet 
+	if (p == null)
+	    p = new Particle (particleName, Color.white, board, this);
+	// return
 	return p;
     }
 
@@ -112,11 +116,14 @@ public class PatternSet {
 	Pattern pPat = Pattern.compile("NOUN (.*)");
 	Pattern rPat = Pattern.compile("VERB (.*)");
 	Pattern ePat = Pattern.compile("END.*");
+	Pattern commentPat = Pattern.compile(" *#.*");
 	try {
 	    while (buff.ready()) {
 		String s = buff.readLine();
 		Matcher m = null;
-		if ((m = pPat.matcher(s)).matches()) {
+		if (commentPat.matcher(s).matches()) {
+		    continue;
+		} else if ((m = pPat.matcher(s)).matches()) {
 		    ps.particlePattern.add (new ParticlePattern(m.group(1)));
 		} else if ((m = rPat.matcher(s)).matches()) {
 		    ps.rulePattern.add (new RulePattern(m.group(1)));

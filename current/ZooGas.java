@@ -20,16 +20,24 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     // pattern set
     String patternSetFilename = "ECOLOGY.txt";
 
-    // initial conditions
-    String initImageFilename = "TheZoo.bmp";  // if non-null, initialization loads a seed image from this filename
+    // Initial conditions; or, How To Build a Zoo.
+    // if initImageFilename is not null, then the image will be read from a file,
+    // and converted to the Particles in initParticleFilename.
+    // if initImageFilename is null, then it is assumed that a miniprogram to build a zoo
+    // is contained in the initially-loaded pattern set.
+    // in this case, the entire zoo will be initialized to particle "spaceParticleName",
+    // and one initialization particle "INIT/radius" (where "radius" is half the size of the zoo) will be placed at coords (radius,radius).
+    String initImageFilename = null;
+    //    String initImageFilename = "TheZoo.bmp";  // if non-null, initialization loads a seed image from this filename
     String initParticleFilename = "TheZooParticles.txt";
-    // String initImageFilename = null;
+    String initParticlePrefix = "/INIT.";
 
     // view
     int pixelsPerCell = 4;  // width & height of each cell in pixels
     int boardSize;  // width & height of board in pixels
-    int statusBarHeight;  // size in pixels of various parts of the status bar (below the board)
-    int toolKeyWidth = 16, toolReserveBarWidth = 100, toolHeight = 30, toolBarWidth;  // size in pixels of various parts of the tool bar (right of the board)
+    int belowBoardHeight = 0;  // size in pixels of whatever appears below the board -- currently unused but left as a placeholder
+    int toolBarWidth = 100, toolLabelWidth = 100, toolHeight = 30;  // size in pixels of various parts of the tool bar (right of the board)
+    int textBarWidth = 400, textHeight = 30;
 
     // tools
     String toolboxFilename = "TOOLS.txt";
@@ -122,6 +130,13 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    } catch (IOException e) {
 		e.printStackTrace();
 	    }
+	} else {
+	    board.fill(spaceParticle);
+	    String initParticleName = initParticlePrefix + RuleMatch.int2string(size/2);
+	    Particle initParticle = board.getOrCreateParticle(initParticleName);
+	    if (initParticle == null)
+		throw new RuntimeException("Initialization particle " + initParticleName + " not found");
+	    board.writeCell(new Point(size/2,size/2),initParticle);
 	}
 
 	// init cell counts
@@ -130,10 +145,6 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	// init spray tools
 	initSprayTools();
 
-	// init view
-	statusBarHeight = 0;
-	toolBarWidth = toolKeyWidth + toolReserveBarWidth;
-
 	// init JFrame
 	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	setResizable(false);
@@ -141,7 +152,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 	// set size
 	insets = getInsets();
-	setSize(boardSize + toolBarWidth + insets.left + insets.right,boardSize + statusBarHeight + insets.top + insets.bottom);
+	setSize(boardSize + toolBarWidth + toolLabelWidth + textBarWidth + insets.left + insets.right,boardSize + belowBoardHeight + insets.top + insets.bottom);
 
 	// init double buffering
 	createBufferStrategy(2);
@@ -229,7 +240,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     private void drawEverything() {
 	bfGraphics.setColor(Color.black);
-	bfGraphics.fillRect(0,0,boardSize+toolBarWidth,boardSize+statusBarHeight);
+	bfGraphics.fillRect(0,0,boardSize+toolBarWidth+toolLabelWidth+textBarWidth,boardSize+belowBoardHeight);
 
 	board.drawEverything(bfGraphics,pixelsPerCell);
 
@@ -257,7 +268,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     protected void plotCounts() {
 
 	// spray levels
-	toolBox.plotReserves(bfGraphics,new Point(boardSize,0),toolHeight,toolReserveBarWidth,toolKeyWidth);
+	toolBox.plotReserves(bfGraphics,new Point(boardSize,0),toolHeight,toolBarWidth,toolLabelWidth);
 
 	// name of the game
 	flashOrHide ("Z00 GAS", 8, true, 0, 400, true, Color.white);
@@ -297,15 +308,15 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     private void printOrHide (String text, int row, boolean show, Color color) {
 	FontMetrics fm = bfGraphics.getFontMetrics();
-	int xSize = fm.stringWidth(text), xPos = boardSize + toolBarWidth - xSize;
-	int ch = fm.getHeight(), yPos = toolYCenter(row) + ch / 2;
+	int xSize = fm.stringWidth(text), xPos = boardSize + toolBarWidth + toolLabelWidth + textBarWidth - xSize;
+	int ch = fm.getHeight(), bleed = 6, yPos = row * (ch + bleed);
 
 	bfGraphics.setColor (Color.black);
-	bfGraphics.fillRect (boardSize, yPos - ch + 1, toolBarWidth, ch + 2);
+	bfGraphics.fillRect (boardSize + toolBarWidth + toolLabelWidth, yPos, textBarWidth, ch + bleed);
 
 	if (show) {
 	    bfGraphics.setColor (color);
-	    bfGraphics.drawString (text, xPos, yPos);
+	    bfGraphics.drawString (text, xPos, yPos + ch);
 	}
     }
 

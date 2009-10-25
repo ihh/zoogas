@@ -125,9 +125,18 @@ public class Board extends MooreTopology {
 	if (old_pc != pc) {
 	    cell[p.x][p.y].particle = pc;
 	    ++cell[p.x][p.y].writeCount;
-	    --old_pc.count;
+	    if (old_pc != null)
+		--old_pc.count;
 	    ++pc.count;
 	}
+    }
+
+    // fill/init method
+    public void fill(Particle particle) {
+	Point p = new Point();
+	for (p.x = 0; p.x < size; ++p.x)
+	    for (p.y = 0; p.y < size; ++p.y)
+		writeCell(p,particle);
     }
 
     // rendering methods

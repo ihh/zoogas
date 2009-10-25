@@ -45,12 +45,12 @@ public class Particle {
     // methods
     // part of name visible to player
     String visibleName() {
-	// Uncomment to hide invisible metainfo from player
-	/*
+	
+	// Uncomment to reveal invisible metainfo to player
+	//	return name;
+
 	String[] partsOfName = name.split (visibleSeparatorChar, 2);
 	return partsOfName[0].replaceAll (visibleSpaceChar, " ");
-	*/
-	return name;
     }
 
     // helper to "close" all patterns, adding a do-nothing rule for patterns whose RHS probabilities sum to <1
