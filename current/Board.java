@@ -79,7 +79,9 @@ public class Board extends MooreTopology {
 
     // read from image
     // TODO: eliminate the ZooGas references here, use a PatternSet instead
-    protected void initFromImage (BufferedImage img, ZooGas gas) {
+    protected void initFromImage (BufferedImage img, ParticleSet particleSet) {
+	Set<Particle> ps = particleSet.getParticles(this);
+
 	for (int x = 0; x < size; ++x)
 	    for (int y = 0; y < size; ++y) {
 		int c = img.getRGB(x,y);
@@ -90,8 +92,8 @@ public class Board extends MooreTopology {
 		// find state with closest color
 		int dmin = 0;
 		Particle s = null;
-		for (int t = 0; t < gas.particleTypes(); ++t) {
-		    Particle pt = gas.getParticleByNumber(t);
+		for (Iterator<Particle> e = ps.iterator(); e.hasNext() ;) {
+		    Particle pt = e.next();
 		    Color ct = pt.color;
 		    int rdist = red - ct.getRed(), gdist = green - ct.getGreen(), bdist = blue - ct.getBlue();
 		    int dist = rdist*rdist + gdist*gdist + bdist*bdist;

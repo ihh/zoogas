@@ -56,18 +56,12 @@ public class ToolBox {
 	boolean foundKey = false;
 	for (int t = 0; t < tool.size(); ++t) {
 	    SprayTool st = tool.elementAt(t);
-	    if (Character.toUpperCase(st.hotKey) == Character.toUpperCase(c) && !st.hidden) {
+	    if (Character.toUpperCase(st.hotKey) == Character.toUpperCase(c)) {
 		foundKey = true;
 		currentTool = st;
 		break;
 	    }
 	}
 	return foundKey;
-    }
-
-    // reveal
-    void revealHiddenTools() {
-	for (Enumeration<SprayTool> iter = tool.elements(); iter.hasMoreElements(); )
-	    iter.nextElement().hidden = false;
     }
 }

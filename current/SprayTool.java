@@ -5,14 +5,13 @@ public class SprayTool {
     String particleName = null;
     double sprayDiameter = 0, sprayPower = 0, reserve = 0, maxReserve = 0, refillRate = 0, barWidth = 1;
     char hotKey = 0;
-    boolean hidden = false;
     Particle particle = null;
 
     // constructor
     static SprayTool fromString (String toolString, Board board) {
 	SprayTool stat = null;
 	String[] toolArgs = toolString.split(" ");
-	if (toolArgs.length == 8) {
+	if (toolArgs.length == 7) {
 	    stat = new SprayTool();
 	    stat.particleName = toolArgs[0];
 	    stat.hotKey = toolArgs[1].charAt(0);
@@ -21,7 +20,6 @@ public class SprayTool {
 	    stat.maxReserve = new Double(toolArgs[4]).doubleValue();
 	    stat.refillRate = new Double(toolArgs[5]).doubleValue();
 	    stat.barWidth = new Double(toolArgs[6]).doubleValue();
-	    stat.hidden = !(new Boolean(toolArgs[7]).booleanValue());
 	} else
 	    System.err.println("Wrong no. of args in toolString '" + toolString + "'");
 	stat.particle = board.getOrCreateParticle (stat.particleName);
@@ -54,36 +52,31 @@ public class SprayTool {
 
     void plotReserve (Graphics g, Point topLeft, int toolHeight, int toolReserveBarWidth, int toolTextWidth, boolean selected) {
 	int toolBarWidth = toolReserveBarWidth + toolTextWidth;
-	if (hidden) {
-	    g.setColor (Color.black);
-	    g.fillRect (topLeft.x, topLeft.y, toolBarWidth, toolHeight);
-	} else {
-	    char[] ca = new char[1];
-	    ca[0] = hotKey;
-	    int xLeft = topLeft.x;
-	    int yMid = topLeft.y + toolHeight / 2;
+	char[] ca = new char[1];
+	ca[0] = hotKey;
+	int xLeft = topLeft.x;
+	int yMid = topLeft.y + toolHeight / 2;
 
-	    FontMetrics fm = g.getFontMetrics();
-	    int cw = fm.charWidth(hotKey);
-	    int ch = fm.getHeight();
+	FontMetrics fm = g.getFontMetrics();
+	int cw = fm.charWidth(hotKey);
+	int ch = fm.getHeight();
 
-	    g.setColor (particle.color);
-	    g.drawChars (ca, 0, 1, xLeft + toolReserveBarWidth + toolTextWidth/2 - cw/2, yMid + ch/2);
+	g.setColor (particle.color);
+	g.drawChars (ca, 0, 1, xLeft + toolReserveBarWidth + toolTextWidth/2 - cw/2, yMid + ch/2);
 
-	    int td = 4;
-	    int tw = toolReserveBarWidth - td;
-	    int w = (int) (barWidth * (double) (tw * reserve / maxReserve));
-	    if (w > toolReserveBarWidth)
-		w = toolReserveBarWidth;
+	int td = 4;
+	int tw = toolReserveBarWidth - td;
+	int w = (int) (barWidth * (double) (tw * reserve / maxReserve));
+	if (w > toolReserveBarWidth)
+	    w = toolReserveBarWidth;
 
-	    int bh = toolHeight * 3 / 4;
-	    g.fillRect (xLeft + toolReserveBarWidth - w, yMid - bh/2, w, bh);
-	    g.setColor (Color.black);
-	    g.fillRect (xLeft + td, yMid - bh/2, tw - w, bh);
+	int bh = toolHeight * 3 / 4;
+	g.fillRect (xLeft + toolReserveBarWidth - w, yMid - bh/2, w, bh);
+	g.setColor (Color.black);
+	g.fillRect (xLeft + td, yMid - bh/2, tw - w, bh);
 
-	    g.setColor (selected ? Color.white : Color.black);
-	    g.drawRect (xLeft + 2, yMid - toolHeight/2 + 2, toolBarWidth - 4, toolHeight - 4);
-	}
+	g.setColor (selected ? Color.white : Color.black);
+	g.drawRect (xLeft + 2, yMid - toolHeight/2 + 2, toolBarWidth - 4, toolHeight - 4);
     }
 
 }
