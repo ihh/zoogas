@@ -101,17 +101,20 @@ VERB cement .* _ $T .01 drain
 
 
 # Cage builders
+# Choose size and orientation
 VERB cage_builder .* cage_builder/len:5 $T .3 choose_small
 VERB cage_builder .* cage_builder/len:b $T .3 choose_medium
 VERB cage_builder .* cage_builder/len:k $T .3 choose_large
-VERB cage_builder/len:([^,]*) .* cage_builder/len:$1,dir:$F $T 1 choose_direction
-# Hacky way to force ne,nw,se,sw into n,s,e,w
-VERB cage_builder/len:([^,]*),dir:(ne|nw|se|sw) .* cage_builder/len:$1,dir:$F $T 1 rethink_direction
+VERB cage_builder/len:([^,]*) .* cage_builder/len:$1,dir:$F $T 1 choose_orientation
+# Exclude diagonal cages: animals can escape through the cracks
+VERB cage_builder/len:([^,]*),dir:(ne|nw|se|sw) .* cage_builder/len:$1,dir:$F $T 1 rethink_orientation
+# OK, here's the program that actually builds the cage. It's a simple state machine...
 VERB cage_builder/len:([^,]*),dir:([^,]) .* cage_builder/len:$1,walls:3,steps:$1,dir:$2 $T 1 start
 VERB cage_builder/len:(.*),walls:(.),steps:([^0].*),dir:$F _ wall/5 cage_builder/len:$1,walls:$2,steps:$-3,dir:$F 1 build_wall
 VERB cage_builder/len:(.*),walls:([^0]),steps:0,dir:$F .* cage_builder/len:$1,walls:$-2,steps:$1,dir:$+R $T 1 right_angle_turn
-VERB cage_builder/.*dir:$F wall/.*|cage_builder.* wall/5 $T 1 join_wall
 VERB cage_builder/len:(.*),walls:0,steps:[01],dir:.* .* wall/5 $T 1 finish
+# Handle collisions gracefully
+VERB cage_builder/.*dir:$F wall/.*|cage_builder.* wall/5 $T 1 join_wall
 
 
 # Acid dissolves everything; usually, it is then "used up"
