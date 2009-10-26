@@ -16,7 +16,7 @@ public class Particle {
     PatternSet patternSet = null;
 
     // transformation rules
-    protected IdentityHashMap<Particle,RandomVariable<ParticlePair>>[] pattern = null;  // production rules; array is indexed by neighbor direction, Map is indexed by Particle
+    protected ArrayList<IdentityHashMap<Particle,RandomVariable<ParticlePair>>> pattern = null;  // production rules; array is indexed by neighbor direction, Map is indexed by Particle
     protected TransformRuleMatch[][] patternTemplate = null;  // generators for production rules; outer array is indexed by neighbor direction, inner array is the set of partially-bound rules for that direction
 
     // energy rules
@@ -43,10 +43,10 @@ public class Particle {
 	int N = board.neighborhoodSize();
 	// The following is what we really want here, but backward compatibility of Java generics prevents initialization of an array of generics:
 	//	pattern = new IdentityHashMap<Particle,RandomVariable<ParticlePair>> [N];
-	pattern = new IdentityHashMap[N];   // causes an unavoidable warning. Thanks, Java!
+	pattern = new ArrayList<IdentityHashMap<Particle, RandomVariable<ParticlePair>>>(N);   // Ugly, but no longer causes a warning. Thanks, Java!
 	patternTemplate = new TransformRuleMatch[N][];
-	for (int n = 0; n < pattern.length; ++n) {
-	    pattern[n] = new IdentityHashMap<Particle,RandomVariable<ParticlePair>>();
+	for (int n = 0; n < N; ++n) {
+	    pattern.add(new IdentityHashMap<Particle,RandomVariable<ParticlePair>>());
 	    patternTemplate[n] = patternSet.getSourceTransformRules (name, board, n);
 	}
 	// init energy rule patterns
@@ -88,8 +88,8 @@ public class Particle {
 
     // helper to "close" all patterns, adding a do-nothing rule for patterns whose RHS probabilities sum to <1
     protected final void closePatterns() {
-	for (int n = 0; n < pattern.length; ++n) {
-	    Iterator<Map.Entry<Particle,RandomVariable<ParticlePair>>> iter = pattern[n].entrySet().iterator();
+	for (int n = 0; n < pattern.size(); ++n) {
+	    Iterator<Map.Entry<Particle,RandomVariable<ParticlePair>>> iter = pattern.get(n).entrySet().iterator();
 	    while (iter.hasNext()) {
 		Map.Entry<Particle,RandomVariable<ParticlePair>> keyval = (Map.Entry<Particle,RandomVariable<ParticlePair>>) iter.next();
 		Particle target = (Particle) keyval.getKey();
@@ -111,13 +111,13 @@ public class Particle {
     // returns null if no rule found
     public final ParticlePair samplePair (int dir, Particle oldTarget, Random rnd, Board board) {
 	RandomVariable<ParticlePair> rv = null;
-	if (pattern[dir].containsKey(oldTarget)) {
-	    rv = pattern[dir].get (oldTarget);
+	if (pattern.get(dir).containsKey(oldTarget)) {
+	    rv = pattern.get(dir).get (oldTarget);
 	} else {
 	    // if no RV, look for rule generator(s) that match this neighbor, and use them to create a set of rules
 	    if (patternSet != null) {
 		rv = patternSet.compileTransformRules(dir,this,oldTarget,board);
-		pattern[dir].put (oldTarget, rv);
+		pattern.get(dir).put (oldTarget, rv);
 		remember(oldTarget);
 	    }
 	}
@@ -164,8 +164,8 @@ public class Particle {
     }
 
     private final void forget (Particle p) {
-	for (int d = 0; d < pattern.length; ++d)
-	    pattern[d].remove(p);
+	for (int d = 0; d < pattern.size(); ++d)
+	    pattern.get(d).remove(p);
 	energy.remove(p);
 	pastNeighbors.remove(p);
     }

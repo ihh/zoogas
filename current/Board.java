@@ -201,7 +201,7 @@ public class Board extends MooreTopology {
 
 	    if (oldSourceState.name.equals("_")) {
 		System.err.println("_ is active");
-		Set<Particle> actives = oldSourceState.pattern[dir].keySet();
+		Set<Particle> actives = oldSourceState.pattern.get(dir).keySet();
 		for (Iterator<Particle> a = actives.iterator(); a.hasNext(); )
 		    System.err.println("_ " + a.next().name);
 	    }
