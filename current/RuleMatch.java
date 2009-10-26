@@ -21,8 +21,8 @@ import java.io.*;
 //  $1,$2,$3... => groups in A and B regexps (c.f. Perl)
 //  $S,$T => full names for old source,target states
 //  $F,$L,$R,$B,$+L,$+R,$++L,$++R => directions relative to neighbor direction ($F=forward, $L=left, $R=right, $B=back, $+L=two left, $++L=three left)
-//  $-1 or $-1.1 => numerically one less than $1 interpreted as an alphadecimal number (base 36)
-//  $-2.1 => numerically two less than $1 (and $-a.1 is ten less, i.e. it's alphadecimal)
+//  $-1 or $-1.1 => numerically one less than $1
+//  $-2.1 => numerically two less than $1
 //  $+1.1 => numerically one greater than $1
 //  $%3+2.1 => ($1 + 2) mod 3
 
@@ -200,7 +200,7 @@ public class RuleMatch {
     }
 
     // expansion of $+++1
-    static Pattern incGroupPattern = Pattern.compile("\\$\\+([0-9A-Za-z]*)\\.?([1-9][0-9]*)");
+    static Pattern incGroupPattern = Pattern.compile("\\$\\+([0-9]*)\\.?([1-9][0-9]*)");
     protected final String expandInc (String s) {
 	Matcher m = incGroupPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
@@ -215,7 +215,7 @@ public class RuleMatch {
     }
 
     // expansion of $--1
-    static Pattern decGroupPattern = Pattern.compile("\\$\\-([0-9A-Za-z]*)\\.?([1-9][0-9]*)");
+    static Pattern decGroupPattern = Pattern.compile("\\$\\-([0-9]*)\\.?([1-9][0-9]*)");
     protected final String expandDec (String s) {
 	Matcher m = decGroupPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
@@ -231,7 +231,7 @@ public class RuleMatch {
     }
 
     // expansion of $%3++1
-    static Pattern modGroupPattern = Pattern.compile("\\$%([1-9A-Za-z][0-9A-Za-z]*)\\+([0-9A-Za-z]*)\\.?([1-9][0-9]*)");
+    static Pattern modGroupPattern = Pattern.compile("\\$%([1-9][0-9]*)\\+([0-9]*)\\.?([1-9][0-9]*)");
     protected final String expandMod (String s) {
 	Matcher m = modGroupPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
@@ -262,8 +262,8 @@ public class RuleMatch {
 	return val;
     }
 
-    // helper methods to encode/decode alphadecimal
-    static private int base = 36;
+    // helper methods to encode/decode decimal numbers
+    static private int base = 10;
     static String int2string(int n) { return Integer.toString(n,base); }
     static int string2int(String s) { return Integer.parseInt(s,base); }
 }
