@@ -7,6 +7,7 @@ import java.awt.image.*;
 import java.net.*;
 import java.io.*;
 import javax.swing.JFrame;
+import javax.swing.JPanel;
 import javax.imageio.ImageIO;
 
 public class ZooGas extends JFrame implements MouseListener, KeyListener {
@@ -56,9 +57,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     int patternMatchesPerRefresh;
 
     // Swing
-    Insets insets;
-    BufferStrategy bufferStrategy;
     Graphics bfGraphics;
+    BufferedImage bfImage;
     Cursor boardCursor, normalCursor;
     // Uncomment to use "helicopter.png" as a mouse cursor over the board:
     //    String boardCursorFilename = "helicopter.png";
@@ -195,17 +195,21 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	// init JFrame
 	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	setResizable(false);
-	setVisible(true);
-
-	// set size
-	insets = getInsets();
-	setSize(boardSize + toolBarWidth + insets.left + insets.right,boardSize + statusBarHeight + insets.top + insets.bottom);
 
 	// init double buffering
-	createBufferStrategy(2);
-	bufferStrategy = getBufferStrategy();
-	bfGraphics = bufferStrategy.getDrawGraphics();
-	bfGraphics.translate (insets.left, insets.top);
+	bfImage = new BufferedImage(boardSize + toolBarWidth, boardSize + statusBarHeight, BufferedImage.TYPE_3BYTE_BGR);
+	bfGraphics = bfImage.getGraphics();
+	setContentPane(new JPanel() {
+				protected void paintComponent(Graphics g)
+				{
+					super.paintChildren(g);
+					g.drawImage(bfImage, 0, 0, null);
+				}});
+
+	// set size
+	getContentPane().setPreferredSize(new Dimension(boardSize + toolBarWidth, boardSize + statusBarHeight));
+	pack();
+	setVisible(true);
 
 	// create cursors
 	boardCursor = new Cursor(Cursor.HAND_CURSOR);
@@ -312,9 +316,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
     // getCursorPos() returns true if cursor is over board, and places cell coords in cursorPos
     private boolean getCursorPos() {
-	Point mousePos = getMousePosition();
+	Point mousePos = getContentPane().getMousePosition();
 	if (mousePos != null) {
-	    mousePos.translate(-insets.left,-insets.top);
 	    board.getCellCoords(mousePos,cursorPos,pixelsPerCell);
 	    return board.onBoard(cursorPos);
 	}
@@ -348,9 +351,6 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     }
 
     private void drawEverything() {
-	bfGraphics.setColor(Color.black);
-	bfGraphics.fillRect(0,0,boardSize+toolBarWidth,boardSize+statusBarHeight);
-
 	board.drawEverything(bfGraphics,pixelsPerCell);
 
 	refreshBuffer();
@@ -372,7 +372,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	bfGraphics.drawLine(boardSize,0,boardSize,boardSize);
 
 	// update buffer
-	bufferStrategy.show();
+	repaint();
 	Toolkit.getDefaultToolkit().sync();	
     }
 
@@ -569,9 +569,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     public void mousePressed(MouseEvent e) {
 	mouseDown = true;
 
-	Point mousePos = getMousePosition();
-	mousePos.x -= insets.left;
-	mousePos.y -= insets.top;
+	Point mousePos = e.getPoint();
 	if (mousePos.x >= boardSize && mousePos.y < toolHeight * toolBox.tool.size()) {
 	    int row = mousePos.y / toolHeight;
 	    toolBox.currentTool = toolBox.tool.elementAt(row);
