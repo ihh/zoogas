@@ -29,8 +29,8 @@ import java.io.*;
 
 // RuleMatch - a partially- or fully-bound RulePattern.
 // Use as follows:
-//   RulePattern rp ("critter/(\d+) _ $T $S .098 move");
-//   RuleMatch rm = new RuleMatch(rp);
+//   TransformRulePattern rp = TransformRulePattern.fromString ("critter/(\d+) _ $T $S .098 move");
+//   TransformRuleMatch rm = new TransformRuleMatch(rp);
 //   rm.bindDir(0);
 //   rm.bindSource("critter/1");
 //   rm.bindTarget("_");
