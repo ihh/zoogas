@@ -13,7 +13,7 @@ import java.io.*;
 
 public class PatternSet {
     // data
-    private Vector<RulePattern> rulePattern = new Vector<RulePattern>();
+    private Vector<TransformRulePattern> rulePattern = new Vector<TransformRulePattern>();
     private Vector<ParticlePattern> particlePattern = new Vector<ParticlePattern>();
 
     // method to lay down a template for a Particle
@@ -23,7 +23,7 @@ public class PatternSet {
 
     // method to lay down a template for a rule
     void addRulePattern (String patternString) {
-	rulePattern.add (new RulePattern(patternString));
+	rulePattern.add (TransformRulePattern.fromString(patternString));
     }
 
     // method to get a Particle from the Board object or create and add one
@@ -49,7 +49,7 @@ public class PatternSet {
 	if (source.patternTemplate[dir] == null)
 	    source.patternTemplate[dir] = getSourceRules (source.name, board, dir);
 	for (int n = 0; n < source.patternTemplate[dir].length; ++n) {
-	    RuleMatch rm = source.patternTemplate[dir][n];
+	    TransformRuleMatch rm = source.patternTemplate[dir][n];
 	    //		    System.err.println ("Particle " + source.name + ": trying to match " + source.patternTemplate[dir][n]);
 	    if (rm.bindTarget(target.name)) {
 		Particle
@@ -73,19 +73,19 @@ public class PatternSet {
     }
 
     // helper to get a set of rules
-    protected RuleMatch[] getSourceRules (String particleName, Board board, int dir) {
+    protected TransformRuleMatch[] getSourceRules (String particleName, Board board, int dir) {
 	//	System.err.println ("Trying to match particle " + particleName + " to rule generators");
-	Vector<RuleMatch> v = new Vector<RuleMatch>();
+	Vector<TransformRuleMatch> v = new Vector<TransformRuleMatch>();
 	for (int n = 0; n < rulePattern.size(); ++n) {
 	    //	    System.err.println ("Trying to match particle " + particleName + " to rule " + (RulePattern) rulePattern.get(n));
-	    RuleMatch rm = new RuleMatch ((RulePattern) rulePattern.get(n), board, dir, particleName);
+	    TransformRuleMatch rm = new TransformRuleMatch (rulePattern.get(n), board, dir, particleName);
 	    if (rm.matches())
 		v.add (rm);
 	}
 	Object[] a = v.toArray();
-	RuleMatch[] rm = new RuleMatch[a.length];
+	TransformRuleMatch[] rm = new TransformRuleMatch[a.length];
 	for (int n = 0; n < a.length; ++n)
-	    rm[n] = (RuleMatch) a[n];
+	    rm[n] = (TransformRuleMatch) a[n];
 	return rm;
     }
 
@@ -114,21 +114,21 @@ public class PatternSet {
 	PatternSet ps = new PatternSet();
 	InputStreamReader read = new InputStreamReader(in);
 	BufferedReader buff = new BufferedReader(read);
-	Pattern pPat = Pattern.compile("NOUN (.*)");
-	Pattern rPat = Pattern.compile("VERB (.*)");
-	Pattern ePat = Pattern.compile("END.*");
-	Pattern commentPat = Pattern.compile(" *#.*");
+	Pattern nounRegex = Pattern.compile("NOUN (.*)");
+	Pattern verbRegex = Pattern.compile("VERB (.*)");
+	Pattern endRegex = Pattern.compile("END.*");
+	Pattern commentRegex = Pattern.compile(" *#.*");
 	try {
 	    while (buff.ready()) {
 		String s = buff.readLine();
 		Matcher m = null;
-		if (commentPat.matcher(s).matches()) {
+		if (commentRegex.matcher(s).matches()) {
 		    continue;
-		} else if ((m = pPat.matcher(s)).matches()) {
+		} else if ((m = nounRegex.matcher(s)).matches()) {
 		    ps.particlePattern.add (new ParticlePattern(m.group(1)));
-		} else if ((m = rPat.matcher(s)).matches()) {
-		    ps.rulePattern.add (new RulePattern(m.group(1)));
-		} else if (ePat.matcher(s).matches()) {
+		} else if ((m = verbRegex.matcher(s)).matches()) {
+		    ps.rulePattern.add (TransformRulePattern.fromString(m.group(1)));
+		} else if (endRegex.matcher(s).matches()) {
 		    break;
 		}
 	    }

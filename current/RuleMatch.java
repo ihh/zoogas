@@ -55,7 +55,7 @@ public class RuleMatch {
 
     // lhs methods
     // binding methods return true for match, false for mismatch or failed binding
-    boolean bindDir(Board g,int d) {
+    public final boolean bindDir(Board g,int d) {
 	if (!dirBound()) {
 	    board = g;
 	    dir = d;
@@ -66,7 +66,7 @@ public class RuleMatch {
 	return false;
     }
 
-    boolean bindSource(String a) {
+    public final boolean bindSource(String a) {
 	if (!sourceBound()) {
 	    A = a;
 	    am = aPattern.matcher(a);
@@ -79,7 +79,7 @@ public class RuleMatch {
 	return false;
     }
 
-    boolean bindTarget(String b) {
+    public final boolean bindTarget(String b) {
 	if (!targetBound()) {
 	    B = b;
 	    bm = bPattern.matcher(b);
@@ -91,13 +91,13 @@ public class RuleMatch {
     }
 
     // unbinding
-    void unbindTarget() {
+    public final void unbindTarget() {
 	bm = null;
 	B = null;
 	bMatched = false;
     }
 
-    void unbindSource() {
+    public final void unbindSource() {
 	unbindTarget();
 	am = null;
 	A = null;
@@ -105,14 +105,14 @@ public class RuleMatch {
 	aMatched = false;
     }
 
-    void unbind() {
+    public final void unbind() {
 	unbindSource();
 	aPattern = null;
 	dir = -1;
     }
 
     // matches() returns true if the rule has matched *so far*
-    boolean matches() {
+    public final boolean matches() {
 	return
 	    am == null
 	    ? true
@@ -122,34 +122,30 @@ public class RuleMatch {
     }
 
     // methods to test if the rule is fully or partly bound
-    boolean targetBound() { return B != null; }
-    boolean sourceBound() { return A != null; }
-    boolean dirBound() { return dir >= 0; }
+    public final boolean targetBound() { return B != null; }
+    public final boolean sourceBound() { return A != null; }
+    public final boolean dirBound() { return dir >= 0; }
 
     // expanded pattern methods
-    String regexA() { return expandDir(pattern.A); }
-    String regexB() { return expandLHS(pattern.B); }
-    String A() { return A; }
-    String B() { return B; }
-    String C() { return expandRHS(pattern.C); }
-    String D() { return expandRHS(pattern.D); }
-    String V() { return expandRHS(pattern.V); }
-    double P() { return pattern.P; }
+    public final String regexA() { return expandDir(pattern.A); }
+    public final String regexB() { return expandLHS(pattern.B); }
+    public final String A() { return A; }
+    public final String B() { return B; }
 
     // main expand() methods
     // expansion of B
-    protected String expandLHS (String s) {
+    protected final String expandLHS (String s) {
 	return expandMod(expandDec(expandInc(expandGroupOrSource(expandDir(s)))));
     }
 
     // expansion of C and D
-    protected String expandRHS (String s) {
+    protected final String expandRHS (String s) {
 	return expandTarget(expandLHS(s));
     }
 
     // expansion of $F, $B, $L, $R
     static Pattern dirPattern = Pattern.compile("\\$(F|B|L|R|\\+L|\\+\\+L|\\+R|\\+\\+R)");
-    protected String expandDir (String s) {
+    protected final String expandDir (String s) {
 	Matcher m = dirPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
 	while (m.find()) {
@@ -178,7 +174,7 @@ public class RuleMatch {
 
     // expansion of $1, $2, ... and $S
     static Pattern groupPattern = Pattern.compile("\\$(S|[1-9][0-9]*)");
-    protected String expandGroupOrSource (String s) {
+    protected final String expandGroupOrSource (String s) {
 	Matcher m = groupPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
 	while (m.find()) {
@@ -194,7 +190,7 @@ public class RuleMatch {
 
     // expansion of $T
     static Pattern targetPattern = Pattern.compile("\\$T");
-    protected String expandTarget (String s) {
+    protected final String expandTarget (String s) {
 	Matcher m = targetPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
 	while (m.find())
@@ -205,7 +201,7 @@ public class RuleMatch {
 
     // expansion of $+++1
     static Pattern incGroupPattern = Pattern.compile("\\$\\+([0-9A-Za-z]*)\\.?([1-9][0-9]*)");
-    protected String expandInc (String s) {
+    protected final String expandInc (String s) {
 	Matcher m = incGroupPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
 	while (m.find()) {
@@ -220,7 +216,7 @@ public class RuleMatch {
 
     // expansion of $--1
     static Pattern decGroupPattern = Pattern.compile("\\$\\-([0-9A-Za-z]*)\\.?([1-9][0-9]*)");
-    protected String expandDec (String s) {
+    protected final String expandDec (String s) {
 	Matcher m = decGroupPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
 	while (m.find()) {
@@ -236,7 +232,7 @@ public class RuleMatch {
 
     // expansion of $%3++1
     static Pattern modGroupPattern = Pattern.compile("\\$%([1-9A-Za-z][0-9A-Za-z]*)\\+([0-9A-Za-z]*)\\.?([1-9][0-9]*)");
-    protected String expandMod (String s) {
+    protected final String expandMod (String s) {
 	Matcher m = modGroupPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
 	while (m.find()) {

@@ -14,7 +14,7 @@ public class Particle {
 
     // behavior
     protected IdentityHashMap<Particle,RandomVariable<ParticlePair>>[] pattern = null;  // production rules; array is indexed by neighbor direction, Map is indexed by Particle
-    protected RuleMatch[][] patternTemplate = null;  // generators for production rules; outer array is indexed by neighbor direction, inner array is the set of partially-bound rules for that direction
+    protected TransformRuleMatch[][] patternTemplate = null;  // generators for production rules; outer array is indexed by neighbor direction, inner array is the set of partially-bound rules for that direction
     PatternSet patternSet = null;
 
     // internals
@@ -38,7 +38,7 @@ public class Particle {
 	// The following is what we really want here, but backward compatibility of Java generics prevents initialization of an array of generics:
 	//	pattern = new IdentityHashMap<Particle,RandomVariable<ParticlePair>> [board.neighborhoodSize()];
 	pattern = new IdentityHashMap[board.neighborhoodSize()];   // causes an unavoidable warning. Thanks, Java!
-	patternTemplate = new RuleMatch[board.neighborhoodSize()][];
+	patternTemplate = new TransformRuleMatch[board.neighborhoodSize()][];
 	for (int n = 0; n < pattern.length; ++n)
 	    pattern[n] = new IdentityHashMap<Particle,RandomVariable<ParticlePair>>();
     }
