@@ -13,7 +13,8 @@ import java.io.*;
 
 public class PatternSet {
     // data
-    private Vector<TransformRulePattern> rulePattern = new Vector<TransformRulePattern>();
+    private Vector<EnergyRulePattern> energyRulePattern = new Vector<EnergyRulePattern>();
+    private Vector<TransformRulePattern> transformRulePattern = new Vector<TransformRulePattern>();
     private Vector<ParticlePattern> particlePattern = new Vector<ParticlePattern>();
 
     // method to lay down a template for a Particle
@@ -23,7 +24,7 @@ public class PatternSet {
 
     // method to lay down a template for a rule
     void addRulePattern (String patternString) {
-	rulePattern.add (TransformRulePattern.fromString(patternString));
+	transformRulePattern.add (TransformRulePattern.fromString(patternString));
     }
 
     // method to get a Particle from the Board object or create and add one
@@ -47,7 +48,7 @@ public class PatternSet {
 	//	System.err.println ("Compiling rules for " + source.name + " " + target.name);
 	RandomVariable<ParticlePair> rv = new RandomVariable<ParticlePair>();
 	if (source.patternTemplate[dir] == null)
-	    source.patternTemplate[dir] = getSourceRules (source.name, board, dir);
+	    source.patternTemplate[dir] = getSourceTransformRules (source.name, board, dir);
 	for (int n = 0; n < source.patternTemplate[dir].length; ++n) {
 	    TransformRuleMatch rm = source.patternTemplate[dir][n];
 	    //		    System.err.println ("Particle " + source.name + ": trying to match " + source.patternTemplate[dir][n]);
@@ -72,20 +73,35 @@ public class PatternSet {
 	return rv;
     }
 
-    // helper to get a set of rules
-    protected TransformRuleMatch[] getSourceRules (String particleName, Board board, int dir) {
-	//	System.err.println ("Trying to match particle " + particleName + " to rule generators");
+    // helper to get a set of transformation rules with the source bound to a given Particle
+    protected TransformRuleMatch[] getSourceTransformRules (String particleName, Board board, int dir) {
+	//	System.err.println ("Trying to match particle " + particleName + " to transformation rule generators");
 	Vector<TransformRuleMatch> v = new Vector<TransformRuleMatch>();
-	for (int n = 0; n < rulePattern.size(); ++n) {
-	    //	    System.err.println ("Trying to match particle " + particleName + " to rule " + (RulePattern) rulePattern.get(n));
-	    TransformRuleMatch rm = new TransformRuleMatch (rulePattern.get(n), board, dir, particleName);
+	for (int n = 0; n < transformRulePattern.size(); ++n) {
+	    //	    System.err.println ("Trying to match particle " + particleName + " to transformation rule " + (RulePattern) transformRulePattern.get(n));
+	    TransformRuleMatch rm = new TransformRuleMatch (transformRulePattern.get(n), board, dir, particleName);
 	    if (rm.matches())
 		v.add (rm);
 	}
-	Object[] a = v.toArray();
-	TransformRuleMatch[] rm = new TransformRuleMatch[a.length];
-	for (int n = 0; n < a.length; ++n)
-	    rm[n] = (TransformRuleMatch) a[n];
+	TransformRuleMatch[] rm = new TransformRuleMatch[v.size()];
+	for (int n = 0; n < v.size(); ++n)
+	    rm[n] = v.get(n);
+	return rm;
+    }
+
+    // helper to get a set of energy rules with the source bound to a given Particle
+    protected EnergyRuleMatch[] getSourceEnergyRules (String particleName, Board board) {
+	//	System.err.println ("Trying to match particle " + particleName + " to energy rule generators");
+	Vector<EnergyRuleMatch> v = new Vector<EnergyRuleMatch>();
+	for (int n = 0; n < energyRulePattern.size(); ++n) {
+	    //	    System.err.println ("Trying to match particle " + particleName + " to energy rule " + (RulePattern) energyRulePattern.get(n));
+	    EnergyRuleMatch rm = new EnergyRuleMatch (energyRulePattern.get(n), board, particleName);
+	    if (rm.matches())
+		v.add (rm);
+	}
+	EnergyRuleMatch[] rm = new EnergyRuleMatch[v.size()];
+	for (int n = 0; n < v.size(); ++n)
+	    rm[n] = v.get(n);
 	return rm;
     }
 
@@ -93,9 +109,11 @@ public class PatternSet {
     void toStream (OutputStream out) {
 	PrintStream print = new PrintStream(out);
 	for (Enumeration e = particlePattern.elements(); e.hasMoreElements() ;)
-	    print.println ("NOUN " + ((ParticlePattern) e.nextElement()).toString());
-	for (Enumeration e = rulePattern.elements(); e.hasMoreElements() ;)
-	    print.println ("VERB " + ((RulePattern) e.nextElement()).toString());
+	    print.println ("NOUN " + (e.nextElement()).toString());
+	for (Enumeration e = transformRulePattern.elements(); e.hasMoreElements() ;)
+	    print.println ("VERB " + (e.nextElement()).toString());
+	for (Enumeration e = energyRulePattern.elements(); e.hasMoreElements() ;)
+	    print.println ("ENERGY " + (e.nextElement()).toString());
 	print.println ("END");
     }
 
@@ -116,6 +134,7 @@ public class PatternSet {
 	BufferedReader buff = new BufferedReader(read);
 	Pattern nounRegex = Pattern.compile("NOUN (.*)");
 	Pattern verbRegex = Pattern.compile("VERB (.*)");
+	Pattern energyRegex = Pattern.compile("ENERGY (.*)");
 	Pattern endRegex = Pattern.compile("END.*");
 	Pattern commentRegex = Pattern.compile(" *#.*");
 	try {
@@ -127,7 +146,9 @@ public class PatternSet {
 		} else if ((m = nounRegex.matcher(s)).matches()) {
 		    ps.particlePattern.add (new ParticlePattern(m.group(1)));
 		} else if ((m = verbRegex.matcher(s)).matches()) {
-		    ps.rulePattern.add (TransformRulePattern.fromString(m.group(1)));
+		    ps.transformRulePattern.add (TransformRulePattern.fromString(m.group(1)));
+		} else if ((m = energyRegex.matcher(s)).matches()) {
+		    ps.energyRulePattern.add (EnergyRulePattern.fromString(m.group(1)));
 		} else if (endRegex.matcher(s).matches()) {
 		    break;
 		}

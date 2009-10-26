@@ -12,10 +12,17 @@ public class Particle {
     public String name = null;  // noun uniquely identifying this Particle (no whitespace)
     public Color color = null;
 
-    // behavior
+    // the PatternSet, i.e. the authority for all transformation, energy and color rules about this Particle
+    PatternSet patternSet = null;
+
+    // transformation rules
     protected IdentityHashMap<Particle,RandomVariable<ParticlePair>>[] pattern = null;  // production rules; array is indexed by neighbor direction, Map is indexed by Particle
     protected TransformRuleMatch[][] patternTemplate = null;  // generators for production rules; outer array is indexed by neighbor direction, inner array is the set of partially-bound rules for that direction
-    PatternSet patternSet = null;
+
+    // energy rules
+    // TODO: add code to populate and use these!
+    protected IdentityHashMap<Particle,Double> energy = null;  // interaction energies; Map is indexed by Particle
+    protected EnergyRuleMatch[] energyTemplate = null;  // generators for interaction energies
 
     // internals
     protected int count = 0;  // how many of this type on the board
