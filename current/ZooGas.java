@@ -145,6 +145,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 
 	// init JFrame
 	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+	setResizable(false);
 	Dimension size = new Dimension(boardSize + toolBarWidth + toolLabelWidth + textBarWidth,boardSize + belowBoardHeight);
 	bfImage = new BufferedImage((int)size.getWidth(), (int)size.getHeight(), BufferedImage.TYPE_3BYTE_BGR);
 	bfGraphics = bfImage.getGraphics();
