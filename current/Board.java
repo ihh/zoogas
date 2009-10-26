@@ -224,10 +224,7 @@ public class Board extends MooreTopology {
     // Return the new source state (the caller of this method will send this returned state back over the network as a RETURN datagram).
     synchronized Particle evolveLocalTargetForRemoteSource (Point targetCoords, Particle oldSourceState, int dir, double energyBarrier)
     {
-	Particle p = evolveTargetForSource (null, targetCoords, oldSourceState, dir, energyBarrier);
-	System.err.println("evolveLocalTargetForRemoteSource " + oldSourceState.name + " energyBarrier " + energyBarrier + " return " + p.name);
-	return p;
-	//	return evolveTargetForSource (null, targetCoords, oldSourceState, dir, energyBarrier);
+	return evolveTargetForSource (null, targetCoords, oldSourceState, dir, energyBarrier);
     }
 
     // evolveTargetForSource : given a source state, and the co-ords of a target cell,
