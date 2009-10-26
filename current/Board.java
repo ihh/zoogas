@@ -228,7 +228,7 @@ public class Board extends MooreTopology {
     // evolveLocalSourceAndLocalTarget : handle entirely local updates. Strictly in the family, folks
     synchronized void evolveLocalSourceAndLocalTarget (Point sourceCoords, Point targetCoords, int dir)
     {
-	writeCell (sourceCoords, evolveTargetForSource (targetCoords, readCell(sourceCoords), dir));
+	writeCell (sourceCoords, evolveTargetForSource (sourceCoords, targetCoords, readCell(sourceCoords), dir));
     }
 
     // SYNCHRONIZED : this is one of two synchronized methods in this class
@@ -236,13 +236,14 @@ public class Board extends MooreTopology {
     // Return the new source state (the caller of this method will send this returned state back over the network as a RETURN datagram).
     synchronized Particle evolveLocalTargetForRemoteSource (Point targetCoords, Particle oldSourceState, int dir)
     {
-	return evolveTargetForSource (targetCoords, oldSourceState, dir);
+	return evolveTargetForSource (null, targetCoords, oldSourceState, dir);
     }
 
     // evolveTargetForSource : given a source state, and the co-ords of a target cell,
     // sample the new (source,target) state configuration, write the new target,
     // and return the new source state.
-    Particle evolveTargetForSource (Point targetCoords, Particle oldSourceState, int dir)
+    // The source cell coords are provided, but may be null if the source cell is off-board.
+    Particle evolveTargetForSource (Point sourceCoords, Point targetCoords, Particle oldSourceState, int dir)
     {
 	// get old state-pair
 	Particle oldTargetState = readCell (targetCoords);
@@ -256,12 +257,54 @@ public class Board extends MooreTopology {
 	    // test for null
 	    if (newSourceState == null || newTargetState == null) {
 		throw new RuntimeException ("Null outcome of rule: " + oldSourceState.name + " " + oldTargetState.name + " -> " + (newSourceState == null ? "[null]" : newSourceState.name) + " " + (newTargetState == null ? "[null]" : newTargetState.name));
-	    } else
-		writeCell (targetCoords, newTargetState);  // write
+	    } else {
+		// test energy difference
+		double energyDelta =
+		    sourceCoords == null
+		    ? neighborhoodEnergyDelta(targetCoords,oldTargetState,newTargetState)
+		    : neighborhoodEnergyDelta(sourceCoords,targetCoords,oldSourceState,oldTargetState,newSourceState,newTargetState);
+		boolean energyDeltaAcceptable =
+		    energyDelta >= 0
+		    ? true
+		    : rnd.nextDouble() < Math.pow(10,energyDelta);
+		// write
+		if (energyDeltaAcceptable)
+		    writeCell (targetCoords, newTargetState);
+		else
+		    newSourceState = oldSourceState;
+	    }
 	}
 
 	// return
 	return newSourceState;
+    }
+
+    // method to calculate the energy of a cell neighborhood, if the cell is in a particular state.
+    // a single neighbor can optionally be excluded from the sum (this aids in pair-cell neighborhood calculations).
+    double neighborhoodEnergyDelta (Point p, Particle oldState, Particle newState) {
+	return neighborhoodEnergyDelta (p, oldState, newState, null);
+    }
+    double neighborhoodEnergyDelta (Point p, Particle oldState, Particle newState, Point exclude) {
+	int N = neighborhoodSize();
+	double delta = 0;
+	Point q = new Point();
+	for (int d = 0; d < N; ++d) {
+	    getNeighbor(p,q,d);
+	    if (q != exclude && onBoard(q)) {
+		Particle nbrState = readCell(q);
+		delta += newState.symmetricPairEnergy(nbrState) - oldState.symmetricPairEnergy(nbrState);
+	    }
+	}
+	return delta;
+    }
+
+    // method to calculate the energy of a joint neighborhood around a given pair of cells in a particular pair-state.
+    // ("joint neighborhood" means the union of the neighborhoods of the two cells.)
+    double neighborhoodEnergyDelta (Point sourceCoords, Point targetCoords, Particle oldSourceState, Particle oldTargetState, Particle newSourceState, Particle newTargetState) {
+	return
+	    neighborhoodEnergyDelta(sourceCoords,oldSourceState,newSourceState,targetCoords)
+	    + neighborhoodEnergyDelta(targetCoords,oldTargetState,newTargetState,sourceCoords)
+	    + newSourceState.symmetricPairEnergy(newTargetState) - oldSourceState.symmetricPairEnergy(oldTargetState);
     }
 
     // method to send requests to establish two-way network connections between cells

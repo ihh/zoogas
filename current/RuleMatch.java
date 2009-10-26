@@ -41,38 +41,21 @@ public class RuleMatch {
     // data
     protected RulePattern pattern = null;
     private Pattern aPattern = null, bPattern = null;
-    private int dir = -1;
     private String A = null, B = null;
     private Matcher am = null, bm = null;
     private boolean aMatched = false, bMatched = false;
-    Board board = null;
 
     // constructors
     public RuleMatch(RulePattern p) { pattern = p; }
-    public RuleMatch(RulePattern p,Board board,int dir) { this(p); bindDir(board,dir); }
-    public RuleMatch(RulePattern p,Board board,int dir,String a) { this(p,board,dir); bindSource(a); }
-    public RuleMatch(RulePattern p,Board board,int dir,String a,String b) { this(p,board,dir,a); bindTarget(b); }
 
     // lhs methods
-    // binding methods return true for match, false for mismatch or failed binding
-    public final boolean bindDir(Board g,int d) {
-	if (!dirBound()) {
-	    board = g;
-	    dir = d;
-	    aPattern = Pattern.compile(regexA());
-	    return true;
-	}
-	// throw AlreadyBoundException
-	return false;
-    }
-
     public final boolean bindSource(String a) {
 	if (!sourceBound()) {
 	    A = a;
+	    if (aPattern == null)
+		aPattern = Pattern.compile(regexA());
 	    am = aPattern.matcher(a);
 	    aMatched = am.matches();
-	    if (aMatched)
-		bPattern = Pattern.compile(regexB());
 	    return aMatched;
 	}
 	// throw AlreadyBoundException
@@ -80,8 +63,10 @@ public class RuleMatch {
     }
 
     public final boolean bindTarget(String b) {
-	if (!targetBound()) {
+	if (aMatched && !targetBound()) {
 	    B = b;
+	    if (bPattern == null)
+		bPattern = Pattern.compile(regexB());
 	    bm = bPattern.matcher(b);
 	    bMatched = bm.matches();
 	    return bMatched;
@@ -105,10 +90,9 @@ public class RuleMatch {
 	aMatched = false;
     }
 
-    public final void unbind() {
+    public void unbind() {
 	unbindSource();
 	aPattern = null;
-	dir = -1;
     }
 
     // matches() returns true if the rule has matched *so far*
@@ -124,52 +108,23 @@ public class RuleMatch {
     // methods to test if the rule is fully or partly bound
     public final boolean targetBound() { return B != null; }
     public final boolean sourceBound() { return A != null; }
-    public final boolean dirBound() { return dir >= 0; }
 
     // expanded pattern methods
-    public final String regexA() { return expandDir(pattern.A); }
-    public final String regexB() { return expandLHS(pattern.B); }
+    public String regexA() { return pattern.A; }
+    public String regexB() { return expandLHS(pattern.B); }
     public final String A() { return A; }
     public final String B() { return B; }
 
     // main expand() methods
     // expansion of B
     protected final String expandLHS (String s) {
-	return expandMod(expandDec(expandInc(expandGroupOrSource(expandDir(s)))));
-    }
-
-    // expansion of C and D
-    protected final String expandRHS (String s) {
-	return expandTarget(expandLHS(s));
+	return expandMod(expandDec(expandInc(expandGroupOrSource(s))));
     }
 
     // expansion of $F, $B, $L, $R
-    static Pattern dirPattern = Pattern.compile("\\$(F|B|L|R|\\+L|\\+\\+L|\\+R|\\+\\+R)");
+    // (overridden in TransformRuleMatch)
     protected String expandDir (String s) {
-	Matcher m = dirPattern.matcher(s);
-	StringBuffer sb = new StringBuffer();
-	while (m.find()) {
-	    String var = m.group(1);
-	    int nbrs = board.neighborhoodSize();
-	    if (var.equals("F"))
-		m.appendReplacement(sb,board.dirString(dir));
-	    else if (var.equals("B"))
-		m.appendReplacement(sb,board.dirString((dir + nbrs/2) % nbrs));
-	    else if (var.equals("L"))
-		m.appendReplacement(sb,board.dirString((dir + nbrs-1) % nbrs));
-	    else if (var.equals("+L"))
-		m.appendReplacement(sb,board.dirString((dir + nbrs-2) % nbrs));
-	    else if (var.equals("++L"))
-		m.appendReplacement(sb,board.dirString((dir + nbrs-3) % nbrs));
-	    else if (var.equals("R"))
-		m.appendReplacement(sb,board.dirString((dir + 1) % nbrs));
-	    else if (var.equals("+R"))
-		m.appendReplacement(sb,board.dirString((dir + 2) % nbrs));
-	    else if (var.equals("++R"))
-		m.appendReplacement(sb,board.dirString((dir + 3) % nbrs));
-	}
-	m.appendTail(sb);
-	return sb.toString();
+	return s;
     }
 
     // expansion of $1, $2, ... and $S

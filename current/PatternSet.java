@@ -43,19 +43,20 @@ public class PatternSet {
 	return p;
     }
 
-    // method to compile new target rules for a Particle
-    RandomVariable<ParticlePair> compileTargetRules (int dir, Particle source, Particle target, Board board) {
-	//	System.err.println ("Compiling rules for " + source.name + " " + target.name);
+    // method to compile transformation rules for a new target Particle
+    RandomVariable<ParticlePair> compileTransformRules (int dir, Particle source, Particle target, Board board) {
+	//	System.err.println ("Compiling transformation rules for " + source.name + " " + target.name);
 	RandomVariable<ParticlePair> rv = new RandomVariable<ParticlePair>();
 	if (source.patternTemplate[dir] == null)
 	    source.patternTemplate[dir] = getSourceTransformRules (source.name, board, dir);
 	for (int n = 0; n < source.patternTemplate[dir].length; ++n) {
 	    TransformRuleMatch rm = source.patternTemplate[dir][n];
-	    //		    System.err.println ("Particle " + source.name + ": trying to match " + source.patternTemplate[dir][n]);
+	    //	    System.err.println ("Pair " + source.name + " " + target.name + " : trying to match " + source.patternTemplate[dir][n].pattern);
 	    if (rm.bindTarget(target.name)) {
 		Particle
 		    newSource = board.getOrCreateParticle (rm.C()),
 		    newTarget = board.getOrCreateParticle (rm.D());
+		//		System.err.println ("Pair " + source.name + " " + target.name + " : matched " + source.patternTemplate[dir][n].pattern);
 		if (newSource == null || newTarget == null) {
 		    System.err.println ("Null outcome of rule '" + rm.pattern + "': "
 					+ source.name + " " + target.name + " -> "
@@ -69,7 +70,6 @@ public class PatternSet {
 	    rm.unbindTarget();
 	}
 	rv.close (new ParticlePair (source, target));
-	source.pattern[dir].put (target, rv);
 	return rv;
     }
 
@@ -89,13 +89,29 @@ public class PatternSet {
 	return rm;
     }
 
+    // method to compile energy rules for a new target Particle
+    double compileEnergyRules (Particle source, Particle target) {
+	//	System.err.println ("Compiling energy rules for " + source.name + " " + target.name);
+	double E = 0;
+	if (source.energyTemplate == null)
+	    source.energyTemplate = getSourceEnergyRules (source.name);
+	for (int n = 0; n < source.energyTemplate.length; ++n) {
+	    EnergyRuleMatch rm = source.energyTemplate[n];
+	    //		    System.err.println ("Particle " + source.name + ": trying to match " + source.energyTemplate[n]);
+	    if (rm.bindTarget(target.name))
+		E += rm.E();
+	    rm.unbindTarget();
+	}
+	return E;
+    }
+
     // helper to get a set of energy rules with the source bound to a given Particle
-    protected EnergyRuleMatch[] getSourceEnergyRules (String particleName, Board board) {
+    protected EnergyRuleMatch[] getSourceEnergyRules (String particleName) {
 	//	System.err.println ("Trying to match particle " + particleName + " to energy rule generators");
 	Vector<EnergyRuleMatch> v = new Vector<EnergyRuleMatch>();
 	for (int n = 0; n < energyRulePattern.size(); ++n) {
 	    //	    System.err.println ("Trying to match particle " + particleName + " to energy rule " + (RulePattern) energyRulePattern.get(n));
-	    EnergyRuleMatch rm = new EnergyRuleMatch (energyRulePattern.get(n), board, particleName);
+	    EnergyRuleMatch rm = new EnergyRuleMatch (energyRulePattern.get(n), particleName);
 	    if (rm.matches())
 		v.add (rm);
 	}

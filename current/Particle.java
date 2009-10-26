@@ -52,6 +52,7 @@ public class Particle {
 	for (int n = 0; n < pattern.length; ++n)
 	    pattern[n] = new IdentityHashMap<Particle,RandomVariable<ParticlePair>>();
 	// init energy rule patterns
+	energy = new IdentityHashMap<Particle,Double>();
 	// register with the Board to prevent garbage collection
 	board.registerParticle(this);
     }
@@ -102,14 +103,41 @@ public class Particle {
     // helper to sample a new (source,target) pair
     // returns null if no rule found
     ParticlePair samplePair (int dir, Particle oldTarget, Random rnd, Board board) {
-	RandomVariable rv = (RandomVariable) pattern[dir].get (oldTarget);
-	// if no RV, look for rule generator(s) that match this neighbor, and use them to create a set of rules
-	if (rv == null && patternSet != null)
-	    rv = patternSet.compileTargetRules(dir,this,oldTarget,board);
+	RandomVariable<ParticlePair> rv = null;
+	if (pattern[dir].containsKey(oldTarget)) {
+	    rv = pattern[dir].get (oldTarget);
+	} else {
+	    // if no RV, look for rule generator(s) that match this neighbor, and use them to create a set of rules
+	    if (patternSet != null) {
+		rv = patternSet.compileTransformRules(dir,this,oldTarget,board);
+		pattern[dir].put (oldTarget, rv);
+	    }
+	}
 	// have we got an RV?
 	if (rv != null)
 	    return (ParticlePair) rv.sample(rnd);
 	// no RV; return null
 	return null;
+    }
+
+    // helper to calculate pairwise interaction energy with another Particle (one-way)
+    double pairEnergy (Particle p) {
+	double E = 0;
+	if (energy.containsKey(p)) {
+	    E = energy.get(p).doubleValue();
+	} else {
+	    // look for rule generator(s) that match this neighbor, and use them to calculate energy
+	    if (patternSet != null) {
+		E = patternSet.compileEnergyRules(this,p);
+		energy.put (p, new Double(E));
+	    }
+	}
+	// return
+	return E;
+    }
+
+    // helper to calculate symmetric form of pairEnergy
+    double symmetricPairEnergy (Particle p) {
+	return pairEnergy(p) + p.pairEnergy(this);
     }
 }
