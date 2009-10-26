@@ -3,10 +3,13 @@ import java.util.*;
 
 public class SprayTool {
     // data
-    String particleName = null;
-    double sprayDiameter = 0, sprayPower = 0, reserve = 0, maxReserve = 0, refillRate = 0, barWidth = 1;
-    char hotKey = 0;
-    Particle particle = null;
+    private String particleName = null;
+    private double sprayDiameter = 0, sprayPower = 0, reserve = 0, maxReserve = 0, refillRate = 0, barWidth = 1;
+    private char hotKey = 0;
+    private Particle particle = null;
+
+    // random number generator
+    private Random rnd = new Random();
 
     // constructor
     static SprayTool fromString (String toolString, Board board) {
@@ -38,8 +41,8 @@ public class SprayTool {
 	Point sprayCell = new Point();
 	for (int n = 0; reserve >= 1 && n < sprayPower; ++n) {
 
-	    sprayCell.x = cursorPos.x + board.rnd.nextInt((int) sprayDiameter) - (int) (sprayDiameter / 2);
-	    sprayCell.y = cursorPos.y + board.rnd.nextInt((int) sprayDiameter) - (int) (sprayDiameter / 2);
+	    sprayCell.x = cursorPos.x + rnd.nextInt((int) sprayDiameter) - (int) (sprayDiameter / 2);
+	    sprayCell.y = cursorPos.y + rnd.nextInt((int) sprayDiameter) - (int) (sprayDiameter / 2);
 
 	    if (board.onBoard(sprayCell)) {
 		Particle oldCell = board.readCell (sprayCell);
@@ -80,4 +83,6 @@ public class SprayTool {
 	g.drawRect (xLeft + 2, yMid - toolHeight/2 + 2, toolBarWidth - 4, toolHeight - 4);
     }
 
+    // isHotKey helper
+    boolean isHotKey(char c) { return Character.toUpperCase(hotKey) == Character.toUpperCase(c); }
 }

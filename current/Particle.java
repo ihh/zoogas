@@ -57,11 +57,11 @@ public class Particle {
 
     // methods
     // reference counting
-    public int incReferenceCount() {
+    public final int incReferenceCount() {
 	return ++count;
     }
 
-    public int decReferenceCount() {
+    public final int decReferenceCount() {
 	if (--count <= 0) {
 	    //	    System.err.println("Zero reference count for " + name);
 
@@ -74,7 +74,7 @@ public class Particle {
     }
 
     // part of name visible to player
-    String visibleName() {
+    public final String visibleName() {
 	
 	String[] partsOfName = name.split (visibleSeparatorChar, 2);
 	String viz = partsOfName[0].replaceAll (visibleSpaceChar, " ");
@@ -86,7 +86,7 @@ public class Particle {
     }
 
     // helper to "close" all patterns, adding a do-nothing rule for patterns whose RHS probabilities sum to <1
-    void closePatterns() {
+    protected final void closePatterns() {
 	for (int n = 0; n < pattern.length; ++n) {
 	    Iterator<Map.Entry<Particle,RandomVariable<ParticlePair>>> iter = pattern[n].entrySet().iterator();
 	    while (iter.hasNext()) {
@@ -101,11 +101,11 @@ public class Particle {
     }
 
     // method to test if a Particle is active (i.e. has any rules) in a given direction
-    boolean isActive(int dir) { return patternTemplate[dir].length > 0; }
+    public final boolean isActive(int dir) { return patternTemplate[dir].length > 0; }
 
     // helper to sample a new (source,target) pair
     // returns null if no rule found
-    ParticlePair samplePair (int dir, Particle oldTarget, Random rnd, Board board) {
+    public final ParticlePair samplePair (int dir, Particle oldTarget, Random rnd, Board board) {
 	RandomVariable<ParticlePair> rv = null;
 	if (pattern[dir].containsKey(oldTarget)) {
 	    rv = pattern[dir].get (oldTarget);
@@ -125,7 +125,7 @@ public class Particle {
     }
 
     // helper to calculate pairwise interaction energy with another Particle (one-way)
-    double pairEnergy (Particle p) {
+    public final double pairEnergy (Particle p) {
 	double E = 0;
 	if (energy.containsKey(p)) {
 	    E = energy.get(p).doubleValue();
@@ -142,21 +142,22 @@ public class Particle {
     }
 
     // helper to calculate symmetric form of pairEnergy
-    double symmetricPairEnergy (Particle p) {
+    public final double symmetricPairEnergy (Particle p) {
 	return pairEnergy(p) + p.pairEnergy(this);
     }
 
     // helpers to remember/forget a neighbor
-    void remember (Particle p) {
+    private final void remember (Particle p) {
 	if (p == null)
 	    throw new RuntimeException ("Tried to remember a null Particle");
 	else if (p != this) {  // don't create circular references
-	    pastNeighbors.put(p,null);
+	    // NB we don't need to remember p, only ensure that p remembers us
+	    // The purpose of this remembering is to ensure that we delete p from our compiled rule tables when p's reference count hits zero
 	    p.pastNeighbors.put(this,null);
 	}
     }
 
-    void forget (Particle p) {
+    private final void forget (Particle p) {
 	for (int d = 0; d < pattern.length; ++d)
 	    pattern[d].remove(p);
 	energy.remove(p);
@@ -164,14 +165,14 @@ public class Particle {
     }
 
     // equals method
-    public boolean equals(Particle p) {
+    public final boolean equals(Particle p) {
 	return name.equals(p.name);
     }
 
     // finalize method
     // uncomment to debug garbage collection
     /*
-    protected void finalize() throws Throwable
+    protected final void finalize() throws Throwable
     {
 	System.err.println("Deleting " + name);
 

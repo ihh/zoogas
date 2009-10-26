@@ -56,7 +56,7 @@ public class ToolBox {
 	boolean foundKey = false;
 	for (int t = 0; t < tool.size(); ++t) {
 	    SprayTool st = tool.elementAt(t);
-	    if (Character.toUpperCase(st.hotKey) == Character.toUpperCase(c)) {
+	    if (st.isHotKey(c)) {
 		foundKey = true;
 		currentTool = st;
 		break;

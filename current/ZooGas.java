@@ -278,8 +278,8 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	flashOrHide ("Z00 GAS", 8, true, 0, 400, true, Color.white);
 
 	// networking
-	flashOrHide ("Online", 10, board.updateServer != null, 0, -1, false, Color.blue);
-	flashOrHide ("Connected", 11, board.remoteCell.size() > 0, 0, -1, false, Color.cyan);
+	flashOrHide ("Online", 10, board.online(), 0, -1, false, Color.blue);
+	flashOrHide ("Connected", 11, board.connected(), 0, -1, false, Color.cyan);
 
 	// identify particle that cursor is currently over
 	boolean cursorOnBoard = getCursorPos();
