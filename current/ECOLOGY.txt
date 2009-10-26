@@ -37,15 +37,15 @@ NOUN wall/basalt 255 200 0
 NOUN zoo_guest.* 254 254 254
 
 # Beacon: an example directional particle
-NOUN beacon.* 192 192 0
-VERB beacon _ beacon beacon/$F .5 shine
+NOUN (beacon|photon).* 192 192 0
+VERB beacon _ beacon photon/$F .5 shine
 VERB beacon _ _ _ .01 extinguish
-VERB beacon/$F _ $T $S 1 move
-VERB beacon/$F [^_].* _ $T .9 extinguish
-VERB beacon/$F [^_].* beacon/$++L $T .1 reflect
-VERB beacon/$F [^_].* beacon/$++R $T .05 reflect
-# Without this last rule, beacons at uncrossable borders will never die
-VERB beacon/$B .* _ $T .001 extinguish
+VERB photon/$F _ $T $S 1 move
+VERB photon/$F [^_].* _ $T .9 extinguish
+VERB photon/$F [^_].* photon/$++L $T .1 reflect
+VERB photon/$F [^_].* photon/$++R $T .05 reflect
+# Without this last rule, photons at uncrossable borders will never die
+VERB photon/$B .* _ $T .001 extinguish
 
 # Initial conditions
 VERB /INIT.* _ beacon _ 1 start
