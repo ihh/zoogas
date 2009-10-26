@@ -131,21 +131,6 @@ public class Board extends MooreTopology {
 		writeCell(p,particle);
     }
 
-    // rendering methods
-    public void drawCell (Point p, Graphics g, int pixelsPerCell) {
-	g.setColor(cell[p.x][p.y].particle.color);
-	Point q = new Point();
-	getGraphicsCoords(p,q,pixelsPerCell);
-	g.fillRect(q.x,q.y,pixelsPerCell,pixelsPerCell);
-    }
-
-    public void drawEverything(Graphics g, int pixelsPerCell) {
-	Point p = new Point();
-	for (p.x = 0; p.x < size; ++p.x)
-	    for (p.y = 0; p.y < size; ++p.y)
-		drawCell (p,g,pixelsPerCell);
-    }
-
     // method to sample a random cell
     private void getRandomPoint (Point p) {
 	p.x = rnd.nextInt(size);
@@ -176,7 +161,7 @@ public class Board extends MooreTopology {
 	    update(p,n);
     }
 
-    public void update(int cycles,Graphics g,int pixelsPerCell) {
+    public void update(int cycles,BoardRenderer renderer) {
 	Point p = new Point(), n = new Point();
 	for (int u = 0; u < cycles; ++u) {
 
@@ -188,9 +173,10 @@ public class Board extends MooreTopology {
 	    Particle newTarget = onBoard(n) ? readCell(n) : null;
 	    
 	    if (newSource != oldSource)
-		drawCell(p,g,pixelsPerCell);
+		renderer.drawCell(p);
+
 	    if (onBoard(n) && newTarget != oldTarget)
-		drawCell(n,g,pixelsPerCell);
+		renderer.drawCell(n);
 	}
     }
 

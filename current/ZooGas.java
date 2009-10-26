@@ -198,7 +198,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 
     // main evolution loop
     private void evolveStuff() {
-	board.update(patternMatchesPerRefresh,bfGraphics,pixelsPerCell);
+	board.update(patternMatchesPerRefresh,this);
 	++boardUpdateCount;
     }
 
@@ -236,14 +236,20 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 
     // rendering methods
     public void drawCell (Point p) {
-	board.drawCell(p,bfGraphics,pixelsPerCell);
+	bfGraphics.setColor(board.readCell(p).color);
+	Point q = new Point();
+	board.getGraphicsCoords(p,q,pixelsPerCell);
+	bfGraphics.fillRect(q.x,q.y,pixelsPerCell,pixelsPerCell);
     }
 
     private void drawEverything() {
 	bfGraphics.setColor(Color.black);
 	bfGraphics.fillRect(0,0,boardSize+toolBarWidth+toolLabelWidth+textBarWidth,boardSize+belowBoardHeight);
 
-	board.drawEverything(bfGraphics,pixelsPerCell);
+	Point p = new Point();
+	for (p.x = 0; p.x < size; ++p.x)
+	    for (p.y = 0; p.y < size; ++p.y)
+		drawCell(p);
 
 	refreshBuffer();
     }
@@ -252,7 +258,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	bfGraphics.setColor(Color.black);
 	bfGraphics.fillRect(0,0,boardSize,boardSize);
 
-	board.drawEverything(bfGraphics,pixelsPerCell);
+	drawEverything();
     }
 
     protected void refreshBuffer() {
