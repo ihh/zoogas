@@ -83,8 +83,8 @@ VERB .*/=\d+ _ $T $S 0.02 step
 # Other behaviors of animals
 # Animals eat guests:
 VERB .*/=\d+ zoo_guest _ $S 1.0 maul
-# Only [non-mutant] imps can destroy lava:
-VERB .*imp/=\d+ lava.* _ $T 1 frolic
+# Imps feed on lava:
+VERB .*_imp/=\d+ lava.* $S $S .01 frolic
 
 
 
