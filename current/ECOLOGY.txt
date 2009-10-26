@@ -1,6 +1,6 @@
 # The different colored species particles
 # The species follow a simple (unrealistic) cyclic ecology.
-# The species character (an alphadecimal number from 0 to h, so there are eighteen species in total) is prefixed by "/=".
+# The species character (a alphadecimal number from 0 to h, so there are eighteen species in total) is prefixed by "/=".
 NOUN _ 0 0 0
 NOUN .*/=0 255 0 0
 NOUN .*/=1 255 81 0
