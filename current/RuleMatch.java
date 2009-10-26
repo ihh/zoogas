@@ -7,36 +7,8 @@ import java.net.*;
 import java.io.*;
 
 
-// Syntax for regexp-based pattern generators:
-//  A B C D P V
-// where
-//  A is a regexp that must globally match the old source state
-//  B is a regexp that must globally match the old target state
-//  C is a string that will expand to the new source state
-//  D is a string that will expand to the new target state
-//  P is a numeric constant that is the probability of the rule
-//  V is a verb describing the action being carried out by the source when this rule fires (no whitespace)
-
-// The following "special variables" will be expanded in {A,B,C,D} as appropriate:
-//  $1,$2,$3... => groups in A and B regexps (c.f. Perl)
-//  $S,$T => full names for old source,target states
-//  $F,$L,$R,$B,$+L,$+R,$++L,$++R => directions relative to neighbor direction ($F=forward, $L=left, $R=right, $B=back, $+L=two left, $++L=three left)
-//  $-1 or $-1.1 => numerically one less than $1
-//  $-2.1 => numerically two less than $1
-//  $+1.1 => numerically one greater than $1
-//  $%3+2.1 => ($1 + 2) mod 3
-
-
 // RuleMatch - a partially- or fully-bound RulePattern.
-// Use as follows:
-//   TransformRulePattern rp = TransformRulePattern.fromString ("critter/(\d+) _ $T $S .098 move");
-//   TransformRuleMatch rm = new TransformRuleMatch(rp);
-//   rm.bindDir(0);
-//   rm.bindSource("critter/1");
-//   rm.bindTarget("_");
-//   String newSource = rm.C(), newTarget = rm.D(), verb = rm.V();
-//   double prob = rm.P();
-//   rm.unbind();
+// For minilanguage syntax see subclasses TransformRuleMatch, EnergyRuleMatch
 public class RuleMatch {
     // data
     protected RulePattern pattern = null;

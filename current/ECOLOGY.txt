@@ -169,8 +169,10 @@ VERB lava .* _ $T .00001 drain
 
 # zoo guests do bugger all except stroll around the place and get mauled
 VERB zoo_guest.* _ $T $S 0.01 perambulate
-g
+
 # conga line of zoo guests
+# this models a simple polymer (e.g. a hydrocarbon) by creating energetically favored adjacencies between consecutive monomers
+# the builder is directional to avoid intractable tangles (the polymer is initially stretched in a straight line, but quickly relaxes)
 NOUN conga.* 128 192 192
 VERB conga .* conga/pos:10 $T .3 lil_partay
 VERB conga .* conga/pos:20 $T .3 ok_partay
@@ -178,6 +180,7 @@ VERB conga .* conga/pos:30 $T .3 big_partay
 VERB conga/pos:(\d+) .* conga/dir:$F,pos:$1 $T 1 line_it_up
 VERB conga/dir:$F,pos:([1-9]\d*) _ zoo_guest/pos:$1 conga/dir:$F,pos:$-1 1 partay
 VERB conga/dir:.*,pos:0 _ zoo_guest/pos:0 _ 1 partay
+# this is the energy term that effectively creates a covalent bond between consecutive monomers
 ENERGY .*[/,]pos:(\d+) .*[/,]pos:$+1 5
 
 # make the conga guests move at max speed, since most of their steps are rejected anyway

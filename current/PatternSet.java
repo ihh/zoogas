@@ -153,6 +153,7 @@ public class PatternSet {
 	Pattern energyRegex = Pattern.compile("ENERGY (.*)");
 	Pattern endRegex = Pattern.compile("END.*");
 	Pattern commentRegex = Pattern.compile(" *#.*");
+	Pattern nonWhitespaceRegex = Pattern.compile("\\S");
 	try {
 	    while (buff.ready()) {
 		String s = buff.readLine();
@@ -167,6 +168,8 @@ public class PatternSet {
 		    ps.energyRulePattern.add (EnergyRulePattern.fromString(m.group(1)));
 		} else if (endRegex.matcher(s).matches()) {
 		    break;
+		} else if (nonWhitespaceRegex.matcher(s).matches()) {
+		    System.err.println("Ignoring line: " + s);
 		}
 	    }
 	} catch (IOException e) {
