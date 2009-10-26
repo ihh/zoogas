@@ -91,8 +91,6 @@ public class PatternSet {
     double compileEnergyRules (Particle source, Particle target) {
 	//	System.err.println ("Compiling energy rules for " + source.name + " " + target.name);
 	double E = 0;
-	if (source.energyTemplate == null)
-	    source.energyTemplate = getSourceEnergyRules (source.name);
 	for (int n = 0; n < source.energyTemplate.length; ++n) {
 	    EnergyRuleMatch rm = source.energyTemplate[n];
 	    //		    System.err.println ("Particle " + source.name + ": trying to match " + source.energyTemplate[n]);

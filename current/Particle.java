@@ -51,6 +51,7 @@ public class Particle {
 	}
 	// init energy rule patterns
 	energy = new IdentityHashMap<Particle,Double>();
+	energyTemplate = patternSet.getSourceEnergyRules(name);
 	// register with the Board to prevent garbage collection
 	board.registerParticle(this);
     }
@@ -100,8 +101,11 @@ public class Particle {
 	}
     }
 
-    // method to test if a Particle is active (i.e. has any rules) in a given direction
+    // method to test if a Particle is active (i.e. has any transformation rules) in a given direction
     public final boolean isActive(int dir) { return patternTemplate[dir].length > 0; }
+
+    // method to test if a Particle has energy rules
+    public final boolean hasEnergy() { return energyTemplate.length > 0; }
 
     // helper to sample a new (source,target) pair
     // returns null if no rule found
@@ -127,14 +131,16 @@ public class Particle {
     // helper to calculate pairwise interaction energy with another Particle (one-way)
     public final double pairEnergy (Particle p) {
 	double E = 0;
-	if (energy.containsKey(p)) {
-	    E = energy.get(p).doubleValue();
-	} else {
-	    // look for rule generator(s) that match this neighbor, and use them to calculate energy
-	    if (patternSet != null) {
-		E = patternSet.compileEnergyRules(this,p);
-		energy.put (p, new Double(E));
-		remember(p);
+	if (hasEnergy()) {
+	    if (energy.containsKey(p)) {
+		E = energy.get(p).doubleValue();
+	    } else {
+		// look for rule generator(s) that match this neighbor, and use them to calculate energy
+		if (patternSet != null) {
+		    E = patternSet.compileEnergyRules(this,p);
+		    energy.put (p, new Double(E));
+		    remember(p);
+		}
 	    }
 	}
 	// return
