@@ -145,7 +145,7 @@ public class RuleMatch {
 
     // expansion of $F, $B, $L, $R
     static Pattern dirPattern = Pattern.compile("\\$(F|B|L|R|\\+L|\\+\\+L|\\+R|\\+\\+R)");
-    protected final String expandDir (String s) {
+    protected String expandDir (String s) {
 	Matcher m = dirPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
 	while (m.find()) {
