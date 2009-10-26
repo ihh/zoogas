@@ -73,7 +73,7 @@ public class Board extends MooreTopology {
     void incCounts() {
 	for (int x = 0; x < size; ++x)
 	    for (int y = 0; y < size; ++y) {
-		++cell[x][y].particle.count;
+		cell[x][y].particle.incReferenceCount();
 	    }
     }
 
@@ -126,8 +126,8 @@ public class Board extends MooreTopology {
 	    cell[p.x][p.y].particle = pc;
 	    ++cell[p.x][p.y].writeCount;
 	    if (old_pc != null)
-		--old_pc.count;
-	    ++pc.count;
+		old_pc.decReferenceCount();
+	    pc.incReferenceCount();
 	}
     }
 
@@ -296,8 +296,13 @@ public class Board extends MooreTopology {
 
 
     // Particle name-indexing methods
-    protected void registerParticle (String name, Particle p) {
-	nameToParticle.put (name, p);
+    protected void registerParticle (Particle p) {
+	nameToParticle.put (p.name, p);
+    }
+
+    protected void deregisterParticle (Particle p) {
+	nameToParticle.remove (p.name);
+	//	System.err.println("Deregistering " + p.name);
     }
 
     public Particle getParticleByName (String name) {

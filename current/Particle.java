@@ -24,8 +24,9 @@ public class Particle {
     protected IdentityHashMap<Particle,Double> energy = null;  // interaction energies; Map is indexed by Particle
     protected EnergyRuleMatch[] energyTemplate = null;  // generators for interaction energies
 
-    // internals
-    protected int count = 0;  // how many of this type on the board
+    // reference count
+    private Board board = null;
+    private int count = 0;  // how many of this type on the board
 
     // static variables
     public static String
@@ -41,16 +42,33 @@ public class Particle {
     public Particle (String name, Color color, Board board) {
 	this.name = name.length() > maxNameLength ? name.substring(0,maxNameLength) : name;
 	this.color = color;
-	board.registerParticle (name, this);
+	this.board = board;
+	// init transformation rule patterns
+	int N = board.neighborhoodSize();
 	// The following is what we really want here, but backward compatibility of Java generics prevents initialization of an array of generics:
-	//	pattern = new IdentityHashMap<Particle,RandomVariable<ParticlePair>> [board.neighborhoodSize()];
-	pattern = new IdentityHashMap[board.neighborhoodSize()];   // causes an unavoidable warning. Thanks, Java!
-	patternTemplate = new TransformRuleMatch[board.neighborhoodSize()][];
+	//	pattern = new IdentityHashMap<Particle,RandomVariable<ParticlePair>> [N];
+	pattern = new IdentityHashMap[N];   // causes an unavoidable warning. Thanks, Java!
+	patternTemplate = new TransformRuleMatch[N][];
 	for (int n = 0; n < pattern.length; ++n)
 	    pattern[n] = new IdentityHashMap<Particle,RandomVariable<ParticlePair>>();
+	// init energy rule patterns
+	// register with the Board to prevent garbage collection
+	board.registerParticle(this);
     }
 
     // methods
+    // reference counting
+    public int incReferenceCount() {
+	return ++count;
+    }
+
+    public int decReferenceCount() {
+	if (--count <= 0) {
+	    board.deregisterParticle(this);
+	}
+	return count;
+    }
+
     // part of name visible to player
     String visibleName() {
 	
