@@ -2,12 +2,12 @@ import java.net.*;
 import java.io.*;
 
 public class ConnectionServerThread extends Thread {
-    private Board board = null;
+    private ConnectionServer connServer = null;
     private Socket socket = null;
 
-    public ConnectionServerThread(Board board, Socket socket) {
+    public ConnectionServerThread(ConnectionServer connServer, Socket socket) {
 	super("ConnectionServerThread");
-	this.board = board;
+	this.connServer = connServer;
 	this.socket = socket;
     }
 
@@ -21,7 +21,7 @@ public class ConnectionServerThread extends Thread {
 	    String inputLine;
 	    Boolean listening = true;
 	    while (listening && (inputLine = in.readLine()) != null) {
-		BoardServer.process (board, inputLine, listening);
+		connServer.process (inputLine, listening);
 	    }
 	    in.close();
 	    socket.close();

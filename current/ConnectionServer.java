@@ -1,14 +1,9 @@
 import java.net.*;
 import java.io.*;
 
-public class ConnectionServer extends Thread {
-    private Board board = null;
-    private int port = -1;
-
+public class ConnectionServer extends BoardServer {
     public ConnectionServer (Board board, int port) {
-	super("ConnectionServer");
-	this.board = board;
-	this.port = port;
+	super(board,port,null);
     }
 
     public void run() {
@@ -19,7 +14,7 @@ public class ConnectionServer extends Thread {
             serverSocket = new ServerSocket(port);
 
 	    while (listening)
-		new ConnectionServerThread(board,serverSocket.accept()).start();
+		new ConnectionServerThread(this,serverSocket.accept()).start();
 
 	    serverSocket.close();
 

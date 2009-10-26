@@ -181,7 +181,8 @@ VERB conga/pos:(\d+) .* conga/dir:$F,pos:$1 $T 1 line_it_up
 VERB conga/dir:$F,pos:([1-9]\d*) _ zoo_guest/pos:$1 conga/dir:$F,pos:$-1 1 partay
 VERB conga/dir:.*,pos:0 _ zoo_guest/pos:0 _ 1 partay
 # this is the energy term that effectively creates a covalent bond between consecutive monomers
-ENERGY .*[/,]pos:(\d+) .*[/,]pos:$+1 5
+# since the energy of this bond is -5, the probability of spontaneously breaking it is 1e-5
+ENERGY .*[/,]pos:(\d+) .*[/,]pos:$+1 -5
 
 # make the conga guests move at max speed, since most of their steps are rejected anyway
 VERB zoo_guest/pos:.* _ $T $S 1 perambulate

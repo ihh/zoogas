@@ -33,24 +33,22 @@ public class Particle {
 	visibleSeparatorChar = "/",
 	visibleSpaceChar = "_";
 
-    // constructors
+    // constructor
     public Particle (String name, Color color, Board board, PatternSet ps) {
-	this(name,color,board);
-	patternSet = ps;
-    }
-
-    public Particle (String name, Color color, Board board) {
 	this.name = name.length() > maxNameLength ? name.substring(0,maxNameLength) : name;
 	this.color = color;
 	this.board = board;
+	this.patternSet = ps;
 	// init transformation rule patterns
 	int N = board.neighborhoodSize();
 	// The following is what we really want here, but backward compatibility of Java generics prevents initialization of an array of generics:
 	//	pattern = new IdentityHashMap<Particle,RandomVariable<ParticlePair>> [N];
 	pattern = new IdentityHashMap[N];   // causes an unavoidable warning. Thanks, Java!
 	patternTemplate = new TransformRuleMatch[N][];
-	for (int n = 0; n < pattern.length; ++n)
+	for (int n = 0; n < pattern.length; ++n) {
 	    pattern[n] = new IdentityHashMap<Particle,RandomVariable<ParticlePair>>();
+	    patternTemplate[n] = patternSet.getSourceTransformRules (name, board, n);
+	}
 	// init energy rule patterns
 	energy = new IdentityHashMap<Particle,Double>();
 	// register with the Board to prevent garbage collection
@@ -98,7 +96,7 @@ public class Particle {
     }
 
     // method to test if a Particle is active (i.e. has any rules) in a given direction
-    boolean isActive(int dir) { return pattern[dir].size() > 0; }
+    boolean isActive(int dir) { return patternTemplate[dir].length > 0; }
 
     // helper to sample a new (source,target) pair
     // returns null if no rule found

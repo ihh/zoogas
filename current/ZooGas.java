@@ -9,7 +9,7 @@ import java.io.*;
 import javax.swing.JFrame;
 import javax.imageio.ImageIO;
 
-public class ZooGas extends JFrame implements MouseListener, KeyListener {
+public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyListener {
 
     // size of board in cells
     int size = 128;
@@ -102,7 +102,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     // networked constructor (server)
     public ZooGas (int port) {
 	this();
-	board.initClient(port);
+	board.initClient(port,this);
     }
 
     // default constructor
@@ -136,7 +136,8 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	    Particle initParticle = board.getOrCreateParticle(initParticleName);
 	    if (initParticle == null)
 		throw new RuntimeException("Initialization particle " + initParticleName + " not found");
-	    board.writeCell(new Point(size/2,size/2),initParticle);
+	    Point initPoint = new Point(size/2,size/2);
+	    board.writeCell(initPoint,initParticle);
 	}
 
 	// init cell counts
@@ -237,7 +238,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 
 
     // rendering methods
-    private void drawCell (Point p) {
+    public void drawCell (Point p) {
 	board.drawCell(p,bfGraphics,pixelsPerCell);
     }
 
@@ -277,7 +278,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
 	flashOrHide ("Z00 GAS", 8, true, 0, 400, true, Color.white);
 
 	// networking
-	flashOrHide ("Online", 10, board.boardServer != null, 0, -1, false, Color.blue);
+	flashOrHide ("Online", 10, board.updateServer != null, 0, -1, false, Color.blue);
 	flashOrHide ("Connected", 11, board.remoteCell.size() > 0, 0, -1, false, Color.cyan);
 
 	// identify particle that cursor is currently over

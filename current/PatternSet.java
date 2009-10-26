@@ -47,8 +47,6 @@ public class PatternSet {
     RandomVariable<ParticlePair> compileTransformRules (int dir, Particle source, Particle target, Board board) {
 	//	System.err.println ("Compiling transformation rules for " + source.name + " " + target.name);
 	RandomVariable<ParticlePair> rv = new RandomVariable<ParticlePair>();
-	if (source.patternTemplate[dir] == null)
-	    source.patternTemplate[dir] = getSourceTransformRules (source.name, board, dir);
 	for (int n = 0; n < source.patternTemplate[dir].length; ++n) {
 	    TransformRuleMatch rm = source.patternTemplate[dir][n];
 	    //	    System.err.println ("Pair " + source.name + " " + target.name + " : trying to match " + source.patternTemplate[dir][n].pattern);

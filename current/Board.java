@@ -23,8 +23,8 @@ public class Board extends MooreTopology {
     protected Map<String,Particle> nameToParticle = new HashMap<String,Particle>();  // updated by Particle constructor
 
     // networking
-    BoardServer boardServer = null;  // board servers field UDP requests for cross-border interactions
-    ConnectionServer connectServer = null;   // connectionServer runs over TCP (otherwise requests to establish connections can get lost amongst the flood of UDP traffic)
+    UpdateServer updateServer = null;  // UpdateServer fields UDP requests for cross-border interactions
+    ConnectionServer connectServer = null;   // ConnectionServer runs over TCP (otherwise requests to establish connections can get lost amongst the flood of UDP traffic)
     int boardServerPort = 4444;
     String localhost = null;
 
@@ -46,13 +46,13 @@ public class Board extends MooreTopology {
 	}
     }
 
-    public void initClient(int port) {
+    public void initClient(int port,ZooGas gas) {
 
 	this.boardServerPort = port;
 
 	try {
-	    boardServer = new BoardServer (this, boardServerPort);
-	    boardServer.start();
+	    updateServer = new UpdateServer (this, boardServerPort, gas);
+	    updateServer.start();
 
 	    connectServer = new ConnectionServer (this, boardServerPort);
 	    connectServer.start();
@@ -220,30 +220,43 @@ public class Board extends MooreTopology {
     // evolveLocalSourceAndRemoteTarget: send an EVOLVE datagram to the network address of a remote cell.
     protected void evolveLocalSourceAndRemoteTarget (Point sourceCoords, RemoteCellCoord remoteCoords, int dir) {
 	Particle oldSourceState = readCell(sourceCoords);
-	if (oldSourceState.isActive(dir))
-	    BoardServer.sendEvolveDatagram (remoteCoords.addr, remoteCoords.port, remoteCoords.p, oldSourceState, sourceCoords, dir, localhost, boardServerPort, getCellWriteCount(sourceCoords));
+	if (oldSourceState.isActive(dir)) {
+
+	    if (oldSourceState.name.equals("_")) {
+		System.err.println("_ is active");
+		Set<Particle> actives = oldSourceState.pattern[dir].keySet();
+		for (Iterator<Particle> a = actives.iterator(); a.hasNext(); )
+		    System.err.println("_ " + a.next().name);
+	    }
+
+	    double energyBarrier = -neighborhoodEnergy(sourceCoords);
+	    BoardServer.sendEvolveDatagram (remoteCoords.addr, remoteCoords.port, remoteCoords.p, oldSourceState, sourceCoords, dir, energyBarrier, localhost, boardServerPort, getCellWriteCount(sourceCoords));
+	}
     }
 
     // SYNCHRONIZED : this is one of two synchronized methods in this class
     // evolveLocalSourceAndLocalTarget : handle entirely local updates. Strictly in the family, folks
     synchronized void evolveLocalSourceAndLocalTarget (Point sourceCoords, Point targetCoords, int dir)
     {
-	writeCell (sourceCoords, evolveTargetForSource (sourceCoords, targetCoords, readCell(sourceCoords), dir));
+	writeCell (sourceCoords, evolveTargetForSource (sourceCoords, targetCoords, readCell(sourceCoords), dir, 0));
     }
 
     // SYNCHRONIZED : this is one of two synchronized methods in this class
     // evolveLocalSourceAndLocalTarget : handle a remote request for update.
     // Return the new source state (the caller of this method will send this returned state back over the network as a RETURN datagram).
-    synchronized Particle evolveLocalTargetForRemoteSource (Point targetCoords, Particle oldSourceState, int dir)
+    synchronized Particle evolveLocalTargetForRemoteSource (Point targetCoords, Particle oldSourceState, int dir, double energyBarrier)
     {
-	return evolveTargetForSource (null, targetCoords, oldSourceState, dir);
+	Particle p = evolveTargetForSource (null, targetCoords, oldSourceState, dir, energyBarrier);
+	System.err.println("evolveLocalTargetForRemoteSource " + oldSourceState.name + " energyBarrier " + energyBarrier + " return " + p.name);
+	return p;
+	//	return evolveTargetForSource (null, targetCoords, oldSourceState, dir, energyBarrier);
     }
 
     // evolveTargetForSource : given a source state, and the co-ords of a target cell,
     // sample the new (source,target) state configuration, write the new target,
     // and return the new source state.
     // The source cell coords are provided, but may be null if the source cell is off-board.
-    Particle evolveTargetForSource (Point sourceCoords, Point targetCoords, Particle oldSourceState, int dir)
+    Particle evolveTargetForSource (Point sourceCoords, Point targetCoords, Particle oldSourceState, int dir, double energyBarrier)
     {
 	// get old state-pair
 	Particle oldTargetState = readCell (targetCoords);
@@ -258,17 +271,8 @@ public class Board extends MooreTopology {
 	    if (newSourceState == null || newTargetState == null) {
 		throw new RuntimeException ("Null outcome of rule: " + oldSourceState.name + " " + oldTargetState.name + " -> " + (newSourceState == null ? "[null]" : newSourceState.name) + " " + (newTargetState == null ? "[null]" : newTargetState.name));
 	    } else {
-		// test energy difference
-		double energyDelta =
-		    sourceCoords == null
-		    ? neighborhoodEnergyDelta(targetCoords,oldTargetState,newTargetState)
-		    : neighborhoodEnergyDelta(sourceCoords,targetCoords,oldSourceState,oldTargetState,newSourceState,newTargetState);
-		boolean energyDeltaAcceptable =
-		    energyDelta >= 0
-		    ? true
-		    : rnd.nextDouble() < Math.pow(10,energyDelta);
-		// write
-		if (energyDeltaAcceptable)
+		// test energy difference and write, or reject
+		if (energyDeltaAcceptable(sourceCoords,targetCoords,oldSourceState,oldTargetState,newSourceState,newTargetState,energyBarrier))
 		    writeCell (targetCoords, newTargetState);
 		else
 		    newSourceState = oldSourceState;
@@ -279,7 +283,31 @@ public class Board extends MooreTopology {
 	return newSourceState;
     }
 
-    // method to calculate the energy of a cell neighborhood, if the cell is in a particular state.
+    // methods to test if a move is energetically acceptable
+    boolean energyDeltaAcceptable (Point coords, Particle newState, double energyBarrier) {
+	return energyDeltaAcceptable (null, coords, null, readCell(coords), null, newState, energyBarrier);
+    }
+    boolean energyDeltaAcceptable (Point sourceCoords, Point targetCoords, Particle oldSourceState, Particle oldTargetState, Particle newSourceState, Particle newTargetState) {
+	return energyDeltaAcceptable (sourceCoords, targetCoords, oldSourceState, oldTargetState, newSourceState, newTargetState, 0);
+    }
+    boolean energyDeltaAcceptable (Point sourceCoords, Point targetCoords, Particle oldSourceState, Particle oldTargetState, Particle newSourceState, Particle newTargetState, double energyBarrier) {
+	double energyDelta = energyBarrier +
+	    (sourceCoords == null
+	     ? neighborhoodEnergyDelta(targetCoords,oldTargetState,newTargetState)
+	     : neighborhoodEnergyDelta(sourceCoords,targetCoords,oldSourceState,oldTargetState,newSourceState,newTargetState));
+
+	return
+	    energyDelta <= 0
+	    ? true
+	    : rnd.nextDouble() < Math.pow(10,-energyDelta);
+    }
+
+    // method to calculate the absolute interaction energy of a cell with its neighbors.
+    double neighborhoodEnergy (Point p) {
+	return neighborhoodEnergyDelta (p, null, readCell(p), null);
+    }
+
+    // methods to calculate the energy of a cell neighborhood, if the cell is in a particular state.
     // a single neighbor can optionally be excluded from the sum (this aids in pair-cell neighborhood calculations).
     double neighborhoodEnergyDelta (Point p, Particle oldState, Particle newState) {
 	return neighborhoodEnergyDelta (p, oldState, newState, null);
@@ -292,13 +320,15 @@ public class Board extends MooreTopology {
 	    getNeighbor(p,q,d);
 	    if (q != exclude && onBoard(q)) {
 		Particle nbrState = readCell(q);
-		delta += newState.symmetricPairEnergy(nbrState) - oldState.symmetricPairEnergy(nbrState);
+		delta += newState.symmetricPairEnergy(nbrState);
+		if (oldState != null)
+		    delta -= oldState.symmetricPairEnergy(nbrState);
 	    }
 	}
 	return delta;
     }
 
-    // method to calculate the energy of a joint neighborhood around a given pair of cells in a particular pair-state.
+    // method to calculate the change in energy of a joint neighborhood around a given pair of cells in a particular pair-state.
     // ("joint neighborhood" means the union of the neighborhoods of the two cells.)
     double neighborhoodEnergyDelta (Point sourceCoords, Point targetCoords, Particle oldSourceState, Particle oldTargetState, Particle newSourceState, Particle newTargetState) {
 	return
