@@ -68,6 +68,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     // helper objects
     Point cursorPos;  // co-ordinates of cell beneath current mouse position
     boolean mouseDown;  // true if mouse is currently down
+    double updatesPerSecond = 0;
 
     // main()
     public static void main(String[] args) {
@@ -188,10 +189,18 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 
 	drawEverything();
 
+	long lastTimeCheck = System.currentTimeMillis();
+	int timeCheckPeriod = 10;
 	while (true)
 	    {
 		evolveStuff();
 		useTools();
+
+		if (boardUpdateCount % timeCheckPeriod == 0) {
+		    long currentTimeCheck = System.currentTimeMillis();
+		    updatesPerSecond = ((double) 1000 * timeCheckPeriod) / ((double) (currentTimeCheck - lastTimeCheck));
+		    lastTimeCheck = currentTimeCheck;
+		}
 
 		plotCounts();
 		refreshBuffer();
@@ -291,6 +300,11 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 		     ? "Mouseover board to identify pixels"
 		     : "Under cursor:", 13, true, Color.white);
 	printOrHide (cursorOnBoard ? cursorParticle.visibleName() : "", 14, cursorOnBoard, cursorOnBoard ? cursorParticle.color : Color.white);
+
+	// update rate
+	StringBuilder sb = new StringBuilder();
+	Formatter formatter = new Formatter(sb, Locale.US);
+	printOrHide (formatter.format("Updates/sec: %.2f",updatesPerSecond).toString(), 3, true, new Color(64,64,0));
 
     }
 
