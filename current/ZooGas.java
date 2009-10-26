@@ -140,9 +140,6 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	    board.writeCell(initPoint,initParticle);
 	}
 
-	// init cell counts
-	board.incCounts();
-
 	// init spray tools
 	initSprayTools();
 

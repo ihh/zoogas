@@ -69,14 +69,6 @@ public class Board extends MooreTopology {
 	connectBorder (new Point(0,127), new Point(0,128), new Point(1,0), 128, new Point(0,+size), remote);  // south
     }
 
-    // add this Board's statistics to the Particle counts. call once after initializing
-    void incCounts() {
-	for (int x = 0; x < size; ++x)
-	    for (int y = 0; y < size; ++y) {
-		cell[x][y].particle.incReferenceCount();
-	    }
-    }
-
     // read from image
     // TODO: eliminate the ZooGas references here, use a PatternSet instead
     protected void initFromImage (BufferedImage img, ParticleSet particleSet) {
@@ -104,7 +96,7 @@ public class Board extends MooreTopology {
 			    break;
 		    }
 		}
-		cell[x][y].particle = s;
+		writeCell(new Point(x,y), s);
 	    }
     }
 

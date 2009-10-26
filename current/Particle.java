@@ -20,13 +20,13 @@ public class Particle {
     protected TransformRuleMatch[][] patternTemplate = null;  // generators for production rules; outer array is indexed by neighbor direction, inner array is the set of partially-bound rules for that direction
 
     // energy rules
-    // TODO: add code to populate and use these!
     protected IdentityHashMap<Particle,Double> energy = null;  // interaction energies; Map is indexed by Particle
     protected EnergyRuleMatch[] energyTemplate = null;  // generators for interaction energies
 
-    // reference count
+    // reference counting
     private Board board = null;
     private int count = 0;  // how many of this type on the board
+    private IdentityHashMap<Particle,Object> pastNeighbors = new IdentityHashMap<Particle,Object>();   // this is a dummy map (values ignored) solely to force reference identity
 
     // static variables
     public static String
@@ -63,7 +63,12 @@ public class Particle {
 
     public int decReferenceCount() {
 	if (--count <= 0) {
+	    //	    System.err.println("Zero reference count for " + name);
+
 	    board.deregisterParticle(this);
+	    for (Iterator<Particle> iter = pastNeighbors.keySet().iterator(); iter.hasNext(); )
+		iter.next().forget(this);
+	    pastNeighbors.clear();
 	}
 	return count;
     }
@@ -109,6 +114,7 @@ public class Particle {
 	    if (patternSet != null) {
 		rv = patternSet.compileTransformRules(dir,this,oldTarget,board);
 		pattern[dir].put (oldTarget, rv);
+		remember(oldTarget);
 	    }
 	}
 	// have we got an RV?
@@ -128,6 +134,7 @@ public class Particle {
 	    if (patternSet != null) {
 		E = patternSet.compileEnergyRules(this,p);
 		energy.put (p, new Double(E));
+		remember(p);
 	    }
 	}
 	// return
@@ -138,4 +145,38 @@ public class Particle {
     double symmetricPairEnergy (Particle p) {
 	return pairEnergy(p) + p.pairEnergy(this);
     }
+
+    // helpers to remember/forget a neighbor
+    void remember (Particle p) {
+	if (p == null)
+	    throw new RuntimeException ("Tried to remember a null Particle");
+	else if (p != this) {  // don't create circular references
+	    pastNeighbors.put(p,null);
+	    p.pastNeighbors.put(this,null);
+	}
+    }
+
+    void forget (Particle p) {
+	for (int d = 0; d < pattern.length; ++d)
+	    pattern[d].remove(p);
+	energy.remove(p);
+	pastNeighbors.remove(p);
+    }
+
+    // equals method
+    public boolean equals(Particle p) {
+	return name.equals(p.name);
+    }
+
+    // finalize method
+    // uncomment to debug garbage collection
+    /*
+    protected void finalize() throws Throwable
+    {
+	System.err.println("Deleting " + name);
+
+	// uncomment if this class is not a direct subclass of Object
+	//	super.finalize();
+    }
+    */
 }
