@@ -23,6 +23,7 @@ public class ToolBox {
 		String s = buff.readLine();
 		tb.tool.add (SprayTool.fromString(s,board));
 	    }
+	    buff.close();
 	    tb.currentTool = tb.tool.elementAt(0);
 	} catch (IOException e) {
 	    e.printStackTrace();

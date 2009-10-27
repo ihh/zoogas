@@ -127,6 +127,7 @@ public class PatternSet {
 	for (Enumeration e = energyRulePattern.elements(); e.hasMoreElements() ;)
 	    print.println ("ENERGY " + (e.nextElement()).toString());
 	print.println ("END");
+	print.close();
     }
 
 
@@ -134,7 +135,6 @@ public class PatternSet {
 	try {
 	    FileOutputStream fos = new FileOutputStream(filename);
 	    toStream (fos);
-	    fos.close();
 	} catch (Exception e) {
 	    e.printStackTrace();
 	}
@@ -168,6 +168,8 @@ public class PatternSet {
 		    System.err.println("Ignoring line: " + s);
 		}
 	    }
+
+	    buff.close();
 	} catch (IOException e) {
 	    e.printStackTrace();
 	}
