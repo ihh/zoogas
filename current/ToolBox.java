@@ -10,6 +10,9 @@ public class ToolBox {
     Vector<SprayTool> tool = new Vector<SprayTool>();
     SprayTool currentTool = null;  // current spray tool
 
+    // dimensions
+    int toolHeight = 30, toolReserveBarWidth = 100, toolTextWidth = 100;
+
     // constructors
     static ToolBox fromStream (InputStream in, Board board) {
 	ToolBox tb = new ToolBox();
@@ -38,7 +41,7 @@ public class ToolBox {
     }
 
     // render method
-    void plotReserves (Graphics g, Point topLeft, int toolHeight, int toolReserveBarWidth, int toolTextWidth) {
+    void plotReserves (Graphics g, Point topLeft) {
 	for (int row = 0; row < tool.size(); ++row) {
 	    SprayTool st = tool.elementAt(row);
 	    st.plotReserve(g,new Point(topLeft.x,topLeft.y+row*toolHeight),toolHeight,toolReserveBarWidth,toolTextWidth,st==currentTool);
@@ -63,5 +66,15 @@ public class ToolBox {
 	    }
 	}
 	return foundKey;
+    }
+
+    // process click-select
+    boolean clickSelect (int ypos) {
+	int row = ypos / toolHeight;
+	if (row >= 0 && row < tool.size()) {
+	    currentTool = tool.elementAt(row);
+	    return true;
+	}
+	return false;
     }
 }

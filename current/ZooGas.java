@@ -39,6 +39,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     int belowBoardHeight = 0;  // size in pixels of whatever appears below the board -- currently unused but left as a placeholder
     int toolBarWidth = 100, toolLabelWidth = 100, toolHeight = 30;  // size in pixels of various parts of the tool bar (right of the board)
     int textBarWidth = 400, textHeight = 30;
+    int totalWidth, totalHeight;
 
     // tools
     String toolboxFilename = "TOOLS.txt";
@@ -114,6 +115,9 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 
 	// set helpers, etc.
 	boardSize = board.getBoardSize(size,pixelsPerCell);
+	totalWidth = boardSize + toolBarWidth + toolLabelWidth + textBarWidth;
+	totalHeight = boardSize + belowBoardHeight;
+
 	patternMatchesPerRefresh = (int) (size * size);
 
 	// load patternSet
@@ -147,8 +151,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	// init JFrame
 	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	setResizable(false);
-	Dimension size = new Dimension(boardSize + toolBarWidth + toolLabelWidth + textBarWidth,boardSize + belowBoardHeight);
-	bfImage = new BufferedImage((int)size.getWidth(), (int)size.getHeight(), BufferedImage.TYPE_3BYTE_BGR);
+	bfImage = new BufferedImage(totalWidth, totalHeight, BufferedImage.TYPE_3BYTE_BGR);
 	bfGraphics = bfImage.getGraphics();
 	setContentPane(new JPanel() {
 				protected void paintComponent(Graphics g)
@@ -158,7 +161,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 				}});
 
 	// set size
-	getContentPane().setPreferredSize(size);
+	getContentPane().setPreferredSize(new Dimension(totalWidth,totalHeight));
 	pack();
 	setVisible(true);
 
@@ -217,6 +220,9 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     // init tools method
     private void initSprayTools() {
 	toolBox = ToolBox.fromFile(toolboxFilename,board);
+	toolBox.toolHeight = toolHeight;
+	toolBox.toolReserveBarWidth = toolBarWidth;
+	toolBox.toolTextWidth = toolLabelWidth;
     }
 
     // getCursorPos() returns true if cursor is over board, and places cell coords in cursorPos
@@ -252,7 +258,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 
     private void drawEverything() {
 	bfGraphics.setColor(Color.black);
-	bfGraphics.fillRect(0,0,boardSize+toolBarWidth+toolLabelWidth+textBarWidth,boardSize+belowBoardHeight);
+	bfGraphics.fillRect(0,0,totalWidth,totalHeight);
 
 	Point p = new Point();
 	for (p.x = 0; p.x < size; ++p.x)
@@ -283,7 +289,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     protected void plotCounts() {
 
 	// spray levels
-	toolBox.plotReserves(bfGraphics,new Point(boardSize,0),toolHeight,toolBarWidth,toolLabelWidth);
+	toolBox.plotReserves(bfGraphics,new Point(boardSize,0));
 
 	// name of the game
 	flashOrHide ("Z00 GAS", 8, true, 0, 400, true, Color.white);
@@ -307,8 +313,6 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	printOrHide (formatter.format("Updates/sec: %.2f",updatesPerSecond).toString(), 3, true, new Color(64,64,0));
 
     }
-
-    private int toolYCenter (int row) { return (2 * row + 1) * toolHeight / 2; }
 
     private void flashOrHide (String text, int row, boolean show, int minTime, int maxTime, boolean onceOnly, Color color) {
 	int flashPeriod = 10, flashes = 10;
@@ -349,11 +353,9 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     public void mousePressed(MouseEvent e) {
 	mouseDown = true;
 
-	Point mousePos = e.getPoint();
-	if (mousePos.x >= boardSize && mousePos.y < toolHeight * toolBox.tool.size()) {
-	    int row = mousePos.y / toolHeight;
-	    toolBox.currentTool = toolBox.tool.elementAt(row);
-	}
+	Point mousePos = getContentPane().getMousePosition();
+	if (mousePos.x >= boardSize && mousePos.x < boardSize + toolBarWidth + toolLabelWidth)
+	    toolBox.clickSelect(mousePos.y);
     }
 
     public void mouseReleased(MouseEvent e) {

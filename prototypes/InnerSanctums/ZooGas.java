@@ -571,7 +571,7 @@ public class ZooGas extends JFrame implements MouseListener, KeyListener {
     public void mousePressed(MouseEvent e) {
 	mouseDown = true;
 
-	Point mousePos = e.getPoint();
+	Point mousePos = getContentPane().getMousePosition();
 	if (mousePos.x >= boardSize && mousePos.y < toolHeight * toolBox.tool.size()) {
 	    int row = mousePos.y / toolHeight;
 	    toolBox.currentTool = toolBox.tool.elementAt(row);
