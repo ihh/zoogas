@@ -73,7 +73,7 @@ public class PatternSet {
 	    rm.unbindTarget();
 
 	}
-	rv.close (new ParticlePair (source, target, source.default_verb));
+	rv.close (new ParticlePair (source, target, source.defaultVerb));
 	return rv;
     }
 
