@@ -219,32 +219,26 @@ VERB (base_u)([^x]*) .* $1/x:2$2 $T 1 /init_$1
 VERB (base_g)([^x]*) .* $1/x:3$2 $T 1 /init_$1
 
 # define the covalent bond between consecutive bases on the same chain
-# chain variable is c; chain position is i
-ENERGY base_.*/c:(\d+)/i:(\d+).* (RNA_sequence|base|basepair)_.*/c:$1/i:$+2/.* -10
+# bond endpoint identifiers are /5p and /3p
+ENERGY base_.*/5p:(\d+).* (RNA_sequence|base|basepair)_.*/3p:$1(/.*|) -10
 
 # basepairs are more favorable than bases...
-ENERGY basepair_.*/c:(\d+)/i:(\d+).* (RNA_sequence|base)_.*/c:$1/i:$+2/.* -10.1
+# bond endpoint identifiers on a basepair are /f/5p, /f/.../3p, /r/5p, /r/.../3p (since a basepair has forward and reverse strands)
+ENERGY basepair_.*/5p:(\d+).* (RNA_sequence|base)_.*/3p:$1(/.*|) -10.1
 
 # ...and stacked basepairs are more favorable still
-# NB we have to specify the x->x and y->y linkages separately, because individual ENERGY rules only fire once (just like individual VERBs)
-ENERGY basepair_[^y]*/c:(\d+)/i:(\d+).* basepair_[^y]*/c:$1/i:$+2/.* -10.2
-ENERGY basepair_.*/c:(\d+)/i:(\d+)[^y]* basepair_.*/c:$1/i:$+2/[^y]* -10.2
+# NB we have to specify the f and r strand linkages separately, because individual ENERGY rules only fire once (just like individual VERBs)
+ENERGY basepair_.*/f[^r]*/5p:(\d+).* basepair_.*/f[^r]*/3p:$1(/.*|) -10.2
+ENERGY basepair_.*/r[^f]*/5p:(\d+).* basepair_.*/r[^f]*/3p:$1(/.*|) -10.2
 
 
-# to make a basepair, merge two bases /x:... and /y:... as /x:.../y:...
-VERB base_(.)/x:(\d)(.*) base_(.)/x:($%4+2.2)(.*) basepair_$1$4/x:$2$3/y:$5$6 _ 1 pair_$1_to_$4
-
-# override the basepair move for nearby nucleotides in the same chain, so min loop length is 3
-# These are commented out because entropy appears to work just fine to prevent this...? Also, verbs are expensive, so...
-# upstream:
-#VERB base_(.)/x:(\d)(.*)/c:(\d+)/i:(\d+)(.*) base_(.)/x:($%4+2.2)(.*)/c:($4)/i:($+2.5)(.*) basepair_$1$7/x:$2$3/c:$4/i:$5$6/y:$8$9/c:$10/i:$11$12 _ 0 pair_$1_to_$4
-#VERB base_(.)/x:(\d)(.*)/c:(\d+)/i:(\d+)(.*) base_(.)/x:($%4+2.2)(.*)/c:($4)/i:($+3.5)(.*) basepair_$1$7/x:$2$3/c:$4/i:$5$6/y:$8$9/c:$10/i:$11$12 _ 0 pair_$1_to_$4
-# downstream:
-#VERB base_(.)/x:(\d)(.*)/c:(\d+)/i:(\d+)(.*) base_(.)/x:($%4+2.2)(.*)/c:($4)/i:($-2.5)(/.*|) basepair_$1$7/x:$2$3/c:$4/i:$5$6/y:$8$9/c:$10/i:$11$12 _ 0 pair_$1_to_$4
-#VERB base_(.)/x:(\d)(.*)/c:(\d+)/i:(\d+)(.*) base_(.)/x:($%4+2.2)(.*)/c:($4)/i:($-3.5)(/.*|) basepair_$1$7/x:$2$3/c:$4/i:$5$6/y:$8$9/c:$10/i:$11$12 _ 0 pair_$1_to_$4
+# to make a basepair, merge two bases /x:... and /x:... as /f/x:.../r/x:...
+# for now, until we introduce self-energies, enforce Watson-Crick complementarity here
+# (this will not be a stable mechanism, once we move to compile-once-only rule patterns...)
+VERB base_(.)/x:(\d)(.*) base_(.)/x:($%4+2.2)(.*) basepair_$1$4/f/x:$2$3/r/x:$5$6 _ 1 pair_$1_to_$4
 
 # unpairing is the opposite move: we have to pick apart the x and y blocks into two particles. tricky :)
-VERB basepair_(.)(.)/x:(\d)(.*)/y:(\d)(.*) _ base_$1/x:$3$4 base_$2/x:$5$6 1 unpair_$1_from_$2
+VERB basepair_(.)(.)/f/x:(\d)(.*)/r/x:(\d)(.*) _ base_$1/x:$3$4 base_$2/x:$5$6 1 unpair_$1_from_$2
 
 
 # all bases and basepairs do Brownian drift, subject to their energy constraints
@@ -254,23 +248,22 @@ VERB (base|basepair)_.* _ $T $S 1 /drift
 # now here is the constructor for an RNA sequence
 NOUN RNA_sequence_[acgu]* 0 0 255
 
-# cycle randomly through chain IDs
-VERB RNA_sequence_[acgu]+ .* $S/c:0 $T 1 /zero_chain_id
+# cycle randomly through dangling bond IDs
+VERB RNA_sequence_[acgu]+ .* $S/next:0 $T 1 /zero_chain_offset
 
-# cycle randomly through chain IDs 0...9
-VERB (RNA_sequence_[acgu]+)/c:(\d) .* $1/c:$%10+1.2 $T 1 /rotate_chain_id
+# cycle randomly through the dangling bond ID
+VERB (RNA_sequence_[acgu]+)/next:(\d+) .* $1/next:$%100+10.2 $T 1 /rotate_chain_offset
 
 # pick a direction, d
 # To prevent collisions, just set this to east for now; but could use d:$F
-# also set i, the chain position index, to zero
 # this rule is slow, to allow adequate sampling of chain IDs via the previous rule
-VERB RNA_sequence_[acgu]+/c:\d .* $S/i:0/d:e $T .1 /pick_direction
+VERB RNA_sequence_[acgu]+/next:\d+ .* $S/d:e $T .05 /pick_direction
 
 # generate a base
-VERB (RNA_sequence_[acgu]+)([acgu])(/c:\d/i:)(\d+)(/d:$F) _ base_$2$3$4/ $1$3$+4$5 1 generate_base_$2
+VERB (RNA_sequence_)([acgu])([acgu]+)(/3p:\d+|)/next:(\d+)(/d:$F) _ base_$2$4/5p:$5 $1$3/3p:$5/next:$%100+1.5$6 1 generate_base_$2
 
 # generate last base
-VERB RNA_sequence_([acgu])(/c:\d/i:\d+)(/d:$F) _ base_$1$2$3 _ 1 generate_base_$1
+VERB (RNA_sequence_)([acgu])(/3p:\d+|)/next:(\d+)(/d:$F) .* base_$2$3 $T 1 generate_base_$2
 
 
 # allow run-length encoding of RNA sequences

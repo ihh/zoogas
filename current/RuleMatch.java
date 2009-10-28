@@ -102,74 +102,99 @@ public class RuleMatch {
     // expansion of $1, $2, ... and $S
     static Pattern groupPattern = Pattern.compile("\\$(S|[1-9]\\d*)");
     protected final String expandGroupOrSource (String s) {
-	Matcher m = groupPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
-	while (m.find()) {
-	    String g = m.group(1);
-	    if (g.equals("S"))
-		m.appendReplacement(sb,A);
-	    else
-		m.appendReplacement(sb,getGroup(g));
+	try {
+	    Matcher m = groupPattern.matcher(s);
+	    while (m.find()) {
+		String g = m.group(1);
+		if (g.equals("S"))
+		    m.appendReplacement(sb,A);
+		else
+		    m.appendReplacement(sb,getGroup(g));
+	    }
+	    m.appendTail(sb);
+	} catch (Exception e) {
+	    System.err.println("While expanding "+s);
+	    e.printStackTrace();
 	}
-	m.appendTail(sb);
 	return sb.toString();
     }
 
     // expansion of $T
     static Pattern targetPattern = Pattern.compile("\\$T");
     protected final String expandTarget (String s) {
-	Matcher m = targetPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
-	while (m.find())
-	    m.appendReplacement(sb,B);
-	m.appendTail(sb);
+	try {
+	    Matcher m = targetPattern.matcher(s);
+	    while (m.find())
+		m.appendReplacement(sb,B);
+	    m.appendTail(sb);
+	} catch (Exception e) {
+	    System.err.println("While expanding "+s);
+	    e.printStackTrace();
+	}
 	return sb.toString();
     }
 
     // expansion of $+1.n
     static Pattern incGroupPattern = Pattern.compile("\\$\\+(\\d*)\\.?([1-9]\\d*)");
     protected final String expandInc (String s) {
-	Matcher m = incGroupPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
-	while (m.find()) {
-	    String inc = m.group(1), g = m.group(2);
-	    int n = string2int(getGroup(g));
-	    int delta = inc.length()>0 ? string2int(inc) : 1;
-	    m.appendReplacement(sb,int2string(n+delta));
+	try {
+	    Matcher m = incGroupPattern.matcher(s);
+	    while (m.find()) {
+		String inc = m.group(1), g = m.group(2);
+		int n = string2int(getGroup(g));
+		int delta = inc.length()>0 ? string2int(inc) : 1;
+		m.appendReplacement(sb,int2string(n+delta));
+	    }
+	    m.appendTail(sb);
+	} catch (Exception e) {
+	    System.err.println("While expanding "+s);
+	    e.printStackTrace();
 	}
-	m.appendTail(sb);
 	return sb.toString();
     }
 
     // expansion of $-1.n
     static Pattern decGroupPattern = Pattern.compile("\\$\\-(\\d*)\\.?([1-9]\\d*)");
     protected final String expandDec (String s) {
-	Matcher m = decGroupPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
-	while (m.find()) {
-	    String dec = m.group(1), g = m.group(2);
-	    int n = string2int(getGroup(g));
-	    int delta = dec.length()>0 ? string2int(dec) : 1;
-	    if (n >= delta)
-		m.appendReplacement(sb,int2string(n-delta));
+	try {
+	    Matcher m = decGroupPattern.matcher(s);
+	    while (m.find()) {
+		String dec = m.group(1), g = m.group(2);
+		int n = string2int(getGroup(g));
+		int delta = dec.length()>0 ? string2int(dec) : 1;
+		if (n >= delta)
+		    m.appendReplacement(sb,int2string(n-delta));
+	    }
+	    m.appendTail(sb);
+	} catch (Exception e) {
+	    System.err.println("While expanding "+s);
+	    e.printStackTrace();
 	}
-	m.appendTail(sb);
 	return sb.toString();
     }
 
     // expansion of $%3+1.n
     static Pattern modGroupPattern = Pattern.compile("\\$%([1-9]\\d*)\\+(\\d*)\\.?([1-9]\\d*)");
     protected final String expandMod (String s) {
-	Matcher m = modGroupPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
-	while (m.find()) {
-	    String mod = m.group(1), inc = m.group(2), g = m.group(3);
-	    int n = string2int(getGroup(g));
-	    int M = string2int(mod);
-	    int delta = inc.length()>0 ? string2int(inc) : 1;
-	    m.appendReplacement(sb,int2string((n+delta)%M));
+	try {
+	    Matcher m = modGroupPattern.matcher(s);
+	    while (m.find()) {
+		String mod = m.group(1), inc = m.group(2), g = m.group(3);
+		int n = string2int(getGroup(g));
+		int M = string2int(mod);
+		int delta = inc.length()>0 ? string2int(inc) : 1;
+		m.appendReplacement(sb,int2string((n+delta)%M));
+	    }
+	    m.appendTail(sb);
+	} catch (Exception e) {
+	    System.err.println("While expanding "+s);
+	    e.printStackTrace();
 	}
-	m.appendTail(sb);
 	return sb.toString();
     }
 
