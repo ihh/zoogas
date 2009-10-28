@@ -33,7 +33,7 @@ public class PatternSet {
 	Particle p = board.getParticleByName (particleName);
 	// if no such particle, look for a pattern that matches this particle
 	for (int n = 0; p == null && n < particlePattern.size(); ++n) {
-	    ParticlePattern pp = (ParticlePattern) particlePattern.get(n);
+	    ParticlePattern pp = particlePattern.get(n);
 	    p = pp.makeParticle(particleName,board,this);  // returns null if fails to match
 	}
 	// if still no such particle, create a bright white default with this PatternSet 
@@ -48,26 +48,32 @@ public class PatternSet {
 	//	System.err.println ("Compiling transformation rules for " + source.name + " " + target.name);
 	RandomVariable<ParticlePair> rv = new RandomVariable<ParticlePair>();
 	for (int n = 0; n < source.patternTemplate[dir].length; ++n) {
+
 	    TransformRuleMatch rm = source.patternTemplate[dir][n];
-	    //	    System.err.println ("Pair " + source.name + " " + target.name + " : trying to match " + source.patternTemplate[dir][n].pattern);
+
+	    //	    System.err.println ("Pair " + source.name + " " + target.name + " : trying to match " + source.patternTemplate[dir][n].transformPattern());
 	    if (rm.bindTarget(target.name)) {
-		Particle
-		    newSource = board.getOrCreateParticle (rm.C()),
-		    newTarget = board.getOrCreateParticle (rm.D());
-		//		System.err.println ("Pair " + source.name + " " + target.name + " : matched " + source.patternTemplate[dir][n].pattern);
+
+		String cName = rm.C();
+		String dName = rm.D();
+
+		Particle newSource = getOrCreateParticle(cName,board);
+		Particle newTarget = getOrCreateParticle(dName,board);
+
+		//		System.err.println ("Pair " + source.name + " " + target.name + " : matched " + source.patternTemplate[dir][n].transformPattern());
 		if (newSource == null || newTarget == null) {
 		    System.err.println ("Null outcome of rule '" + rm.pattern + "': "
-					+ source.name + " " + target.name + " -> "
-					+ (newSource == null ? ("[null: " + rm.C() + "]") : newSource.name) + " "
-					+ (newTarget == null ? ("[null: " + rm.D() + "]") : newTarget.name));
+					+ source.name + " " + target.name + " -> " + cName + " " + dName);
 		} else {
-		    ParticlePair pp = new ParticlePair (newSource, newTarget);
+		    ParticlePair pp = new ParticlePair (newSource, newTarget, rm.V());
 		    rv.add (pp, rm.P());
 		}
 	    }
+
 	    rm.unbindTarget();
+
 	}
-	rv.close (new ParticlePair (source, target));
+	rv.close (new ParticlePair (source, target, source.default_verb));
 	return rv;
     }
 
@@ -93,11 +99,14 @@ public class PatternSet {
 	double E = 0;
 	for (int n = 0; n < source.energyTemplate.length; ++n) {
 	    EnergyRuleMatch rm = source.energyTemplate[n];
-	    //		    System.err.println ("Particle " + source.name + ": trying to match " + source.energyTemplate[n]);
-	    if (rm.bindTarget(target.name))
+	    //	    System.err.println ("Pair   " + source.name + " " + target.name + "   trying to match " + source.energyTemplate[n].energyPattern());
+	    if (rm.bindTarget(target.name)) {
 		E += rm.E();
+		//		System.err.println ("Pair   " + source.name + " " + target.name + "   matched   " + source.energyTemplate[n].energyPattern() + "   with energy " + rm.E());
+	    }
 	    rm.unbindTarget();
 	}
+	//	System.err.println ("Pair   " + source.name + " " + target.name + "   total energy is " + E);
 	return E;
     }
 

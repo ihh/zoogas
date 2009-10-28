@@ -1,5 +1,6 @@
 import java.lang.*;
 import java.util.*;
+import java.util.regex.*;
 import java.text.*;
 import java.awt.*;
 import java.net.*;
@@ -10,6 +11,7 @@ public class Particle {
     // appearance
     public static int maxNameLength = 256;  // maximum length of a Particle name. Introduced to stop runaway regex rules from crashing the engine
     public String name = null;  // noun uniquely identifying this Particle (no whitespace)
+    public String default_verb = null;
     public Color color = null;
 
     // the PatternSet, i.e. the authority for all transformation, energy and color rules about this Particle
@@ -35,7 +37,11 @@ public class Particle {
 
     // constructor
     public Particle (String name, Color color, Board board, PatternSet ps) {
-	this.name = name.length() > maxNameLength ? name.substring(0,maxNameLength) : name;
+	if (name.length() > maxNameLength) {
+	    System.err.println("Warning: truncating name " + name);
+	    this.name = name.substring(0,maxNameLength);
+	} else
+	    this.name = name;
 	this.color = color;
 	this.board = board;
 	this.patternSet = ps;
@@ -76,14 +82,14 @@ public class Particle {
 
     // part of name visible to player
     public final String visibleName() {
-	
-	String[] partsOfName = name.split (visibleSeparatorChar, 2);
+	return visibleText(name);
+    }
+
+    static Pattern nonWhitespace = Pattern.compile("\\S");
+    public static String visibleText(String s) {
+	String[] partsOfName = s.split (visibleSeparatorChar, 2);
 	String viz = partsOfName[0].replaceAll (visibleSpaceChar, " ");
-
-	// Uncomment to reveal invisible metainfo to player
-	//	viz = name;
-
-	return viz;
+	return nonWhitespace.matcher(viz).find() ? viz : "";
     }
 
     // helper to "close" all patterns, adding a do-nothing rule for patterns whose RHS probabilities sum to <1
@@ -96,7 +102,7 @@ public class Particle {
 		//		System.err.println ("Closing pattern " + name + " " + target.name + " -> ...");
 		RandomVariable<ParticlePair> rv = (RandomVariable<ParticlePair>) keyval.getValue();
 		if (rv != null)
-		    rv.close(new ParticlePair (this, target));
+		    rv.close(new ParticlePair (this, target, default_verb));
 	    }
 	}
     }
@@ -123,7 +129,7 @@ public class Particle {
 	}
 	// have we got an RV?
 	if (rv != null)
-	    return (ParticlePair) rv.sample(rnd);
+	    return rv.sample(rnd);
 	// no RV; return null
 	return null;
     }
@@ -170,17 +176,46 @@ public class Particle {
 	pastNeighbors.remove(p);
     }
 
+    // helper to count number of interaction partners
+    protected int interactions() { return pastNeighbors.size(); }
+
+    // helpers to count number of compiled transformation & energy rules
+    protected int transformationRules() {
+	int r = 0;
+	for (int d = 0; d < pattern.size(); ++d)
+	    r += pattern.get(d).size();
+	return r;
+    }
+
+    protected int energyRules() {
+	return energy.size();
+    }
+
+    // helper to count number of compiled transformation rule outcomes
+    protected int outcomes() {
+	int o = 0;
+	for (int d = 0; d < pattern.size(); ++d)
+	    for (Iterator<RandomVariable<ParticlePair>> iter = pattern.get(d).values().iterator(); iter.hasNext(); )
+		o += iter.next().size();
+	return o;
+    }
+
     // equals method
     public final boolean equals(Particle p) {
 	return name.equals(p.name);
     }
 
+    // hashcode method
+    public int hashCode() {
+	return name.hashCode();
+    }
+
     // finalize method
-    // uncomment to debug garbage collection
+    // uncomment and add code to test for garbage collection
     /*
     protected final void finalize() throws Throwable
     {
-	System.err.println("Deleting " + name);
+        //	System.err.println("Deleting " + name);
 
 	// uncomment if this class is not a direct subclass of Object
 	//	super.finalize();

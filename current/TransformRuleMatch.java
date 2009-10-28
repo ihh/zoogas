@@ -42,8 +42,8 @@ public class TransformRuleMatch extends RuleMatch {
     public TransformRuleMatch(TransformRulePattern p,Board board,int dir,String a) { super(p); bindDir(board,dir); bindSource(a); }
     public TransformRuleMatch(TransformRulePattern p,Board board,int dir,String a,String b) { super(p); bindDir(board,dir); bindSource(a); bindTarget(b); }
 
-    // private methods
-    private final TransformRulePattern transformPattern() { return (TransformRulePattern) pattern; }
+    // rule accessor
+    public final TransformRulePattern transformPattern() { return (TransformRulePattern) pattern; }
 
     // binding methods
     public final boolean bindDir(Board b,int d) {
@@ -101,7 +101,7 @@ public class TransformRuleMatch extends RuleMatch {
 	return expandTarget(expandLHS(expandDir(s)));
     }
 
-    // public methods
+    // other public methods
     public final String C() { return expandRHS(transformPattern().C); }
     public final String D() { return expandRHS(transformPattern().D); }
     public final String V() { return expandRHS(transformPattern().V); }

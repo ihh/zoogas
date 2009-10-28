@@ -42,7 +42,7 @@ public class BoardServer extends Thread {
 		    int returnPort = toInt(args[9]);
 		    int remoteSourceWriteCount = toInt(args[10]);
 
-		    Particle newSourceState = board.evolveLocalTargetForRemoteSource (localTarget, oldSourceState, dir, energyBarrier);
+		    Particle newSourceState = board.evolveLocalTargetForRemoteSource(localTarget,oldSourceState,dir,energyBarrier);
 
 		    if (newSourceState != oldSourceState)
 			sendReturnDatagram (returnAddr, returnPort, remoteSource, newSourceState, remoteSourceWriteCount, -energyBarrier);

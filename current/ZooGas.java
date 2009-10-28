@@ -37,13 +37,21 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     int pixelsPerCell = 4;  // width & height of each cell in pixels
     int boardSize;  // width & height of board in pixels
     int belowBoardHeight = 0;  // size in pixels of whatever appears below the board -- currently unused but left as a placeholder
-    int toolBarWidth = 100, toolLabelWidth = 100, toolHeight = 30;  // size in pixels of various parts of the tool bar (right of the board)
+    int toolBarWidth = 100, toolLabelWidth = 200, toolHeight = 30;  // size in pixels of various parts of the tool bar (right of the board)
     int textBarWidth = 400, textHeight = 30;
     int totalWidth, totalHeight;
+    int verbHistoryLength = 10, verbHistoryPos = 0, verbHistoryRefreshPeriod = 100, verbHistoryRefreshCounter = 0, verbsSinceLastRefresh = 0;
+    String[] verbHistory = new String[verbHistoryLength];
+    Particle[] nounHistory = new Particle[verbHistoryLength];
+    int updatesRow = 0, titleRow = 3, networkRow = 5, nounRow = 8, verbHistoryRow = 12;
 
-    // tools
+    // tools and cheats
     String toolboxFilename = "TOOLS.txt";
     ToolBox toolBox = null;
+    char cheatKey = '/';  // allows player to see the hidden parts of state names, i.e. the part behind the '/'
+    char stopKey = '.';  // stops the action on this board (does not block incoming network events)
+    char slowKey = ',';  // slows the action on this board (does not block incoming network events)
+    int slowFactor = 40;  // rate at which the board slows down when slowKey is pressed (actually the rate between buffer refreshes)
 
     // cellular automata state list
     private Vector<Particle> particleVec = new Vector<Particle>();  // internal to this class
@@ -67,8 +75,11 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     Point boardCursorHotSpot = new Point(50,50);  // ignored unless boardCursorFilename != null
 
     // helper objects
-    Point cursorPos;  // co-ordinates of cell beneath current mouse position
-    boolean mouseDown;  // true if mouse is currently down
+    Point cursorPos = null;  // co-ordinates of cell beneath current mouse position
+    boolean mouseDown = false;  // true if mouse is currently down
+    boolean cheatPressed = false;  // true if cheatKey is pressed (allows player to see hidden parts of state names)
+    boolean stopPressed = false;  // true if stopKey is pressed (stops updates on this board)
+    boolean slowPressed = false;  // true if slowKey is pressed (slows updates on this board)
     double updatesPerSecond = 0;
 
     // main()
@@ -180,7 +191,6 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 
 	// register for mouse & keyboard events
 	cursorPos = new Point();
-	mouseDown = false;
 
         addMouseListener(this);
         addKeyListener(this);
@@ -196,12 +206,15 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	int timeCheckPeriod = 10;
 	while (true)
 	    {
-		evolveStuff();
+		if (!stopPressed)
+		    evolveStuff();
 		useTools();
 
 		if (boardUpdateCount % timeCheckPeriod == 0) {
 		    long currentTimeCheck = System.currentTimeMillis();
 		    updatesPerSecond = ((double) 1000 * timeCheckPeriod) / ((double) (currentTimeCheck - lastTimeCheck));
+		    if (slowPressed)
+			updatesPerSecond /= slowFactor;  // this is a bit hacky
 		    lastTimeCheck = currentTimeCheck;
 		}
 
@@ -213,7 +226,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 
     // main evolution loop
     private void evolveStuff() {
-	board.update(patternMatchesPerRefresh,this);
+	board.update(slowPressed ? (patternMatchesPerRefresh/slowFactor) : patternMatchesPerRefresh,this);
 	++boardUpdateCount;
     }
 
@@ -248,7 +261,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     }
 
 
-    // rendering methods
+    // BoardRenderer methods
     public void drawCell (Point p) {
 	bfGraphics.setColor(board.readCell(p).color);
 	Point q = new Point();
@@ -256,6 +269,26 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	bfGraphics.fillRect(q.x,q.y,pixelsPerCell,pixelsPerCell);
     }
 
+    public void showVerb (Point p,Point n,Particle oldSource,Particle oldTarget,ParticlePair newPair) {
+	if (verbsSinceLastRefresh == 0)
+	    if (cheatPressed || newPair.visibleVerb().length() > 0) {
+		// check for duplicates
+		boolean foundDuplicate = false;
+		for (int v = 0; v < verbHistoryLength; ++v)
+		    if (newPair.verb.equals(verbHistory[v]) && oldSource.color.equals(nounHistory[v].color)) {
+			foundDuplicate = true;
+			break;
+		    }
+		if (!foundDuplicate) {
+		    verbHistoryPos = (verbHistoryPos + 1) % verbHistoryLength;
+		    verbHistory[verbHistoryPos] = newPair.verb;
+		    nounHistory[verbHistoryPos] = oldSource;
+		    ++verbsSinceLastRefresh;
+		}
+	    }
+    }
+
+    // other rendering methods
     private void drawEverything() {
 	bfGraphics.setColor(Color.black);
 	bfGraphics.fillRect(0,0,totalWidth,totalHeight);
@@ -292,11 +325,11 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	toolBox.plotReserves(bfGraphics,new Point(boardSize,0));
 
 	// name of the game
-	flashOrHide ("Z00 GAS", 8, true, 0, 400, true, Color.white);
+	flashOrHide ("Z00 GAS", titleRow, true, 0, 400, true, Color.white);
 
 	// networking
-	flashOrHide ("Online", 10, board.online(), 0, -1, false, Color.blue);
-	flashOrHide ("Connected", 11, board.connected(), 0, -1, false, Color.cyan);
+	flashOrHide ("Online", networkRow, board.online(), 0, -1, false, Color.blue);
+	flashOrHide ("Connected", networkRow+1, board.connected(), 0, -1, false, Color.cyan);
 
 	// identify particle that cursor is currently over
 	boolean cursorOnBoard = getCursorPos();
@@ -304,14 +337,33 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	boolean isSpace = cursorParticle == spaceParticle;
 	printOrHide (cursorParticle == null
 		     ? "Mouseover board to identify pixels"
-		     : "Under cursor:", 13, true, Color.white);
-	printOrHide (cursorOnBoard ? cursorParticle.visibleName() : "", 14, cursorOnBoard, cursorOnBoard ? cursorParticle.color : Color.white);
+		     : "Under cursor:", nounRow, true, Color.white);
+	printOrHide (cursorOnBoard ? (cheatPressed ? cursorParticle.name : cursorParticle.visibleName()) : "", nounRow+1, cursorOnBoard, cursorOnBoard ? cursorParticle.color : Color.white);
 
-	// update rate
+	// update rate and other stats
 	StringBuilder sb = new StringBuilder();
 	Formatter formatter = new Formatter(sb, Locale.US);
-	printOrHide (formatter.format("Updates/sec: %.2f",updatesPerSecond).toString(), 3, true, new Color(64,64,0));
+	printOrHide (board.debugDumpStats(), updatesRow, true, new Color(48,48,0));
+	printOrHide (formatter.format("Updates/sec: %.2f",updatesPerSecond).toString(), updatesRow+1, true, new Color(64,64,0));
 
+	// recent verbs
+	printOrHide ("Recent events:", verbHistoryRow, true, Color.white);
+	for (int vpos = 0; vpos < verbHistoryLength; ++vpos) {
+	    int v = (verbHistoryPos + verbHistoryLength - vpos) % verbHistoryLength;
+	    String verbText = null;
+	    Color verbColor = null;
+	    if (verbHistory[v] != null) {
+		String noun = cheatPressed ? nounHistory[v].name : nounHistory[v].visibleName();
+		String nounInBrackets = noun.length() > 0 ? (" (" + noun + ")") : "";
+		// uncomment to always print noun:
+		//		verbText = (cheatPressed ? verbHistory[v] : Particle.visibleText(verbHistory[v])) + nounInBrackets;
+		verbText = cheatPressed ? (verbHistory[v] + nounInBrackets) : Particle.visibleText(verbHistory[v]);
+		verbColor = nounHistory[v].color;
+	    }
+	    printOrHide (verbText, verbHistoryRow + vpos + 1, true, verbColor);
+	    if (++verbHistoryRefreshCounter >= verbHistoryRefreshPeriod)
+		verbsSinceLastRefresh = verbHistoryRefreshCounter = 0;
+	}
     }
 
     private void flashOrHide (String text, int row, boolean show, int minTime, int maxTime, boolean onceOnly, Color color) {
@@ -335,13 +387,13 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 
     private void printOrHide (String text, int row, boolean show, Color color) {
 	FontMetrics fm = bfGraphics.getFontMetrics();
-	int xSize = fm.stringWidth(text), xPos = boardSize + toolBarWidth + toolLabelWidth + textBarWidth - xSize;
 	int ch = fm.getHeight(), bleed = 6, yPos = row * (ch + bleed);
 
 	bfGraphics.setColor (Color.black);
 	bfGraphics.fillRect (boardSize + toolBarWidth + toolLabelWidth, yPos, textBarWidth, ch + bleed);
 
-	if (show) {
+	if (show && text != null) {
+	    int xSize = fm.stringWidth(text), xPos = boardSize + toolBarWidth + toolLabelWidth + textBarWidth - xSize;
 	    bfGraphics.setColor (color);
 	    bfGraphics.drawString (text, xPos, yPos + ch);
 	}
@@ -383,9 +435,16 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	boolean foundKey = toolBox.hotKeyPressed(c);
 	if (foundKey)
 	    mouseDown = true;
+	else if (c == cheatKey)
+	    cheatPressed = true;
+	else if (c == stopKey)
+	    stopPressed = true;
+	else if (c == slowKey)
+	    slowPressed = true;
     }
 
     public void keyReleased(KeyEvent e) {
 	mouseDown = false;
+	slowPressed = stopPressed = cheatPressed = false;
     }
 }

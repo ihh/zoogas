@@ -167,31 +167,39 @@ public class Board extends MooreTopology {
 	    int dir = getRandomPair(p,n);
 	    Particle oldSource = readCell(p);
 	    Particle oldTarget = onBoard(n) ? readCell(n) : null;
-	    evolvePair(p,n,dir);
-	    Particle newSource = readCell(p);
-	    Particle newTarget = onBoard(n) ? readCell(n) : null;
+	    ParticlePair newPair = evolvePair(p,n,dir);
+	    if (newPair != null) {
+		Particle newSource = newPair.source;
+		Particle newTarget = newPair.target;
 	    
-	    if (newSource != oldSource)
-		renderer.drawCell(p);
+		if (newSource != oldSource)
+		    renderer.drawCell(p);
 
-	    if (onBoard(n) && newTarget != oldTarget)
-		renderer.drawCell(n);
+		if (onBoard(n) && newTarget != oldTarget)
+		    renderer.drawCell(n);
+
+		if (newPair.verb != null)
+		    renderer.showVerb(p,n,oldSource,oldTarget,newPair);
+	    }
 	}
     }
 
     // evolvePair(sourceCoords,targetCoords,dir) : delegate to appropriate evolve* method.
     // in what follows, one cell is designated the "source", and its neighbor is the "target".
     // "dir" is the direction from source to target.
-    private final void evolvePair (Point sourceCoords, Point targetCoords, int dir)
+    // returns a ParticlePair describing the new state and verb (may be null).
+    private final ParticlePair evolvePair (Point sourceCoords, Point targetCoords, int dir)
     {
+	ParticlePair pp = null;
 	if (onBoard (targetCoords)) {
-	    evolveLocalSourceAndLocalTarget (sourceCoords, targetCoords, dir);
+	    pp = evolveLocalSourceAndLocalTarget (sourceCoords, targetCoords, dir);
 	} else {
 	    // request remote evolveLocalTargetForRemoteSource
 	    RemoteCellCoord remoteCoords = (RemoteCellCoord) remoteCell.get (targetCoords);
 	    if (remoteCoords != null)
 		evolveLocalSourceAndRemoteTarget (sourceCoords, remoteCoords, dir);
 	}
+	return pp;
     }
 
     // evolveLocalSourceAndRemoteTarget: send an EVOLVE datagram to the network address of a remote cell.
@@ -213,33 +221,38 @@ public class Board extends MooreTopology {
 
     // SYNCHRONIZED : this is one of two synchronized methods in this class
     // evolveLocalSourceAndLocalTarget : handle entirely local updates. Strictly in the family, folks
-    synchronized public final void evolveLocalSourceAndLocalTarget (Point sourceCoords, Point targetCoords, int dir)
+    // returns a ParticlePair
+    synchronized public final ParticlePair evolveLocalSourceAndLocalTarget (Point sourceCoords, Point targetCoords, int dir)
     {
-	writeCell (sourceCoords, evolveTargetForSource (sourceCoords, targetCoords, readCell(sourceCoords), dir, 0));
+	ParticlePair newCellPair = evolveTargetForSource(sourceCoords,targetCoords,readCell(sourceCoords),dir,0);
+	if (newCellPair != null)
+	    writeCell (sourceCoords, newCellPair.source);
+	return newCellPair;
     }
 
     // SYNCHRONIZED : this is one of two synchronized methods in this class
-    // evolveLocalSourceAndLocalTarget : handle a remote request for update.
+    // evolveLocalTargetForRemoteSource : handle a remote request for update.
     // Return the new source state (the caller of this method will send this returned state back over the network as a RETURN datagram).
     synchronized public final Particle evolveLocalTargetForRemoteSource (Point targetCoords, Particle oldSourceState, int dir, double energyBarrier)
     {
-	return evolveTargetForSource (null, targetCoords, oldSourceState, dir, energyBarrier);
+	ParticlePair pp = evolveTargetForSource(null,targetCoords,oldSourceState,dir,energyBarrier);
+	return pp == null ? oldSourceState : pp.source;
     }
 
     // evolveTargetForSource : given a source state, and the co-ords of a target cell,
-    // sample the new (source,target) state configuration, write the new target,
-    // and return the new source state.
+    // sample the new (source,target) state configuration, accept/reject based on energy difference,
+    // write the updated target, and return the updated (source,target) pair.
     // The source cell coords are provided, but may be null if the source cell is off-board.
-    public final Particle evolveTargetForSource (Point sourceCoords, Point targetCoords, Particle oldSourceState, int dir, double energyBarrier)
+    public final ParticlePair evolveTargetForSource (Point sourceCoords, Point targetCoords, Particle oldSourceState, int dir, double energyBarrier)
     {
 	// get old state-pair
 	Particle oldTargetState = readCell (targetCoords);
 
 	// sample new state-pair
-	Particle newSourceState = oldSourceState;
 	ParticlePair newCellPair = oldSourceState.samplePair (dir, oldTargetState, rnd, this);
+
 	if (newCellPair != null) {
-	    newSourceState = newCellPair.source;
+	    Particle newSourceState = newCellPair.source;
 	    Particle newTargetState = newCellPair.target;
 	    // test for null
 	    if (newSourceState == null || newTargetState == null) {
@@ -249,12 +262,12 @@ public class Board extends MooreTopology {
 		if (energyDeltaAcceptable(sourceCoords,targetCoords,oldSourceState,oldTargetState,newSourceState,newTargetState,energyBarrier))
 		    writeCell (targetCoords, newTargetState);
 		else
-		    newSourceState = oldSourceState;
+		    newCellPair = null;
 	    }
 	}
 
 	// return
-	return newSourceState;
+	return newCellPair;
     }
 
     // methods to test if a move is energetically acceptable
@@ -265,10 +278,14 @@ public class Board extends MooreTopology {
 	return energyDeltaAcceptable (sourceCoords, targetCoords, oldSourceState, oldTargetState, newSourceState, newTargetState, 0);
     }
     public final boolean energyDeltaAcceptable (Point sourceCoords, Point targetCoords, Particle oldSourceState, Particle oldTargetState, Particle newSourceState, Particle newTargetState, double energyBarrier) {
+
 	double energyDelta = energyBarrier +
 	    (sourceCoords == null
 	     ? neighborhoodEnergyDelta(targetCoords,oldTargetState,newTargetState)
 	     : neighborhoodEnergyDelta(sourceCoords,targetCoords,oldSourceState,oldTargetState,newSourceState,newTargetState));
+
+	//	if (energyDelta < 0)
+	//	    System.err.println("Gain in energy (" + -energyDelta + "): " + oldSourceState.name + " " + oldTargetState.name + " -> " + newSourceState.name + " " + newTargetState.name);
 
 	return
 	    energyDelta <= 0
@@ -309,6 +326,20 @@ public class Board extends MooreTopology {
 	    neighborhoodEnergyDelta(sourceCoords,oldSourceState,newSourceState,targetCoords)
 	    + neighborhoodEnergyDelta(targetCoords,oldTargetState,newTargetState,sourceCoords)
 	    + newSourceState.symmetricPairEnergy(newTargetState) - oldSourceState.symmetricPairEnergy(oldTargetState);
+    }
+
+    // debug method (or not...)
+    // returns a description of the neighborhood as a String
+    String neighborhoodDescription(Point p) {
+	StringBuffer sb = new StringBuffer();
+	Point n = new Point();
+	for (int d = 0; d < neighborhoodSize(); ++d) {
+	    getNeighbor(p,n,d);
+	    if (d > 0)
+		sb.append(' ');
+	    sb.append(readCell(n).name);
+	}
+	return sb.toString();
     }
 
     // method to send requests to establish two-way network connections between cells
@@ -367,5 +398,18 @@ public class Board extends MooreTopology {
     // network helpers
     public final boolean online() { return updateServer != null; }
     public final boolean connected() { return remoteCell.size() > 0; }
+
+    // debug
+    String debugDumpStats() {
+	int interactions = 0, energyRules = 0, transRules = 0, outcomes = 0;
+	for (Iterator<Particle> iter = nameToParticle.values().iterator(); iter.hasNext(); ) {
+	    Particle p = iter.next();
+	    interactions += p.interactions();
+	    energyRules += p.energyRules();
+	    transRules += p.transformationRules();
+	    outcomes += p.outcomes();
+	}
+	return nameToParticle.size() + " states, " + interactions + " pairs, " + energyRules + " energies, " + transRules + " rules, " + outcomes + " outcomes";
+    }
 }
 
