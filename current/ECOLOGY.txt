@@ -48,8 +48,8 @@ VERB photon/$F [^_].* photon/$++R $T .05 reflect
 VERB photon/$B .* _ $T .001 extinguish
 
 # Initial conditions
-#VERB /INIT.* _ beacon _ 1 /start
-VERB /INIT.* _ _ _ 1 /start
+VERB /INIT.* _ beacon _ 1 /start
+#VERB /INIT.* _ _ _ 1 /start
 
 # Animal rules. This is where the ecology actually happens.
 # Successful predation
