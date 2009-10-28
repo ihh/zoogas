@@ -182,8 +182,8 @@ public class Particle {
     // helpers to count number of compiled transformation & energy rules
     protected int transformationRules() {
 	int r = 0;
-	for (int d = 0; d < pattern.size(); ++d)
-	    r += pattern.get(d).size();
+	for (IdentityHashMap<Particle, RandomVariable<ParticlePair>> ihm : pattern)
+	    r += ihm.size();
 	return r;
     }
 
@@ -194,9 +194,9 @@ public class Particle {
     // helper to count number of compiled transformation rule outcomes
     protected int outcomes() {
 	int o = 0;
-	for (int d = 0; d < pattern.size(); ++d)
-	    for (Iterator<RandomVariable<ParticlePair>> iter = pattern.get(d).values().iterator(); iter.hasNext(); )
-		o += iter.next().size();
+	for(IdentityHashMap<Particle, RandomVariable<ParticlePair>> ihm : pattern)
+		for(RandomVariable rv :  ihm.values())
+			o += rv.size();
 	return o;
     }
 
