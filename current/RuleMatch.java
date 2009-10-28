@@ -100,7 +100,7 @@ public class RuleMatch {
     }
 
     // expansion of $1, $2, ... and $S
-    static Pattern groupPattern = Pattern.compile("\\$(S|[1-9][0-9]*)");
+    static Pattern groupPattern = Pattern.compile("\\$(S|[1-9]\\d*)");
     protected final String expandGroupOrSource (String s) {
 	Matcher m = groupPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
@@ -126,8 +126,8 @@ public class RuleMatch {
 	return sb.toString();
     }
 
-    // expansion of $+++1
-    static Pattern incGroupPattern = Pattern.compile("\\$\\+([0-9]*)\\.?([1-9][0-9]*)");
+    // expansion of $+1.n
+    static Pattern incGroupPattern = Pattern.compile("\\$\\+(\\d*)\\.?([1-9]\\d*)");
     protected final String expandInc (String s) {
 	Matcher m = incGroupPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
@@ -141,8 +141,8 @@ public class RuleMatch {
 	return sb.toString();
     }
 
-    // expansion of $--1
-    static Pattern decGroupPattern = Pattern.compile("\\$\\-([0-9]*)\\.?([1-9][0-9]*)");
+    // expansion of $-1.n
+    static Pattern decGroupPattern = Pattern.compile("\\$\\-(\\d*)\\.?([1-9]\\d*)");
     protected final String expandDec (String s) {
 	Matcher m = decGroupPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();
@@ -157,8 +157,8 @@ public class RuleMatch {
 	return sb.toString();
     }
 
-    // expansion of $%3++1
-    static Pattern modGroupPattern = Pattern.compile("\\$%([1-9][0-9]*)\\+([0-9]*)\\.?([1-9][0-9]*)");
+    // expansion of $%3+1.n
+    static Pattern modGroupPattern = Pattern.compile("\\$%([1-9]\\d*)\\+(\\d*)\\.?([1-9]\\d*)");
     protected final String expandMod (String s) {
 	Matcher m = modGroupPattern.matcher(s);
 	StringBuffer sb = new StringBuffer();

@@ -48,7 +48,8 @@ VERB photon/$F [^_].* photon/$++R $T .05 reflect
 VERB photon/$B .* _ $T .001 extinguish
 
 # Initial conditions
-VERB /INIT.* _ beacon _ 1 start
+#VERB /INIT.* _ beacon _ 1 /start
+VERB /INIT.* _ _ _ 1 /start
 
 # Animal rules. This is where the ecology actually happens.
 # Successful predation
@@ -75,7 +76,7 @@ VERB .*/=(\d+) .*/=$%18+9.1 $S _ .006 kill
 
 # Breeding, overcrowding
 VERB .*/=\d+ _ $S $S .0007 spawn
-VERB .*/=\d+ .*/=. _ $T 0.0015 choke
+VERB .*/=\d+ .*/=\d+ _ $T 0.0015 choke
 
 # Movement
 VERB .*/=\d+ _ $T $S 0.02 step
@@ -170,21 +171,104 @@ VERB lava .* _ $T .00001 drain
 # zoo guests do bugger all except stroll around the place and get mauled
 VERB zoo_guest.* _ $T $S 0.01 perambulate
 
-# conga line of zoo guests
+
+# conga line
 # this models a simple polymer (e.g. a hydrocarbon) by creating energetically favored adjacencies between consecutive monomers
 # the builder is directional to avoid intractable tangles (the polymer is initially stretched in a straight line, but quickly relaxes)
 NOUN conga.* 128 192 192
-VERB conga .* conga/pos:10 $T .3 lil_partay
-VERB conga .* conga/pos:20 $T .3 ok_partay
-VERB conga .* conga/pos:30 $T .3 big_partay
-VERB conga/pos:(\d+) .* conga/dir:$F,pos:$1 $T 1 line_it_up
-VERB conga/dir:$F,pos:([1-9]\d*) _ zoo_guest/pos:$1 conga/dir:$F,pos:$-1 1 partay
-VERB conga/dir:.*,pos:0 _ zoo_guest/pos:0 _ 1 partay
-# this is the energy term that effectively creates a covalent bond between consecutive monomers
+
+# initial production rule:  conga -> conga_head/pos:$POS   where $POS \in { 10, 20, 30 }
+# this (as you can probably guess) sets the length of the conga line at 10, 20 or 30
+VERB conga .* conga_head/pos:10 $T .3 start_lil_conga
+VERB conga .* conga_head/pos:20 $T .3 start_hapnin_conga
+VERB conga .* conga_head/pos:30 $T .3 start_monsta_conga
+
+# conga_head is the constructor
+# its stateful form is  conga_head/pos:$POS,dir:$DIR  where $POS is an integer and $DIR a compass direction
+# the first rule randomly picks $DIR
+VERB conga_head/pos:(\d+) .* conga_head/dir:$F,pos:$1 $T 1 line_em_up
+VERB conga_head/dir:$F,pos:([1-9]\d*) _ conga_dude/pos:$1 conga_head/dir:$F,pos:$-1 1 partay
+VERB conga_head/dir:.*,pos:0 _ conga_dude/pos:0 _ 1 reach_the_end
+
+# this is the energy term that effectively creates a covalent bond between consecutive monomers (conga_dude's)
 # since the energy of this bond is -5, the probability of spontaneously breaking it is 1e-5
-ENERGY .*[/,]pos:(\d+) .*[/,]pos:$+1 -5
+# thus, moves that break a bond will typically be rejected.
+ENERGY conga.*[/,]pos:(\d+) conga.*[/,]pos:$+1 -5
 
-# make the conga guests move at max speed, since most of their steps are rejected anyway
-VERB zoo_guest/pos:.* _ $T $S 1 perambulate
+# jiggle the conga guests at max speed, since most of their random steps are rejected anyway
+VERB conga_dude.* _ $T $S 1 go_nuts
+VERB conga_dude.* .* _ $T .001 expire
 
+
+# RNA
+# base colors: HSV values with S=1, V=0.5 & H depending on the nucleotide: 0(a), .25(c), .5(g), .75(u)
+NOUN base_a.* 128 0 0
+NOUN base_c.* 64 128 0
+NOUN base_g.* 0 128 128
+NOUN base_u.* 64 0 128
+
+# basepairs: currently only Watson-Crick basepairs are allowed. colors are sums of individual bases.
+NOUN basepair_(au|ua).* 192 0 128
+NOUN basepair_(cg|gc).* 64 255 128
+
+# internally, each base is represented as an integer variable x: 0(a), 1(c), 2(u), 3(g)
+# note that a Watson-Crick pairing for x is (x+2)%4
+VERB (base_a)([^x]*) .* $1/x:0$2 $T 1 /init_$1
+VERB (base_c)([^x]*) .* $1/x:1$2 $T 1 /init_$1
+VERB (base_u)([^x]*) .* $1/x:2$2 $T 1 /init_$1
+VERB (base_g)([^x]*) .* $1/x:3$2 $T 1 /init_$1
+
+# define the covalent bond between consecutive bases on the same chain
+# chain variable is c; chain position is i
+ENERGY (base|basepair)_.*/c:(\d+)/i:(\d+).* (base|basepair|RNA_sequence)_.*/c:$2/i:$+3/.* -10
+
+# basepairs are more favorable than bases...
+ENERGY (base|basepair)_.*/c:(\d+)/i:(\d+).* (basepair)_.*/c:$2/i:$+3/.* -1
+
+# ...and stacked basepairs are more favorable still
+ENERGY (basepair)_.*/c:(\d+)/i:(\d+).* (basepair)_.*/c:$2/i:$+3/.* -1
+
+
+
+# to make a basepair, merge two bases /x:... and /y:... as /x:.../y:...
+VERB base_(.)/x:(\d)(.*) base_(.)/x:($%4+2.2)(.*) basepair_$1$4/x:$2$3/y:$5$6 _ 1 pair_$1_to_$4
+
+# unpairing is the opposite move
+VERB basepair_(.)(.)/x:(\d)(.*)/y:(\d)(.*) _ base_$1/x:$3$4 base_$2/y:$5$6 1 unpair_$1_from_$2
+
+
+# all bases and basepairs do Brownian drift
+VERB (base|basepair)_.* _ $T $S 1 /drift
+
+
+# now here is the constructor for an RNA sequence
+NOUN RNA_sequence_[acgu]* 0 0 255
+
+# cycle randomly through chain IDs
+VERB RNA_sequence_[acgu]+ .* $S/c:0 $T 1 /zero_chain_id
+
+# cycle randomly through chain IDs 0...9
+VERB (RNA_sequence_[acgu]+)/c:(\d) .* $1/c:$%10+1.2 $T 1 /rotate_chain_id
+
+# pick a direction, d
+# also set i, the chain position index, to zero
+# this rule is slow, to allow adequate sampling of chain IDs via the previous rule
+VERB RNA_sequence_[acgu]+/c:\d .* $S/i:0/d:$F $T .1 /pick_direction
+
+# generate a base
+VERB (RNA_sequence_[acgu]+)([acgu])(/c:\d/i:)(\d+)(/d:$F) _ base_$2$3$4/ $1$3$+4$5 1 generate_base_$2
+
+# generate last base
+VERB RNA_sequence_([acgu])(/c:\d/i:\d+)(/d:$F) _ base_$1$2$3 _ 1 generate_base_$1
+
+
+# allow run-length encoding of RNA sequences
+NOUN RNA_sequence_[acgu\d]* 0 255 255
+VERB (RNA_sequence_[acgu]*)([acgu])(\d+)(.*) .* $1$2$2$-3$4 $T 1 /expand_run_length_encoding
+# override run-length of 2:
+VERB (RNA_sequence_[acgu]*)([acgu])(2)([^\d].*|) .* $1$2$2$-3$4 $T 0 /expand_run_length_encoding
+VERB (RNA_sequence_[acgu]*)([acgu])(2)([^\d].*|) .* $1$2$2$4 $T 1 /expand_run_length_encoding
+
+
+# end of rules
 END
