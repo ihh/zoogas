@@ -11,7 +11,7 @@ public class Particle {
     // appearance
     public static int maxNameLength = 256;  // maximum length of a Particle name. Introduced to stop runaway regex rules from crashing the engine
     public String name = null;  // noun uniquely identifying this Particle (no whitespace)
-    public String default_verb = null;
+    public String defaultVerb = null;
     public Color color = null;
 
     // the PatternSet, i.e. the authority for all transformation, energy and color rules about this Particle
@@ -102,7 +102,7 @@ public class Particle {
 		//		System.err.println ("Closing pattern " + name + " " + target.name + " -> ...");
 		RandomVariable<ParticlePair> rv = (RandomVariable<ParticlePair>) keyval.getValue();
 		if (rv != null)
-		    rv.close(new ParticlePair (this, target, default_verb));
+		    rv.close(new ParticlePair (this, target, defaultVerb));
 	    }
 	}
     }
