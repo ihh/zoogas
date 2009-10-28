@@ -43,7 +43,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     int verbHistoryLength = 10, verbHistoryPos = 0, verbHistoryRefreshPeriod = 100, verbHistoryRefreshCounter = 0, verbsSinceLastRefresh = 0;
     String[] verbHistory = new String[verbHistoryLength];
     Particle[] nounHistory = new Particle[verbHistoryLength];
-    int updatesRow = 0, titleRow = 3, networkRow = 5, nounRow = 8, verbHistoryRow = 12;
+    int updatesRow = 0, titleRow = 4, networkRow = 5, nounRow = 8, verbHistoryRow = 12;
 
     // tools and cheats
     String toolboxFilename = "TOOLS.txt";
@@ -343,8 +343,10 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	// update rate and other stats
 	StringBuilder sb = new StringBuilder();
 	Formatter formatter = new Formatter(sb, Locale.US);
+	Runtime runtime = Runtime.getRuntime();
 	printOrHide (board.debugDumpStats(), updatesRow, true, new Color(48,48,0));
-	printOrHide (formatter.format("Updates/sec: %.2f",updatesPerSecond).toString(), updatesRow+1, true, new Color(64,64,0));
+	printOrHide ("Heap: current " + kmg(runtime.totalMemory()) + ", max " + kmg(runtime.maxMemory()) + ", free " + kmg(runtime.freeMemory()), updatesRow+1, true, new Color(48,48,0));
+	printOrHide (formatter.format("Updates/sec: %.2f",updatesPerSecond).toString(), updatesRow+2, true, new Color(64,64,0));
 
 	// recent verbs
 	printOrHide ("Recent events:", verbHistoryRow, true, Color.white);
@@ -364,6 +366,10 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	    if (++verbHistoryRefreshCounter >= verbHistoryRefreshPeriod)
 		verbsSinceLastRefresh = verbHistoryRefreshCounter = 0;
 	}
+    }
+
+    static String kmg(long bytes) {
+	return bytes < 1024 ? (bytes + "B") : (bytes < 1048576 ? (bytes/1024 + "K") : (bytes < 1073741824 ? (bytes/1048576 + "M") : bytes/1073741824 + "G"));
     }
 
     private void flashOrHide (String text, int row, boolean show, int minTime, int maxTime, boolean onceOnly, Color color) {

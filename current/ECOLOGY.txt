@@ -40,12 +40,12 @@ NOUN zoo_guest.* 254 254 254
 NOUN (beacon|photon).* 192 192 0
 VERB beacon _ beacon photon/$F .5 shine
 VERB beacon _ _ _ .01 extinguish
-VERB photon/$F _ $T $S 1 move
-VERB photon/$F [^_].* _ $T .9 extinguish
+VERB photon/$F _ $T $S 1 beam
+VERB photon/$F [^_].* _ $T .9 absorb
 VERB photon/$F [^_].* photon/$++L $T .1 reflect
 VERB photon/$F [^_].* photon/$++R $T .05 reflect
 # Without this last rule, photons at uncrossable borders will never die
-VERB photon/$B .* _ $T .001 extinguish
+VERB photon/$B .* _ $T .001 scatter
 
 # Initial conditions
 VERB /INIT.* _ beacon _ 1 /start
@@ -259,9 +259,10 @@ VERB RNA_sequence_[acgu]+ .* $S/c:0 $T 1 /zero_chain_id
 VERB (RNA_sequence_[acgu]+)/c:(\d) .* $1/c:$%10+1.2 $T 1 /rotate_chain_id
 
 # pick a direction, d
+# To prevent collisions, just set this to east for now; but could use d:$F
 # also set i, the chain position index, to zero
 # this rule is slow, to allow adequate sampling of chain IDs via the previous rule
-VERB RNA_sequence_[acgu]+/c:\d .* $S/i:0/d:$F $T .1 /pick_direction
+VERB RNA_sequence_[acgu]+/c:\d .* $S/i:0/d:e $T .1 /pick_direction
 
 # generate a base
 VERB (RNA_sequence_[acgu]+)([acgu])(/c:\d/i:)(\d+)(/d:$F) _ base_$2$3$4/ $1$3$+4$5 1 generate_base_$2
