@@ -301,19 +301,21 @@ public class Board extends MooreTopology {
     // methods to calculate the energy of a cell neighborhood, if the cell is in a particular state.
     // a single neighbor can optionally be excluded from the sum (this aids in pair-cell neighborhood calculations).
     public final double neighborhoodEnergyDelta (Point p, Particle oldState, Particle newState) {
-	return neighborhoodEnergyDelta (p, oldState, newState, null);
+	return oldState == newState ? 0 : neighborhoodEnergyDelta (p, oldState, newState, null);
     }
     public final double neighborhoodEnergyDelta (Point p, Particle oldState, Particle newState, Point exclude) {
-	int N = neighborhoodSize();
 	double delta = 0;
-	Point q = new Point();
-	for (int d = 0; d < N; ++d) {
-	    getNeighbor(p,q,d);
-	    if (q != exclude && onBoard(q)) {
-		Particle nbrState = readCell(q);
-		delta += newState.symmetricPairEnergy(nbrState);
-		if (oldState != null)
-		    delta -= oldState.symmetricPairEnergy(nbrState);
+	if (oldState != newState) {
+	    int N = neighborhoodSize();
+	    Point q = new Point();
+	    for (int d = 0; d < N; ++d) {
+		getNeighbor(p,q,d);
+		if (q != exclude && onBoard(q)) {
+		    Particle nbrState = readCell(q);
+		    delta += newState.symmetricPairEnergy(nbrState);
+		    if (oldState != null)
+			delta -= oldState.symmetricPairEnergy(nbrState);
+		}
 	    }
 	}
 	return delta;
