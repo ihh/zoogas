@@ -229,12 +229,15 @@ ENERGY (base|basepair)_.*/c:(\d+)/i:(\d+).* (basepair)_.*/c:$2/i:$+3/.* -1
 ENERGY (basepair)_.*/c:(\d+)/i:(\d+).* (basepair)_.*/c:$2/i:$+3/.* -1
 
 
-
 # to make a basepair, merge two bases /x:... and /y:... as /x:.../y:...
 VERB base_(.)/x:(\d)(.*) base_(.)/x:($%4+2.2)(.*) basepair_$1$4/x:$2$3/y:$5$6 _ 1 pair_$1_to_$4
 
+# override the basepair move for adjacent nucleotides in the same chain
+VERB base_(.)/x:(\d)(.*)/c:(\d+)/i:(\d+)(.*) base_(.)/x:($%4+2.2)(.*)/c:($4)/i:($+5)(.*) basepair_$1$7/x:$2$3/c:$4/i:$5$6/y:$8$9/c:$10/i:$11$12 _ 0 pair_$1_to_$4
+VERB base_(.)/x:(\d)(.*)/c:(\d+)/i:(\d+)(.*) base_(.)/x:($%4+2.2)(.*)/c:($4)/i:($-5)(.*) basepair_$1$7/x:$2$3/c:$4/i:$5$6/y:$8$9/c:$10/i:$11$12 _ 0 pair_$1_to_$4
+
 # unpairing is the opposite move
-VERB basepair_(.)(.)/x:(\d)(.*)/y:(\d)(.*) _ base_$1/x:$3$4 base_$2/y:$5$6 1 unpair_$1_from_$2
+VERB basepair_(.)(.)/x:(\d)(.*)/y:(\d)(.*) _ base_$1/x:$3$4 base_$2/x:$5$6 1 unpair_$1_from_$2
 
 
 # all bases and basepairs do Brownian drift
