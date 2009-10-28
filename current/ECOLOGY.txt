@@ -220,12 +220,13 @@ VERB (base_g)([^x]*) .* $1/x:3$2 $T 1 /init_$1
 
 # define the covalent bond between consecutive bases on the same chain
 # chain variable is c; chain position is i
-ENERGY base_.*/c:(\d+)/i:(\d+).* (base|basepair|RNA_sequence)_.*/c:$1/i:$+2/.* -10
+ENERGY base_.*/c:(\d+)/i:(\d+).* (RNA_sequence|base|basepair)_.*/c:$1/i:$+2/.* -10
 
 # basepairs are more favorable than bases...
-ENERGY basepair_.*/c:(\d+)/i:(\d+).* (base|RNA_sequence)_.*/c:$1/i:$+2/.* -11
+ENERGY basepair_.*/c:(\d+)/i:(\d+).* (RNA_sequence|base)_.*/c:$1/i:$+2/.* -11
 
 # ...and stacked basepairs are more favorable still
+# NB we have to specify the x->x and y->y linkages separately, because individual ENERGY rules only fire once (just like individual VERBs)
 ENERGY basepair_[^y]*/c:(\d+)/i:(\d+).* basepair_[^y]*/c:$1/i:$+2/.* -12
 ENERGY basepair_.*/c:(\d+)/i:(\d+)[^y]* basepair_.*/c:$1/i:$+2/[^y]* -12
 
@@ -234,6 +235,7 @@ ENERGY basepair_.*/c:(\d+)/i:(\d+)[^y]* basepair_.*/c:$1/i:$+2/[^y]* -12
 VERB base_(.)/x:(\d)(.*) base_(.)/x:($%4+2.2)(.*) basepair_$1$4/x:$2$3/y:$5$6 _ 1 pair_$1_to_$4
 
 # override the basepair move for nearby nucleotides in the same chain, so min loop length is 3
+# These are commented out because entropy appears to work just fine to prevent this...? Also, verbs are expensive, so...
 # upstream:
 #VERB base_(.)/x:(\d)(.*)/c:(\d+)/i:(\d+)(.*) base_(.)/x:($%4+2.2)(.*)/c:($4)/i:($+2.5)(.*) basepair_$1$7/x:$2$3/c:$4/i:$5$6/y:$8$9/c:$10/i:$11$12 _ 0 pair_$1_to_$4
 #VERB base_(.)/x:(\d)(.*)/c:(\d+)/i:(\d+)(.*) base_(.)/x:($%4+2.2)(.*)/c:($4)/i:($+3.5)(.*) basepair_$1$7/x:$2$3/c:$4/i:$5$6/y:$8$9/c:$10/i:$11$12 _ 0 pair_$1_to_$4
@@ -241,11 +243,11 @@ VERB base_(.)/x:(\d)(.*) base_(.)/x:($%4+2.2)(.*) basepair_$1$4/x:$2$3/y:$5$6 _ 
 #VERB base_(.)/x:(\d)(.*)/c:(\d+)/i:(\d+)(.*) base_(.)/x:($%4+2.2)(.*)/c:($4)/i:($-2.5)(/.*|) basepair_$1$7/x:$2$3/c:$4/i:$5$6/y:$8$9/c:$10/i:$11$12 _ 0 pair_$1_to_$4
 #VERB base_(.)/x:(\d)(.*)/c:(\d+)/i:(\d+)(.*) base_(.)/x:($%4+2.2)(.*)/c:($4)/i:($-3.5)(/.*|) basepair_$1$7/x:$2$3/c:$4/i:$5$6/y:$8$9/c:$10/i:$11$12 _ 0 pair_$1_to_$4
 
-# unpairing is the opposite move
+# unpairing is the opposite move: we have to pick apart the x and y blocks into two particles. tricky :)
 VERB basepair_(.)(.)/x:(\d)(.*)/y:(\d)(.*) _ base_$1/x:$3$4 base_$2/x:$5$6 1 unpair_$1_from_$2
 
 
-# all bases and basepairs do Brownian drift
+# all bases and basepairs do Brownian drift, subject to their energy constraints
 VERB (base|basepair)_.* _ $T $S 1 /drift
 
 
