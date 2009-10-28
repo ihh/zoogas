@@ -1,7 +1,18 @@
+# program name
+ZOOGAS = ZooGas
+
+# set heap to 512MB
+JAVA = java -Xmx512m
+
+# max compiler warnings
+JAVAC = javac -Xlint:unchecked
+
+# find all .java files and substitute .class for .java
 CLASSFILES = $(subst .java,.class,$(wildcard *.java))
 
+# targets
 all zoogas: classfiles
-	java ZooGas
+	$(JAVA) $(ZOOGAS)
 
 classfiles class: $(CLASSFILES)
 
@@ -9,12 +20,13 @@ clean:
 	rm $(CLASSFILES)
 
 testserver: classfiles
-	java ZooGas 4444
+	$(JAVA) $(ZOOGAS) 4444
 
 testclient: classfiles
-	java ZooGas 4445 localhost 4444
+	$(JAVA) $(ZOOGAS) 4445 localhost 4444
 
 %.class: %.java
-	javac -Xlint:unchecked $<
+	$(JAVAC) $<
 
+# keep everything when done
 .SECONDARY:
