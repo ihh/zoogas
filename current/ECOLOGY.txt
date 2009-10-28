@@ -220,13 +220,14 @@ VERB (base_g)([^x]*) .* $1/x:3$2 $T 1 /init_$1
 
 # define the covalent bond between consecutive bases on the same chain
 # chain variable is c; chain position is i
-ENERGY (base|basepair)_.*/c:(\d+)/i:(\d+).* (base|basepair|RNA_sequence)_.*/c:$2/i:$+3/.* -10
+ENERGY base_.*/c:(\d+)/i:(\d+).* (base|basepair|RNA_sequence)_.*/c:$1/i:$+2/.* -10
 
 # basepairs are more favorable than bases...
-ENERGY (base|basepair)_.*/c:(\d+)/i:(\d+).* (basepair)_.*/c:$2/i:$+3/.* -1
+ENERGY basepair_.*/c:(\d+)/i:(\d+).* (base|RNA_sequence)_.*/c:$1/i:$+2/.* -11
 
 # ...and stacked basepairs are more favorable still
-ENERGY (basepair)_.*/c:(\d+)/i:(\d+).* (basepair)_.*/c:$2/i:$+3/.* -1
+ENERGY basepair_[^y]*/c:(\d+)/i:(\d+).* basepair_[^y]*/c:$1/i:$+2/.* -12
+ENERGY basepair_.*/c:(\d+)/i:(\d+)[^y]* basepair_.*/c:$1/i:$+2/[^y]* -12
 
 
 # to make a basepair, merge two bases /x:... and /y:... as /x:.../y:...
