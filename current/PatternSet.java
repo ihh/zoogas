@@ -87,10 +87,7 @@ public class PatternSet {
 	    if (rm.matches())
 		v.add (rm);
 	}
-	TransformRuleMatch[] rm = new TransformRuleMatch[v.size()];
-	for (int n = 0; n < v.size(); ++n)
-	    rm[n] = v.get(n);
-	return rm;
+	return (TransformRuleMatch[])v.toArray(new TransformRuleMatch[v.size()]);
     }
 
     // method to compile energy rules for a new target Particle
@@ -120,10 +117,7 @@ public class PatternSet {
 	    if (rm.matches())
 		v.add (rm);
 	}
-	EnergyRuleMatch[] rm = new EnergyRuleMatch[v.size()];
-	for (int n = 0; n < v.size(); ++n)
-	    rm[n] = v.get(n);
-	return rm;
+	return (EnergyRuleMatch[])v.toArray(new EnergyRuleMatch[v.size()]);
     }
 
     // i/o
