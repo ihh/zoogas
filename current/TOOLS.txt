@@ -11,5 +11,7 @@ zoo_guest z 1 1 1 1 .1
 conga x 1 1 1 1 .1
 cage_builder c 1 1 1 1 .1
 RNA_sequence_a5u5 q 1 1 1 1 .1
-RNA_sequence_a10u10 w 1 1 1 1 .1
-RNA_sequence_a20u20 e 1 1 1 1 .1
+RNA_sequence_ccacucc w 1 1 1 1 .1
+RNA_sequence_ggaggugg e 1 1 1 1 .1
+RNA_sequence_ccaaccccuucc r 1 1 1 1 .1
+RNA_sequence_a20u20 t 1 1 1 1 .1
