@@ -164,8 +164,6 @@ public class Board extends MooreTopology {
 	Point p = new Point(), n = new Point();
 	for (int u = 0; u < cycles; ++u) {
 
-	    long startTime = System.currentTimeMillis();
-
 	    int dir = getRandomPair(p,n);
 	    Particle oldSource = readCell(p);
 	    Particle oldTarget = onBoard(n) ? readCell(n) : null;
@@ -182,14 +180,6 @@ public class Board extends MooreTopology {
 
 		if (newPair.verb != null)
 		    renderer.showVerb(p,n,oldSource,oldTarget,newPair);
-	    }
-
-	    long timeLapsed = System.currentTimeMillis() - startTime;
-	    if (timeLapsed > 20) {  // if a rule takes >20ms to complete, something's badly wrong
-		System.err.println("Rule took " + timeLapsed + "ms to complete: " + oldSource.name + " " + oldTarget.name + " -> " + (newPair == null ? "[null]" : (newPair.source.name + " " + newPair.target.name)));
-		//		System.err.println("Source neighborhood: " + neighborhoodDescription(p));
-		//		System.err.println("Target neighborhood: " + neighborhoodDescription(n));
-		//		System.err.println(debugDumpStats());
 	    }
 	}
     }
