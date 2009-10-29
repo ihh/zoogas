@@ -20,6 +20,11 @@ public class RuleMatch {
     protected Matcher am = null, abm = null;
     private boolean aMatched = false, abMatched = false;
 
+    // classes
+    class AlreadyBoundException extends RuntimeException {
+	AlreadyBoundException() { super("Attempt to bind already-bound rule"); }
+    }
+
     // constructors
     public RuleMatch(RulePattern p) { pattern = p; }
     public RuleMatch(RulePattern p,Board board,int dir) { this(p); bindDir(board,dir); }
@@ -33,8 +38,7 @@ public class RuleMatch {
 	    abPattern = Pattern.compile(regexAB());
 	    return true;
 	}
-	// throw AlreadyBoundException
-	return false;
+	throw new AlreadyBoundException();
     }
 
     public final boolean bindSource(String a) {
@@ -44,8 +48,7 @@ public class RuleMatch {
 	    aMatched = am.matches();
 	    return aMatched;
 	}
-	// throw AlreadyBoundException
-	return false;
+	throw new AlreadyBoundException();
     }
 
     public final boolean bindTarget(String b) {
@@ -55,8 +58,7 @@ public class RuleMatch {
 	    abMatched = abm.matches();
 	    return abMatched;
 	}
-	// throw AlreadyBoundException
-	return false;
+	throw new AlreadyBoundException();
     }
 
     // unbinding

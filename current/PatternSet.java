@@ -89,7 +89,10 @@ public class PatternSet {
 		String verb = rm.V();
 		double prob = rm.P();
 
-		// the following calls may corrupt rm, but we now have everything we need from rm (cName, dName, verb and prob)
+		// we now have everything we need from rm (cName, dName, verb and prob)
+		// therefore, unbind it so we can call getOrCreateParticle (which will re-bind it)
+		rm.unbindSourceAndTarget();
+
 		Particle newSource = getOrCreateParticle(cName,board);
 		Particle newTarget = getOrCreateParticle(dName,board);
 

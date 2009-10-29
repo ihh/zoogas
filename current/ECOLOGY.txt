@@ -108,16 +108,16 @@ NOUN cage_builder.* 128 128 192
 VERB cage_builder .* cage_builder/len:5 $T .3 plan_small_cage
 VERB cage_builder .* cage_builder/len:11 $T .3 plan_medium_cage
 VERB cage_builder .* cage_builder/len:21 $T .3 plan_large_cage
-VERB cage_builder/len:([^,]*) .* cage_builder/len:$1,dir:$F $T 1 choose_orientation
+VERB cage_builder/len:(\d+) .* cage_builder/len:$1/dir:$F $T 1 choose_orientation
 # Exclude diagonal cages (or animals can escape through the cracks)
-VERB cage_builder/len:([^,]*),dir:(ne|nw|se|sw) .* cage_builder/len:$1,dir:$F $T 1 rethink_orientation
+VERB cage_builder/len:(\d+)/dir:(ne|nw|se|sw) .* cage_builder/len:$1/dir:$F $T 1 rethink_orientation
 # OK, here's the program that actually builds the cage. It's a simple state machine: build, turn, stop.
-VERB cage_builder/len:([^,]*),dir:([^,]) .* cage_builder/len:$1,walls:3,steps:$1,dir:$2 $T 1 start
-VERB cage_builder/len:(.*),walls:(.),steps:([^0].*),dir:$F _ wall/5 cage_builder/len:$1,walls:$2,steps:$-3,dir:$F 1 place_next_brick
-VERB cage_builder/len:(.*),walls:([^0]),steps:0,dir:$F .* cage_builder/len:$1,walls:$-2,steps:$1,dir:$+R $T 1 build_next_wall
-VERB cage_builder/len:(.*),walls:0,steps:[01],dir:.* .* wall/5 $T 1 finish
+VERB cage_builder/len:(\d+)/dir:(.) .* cage_builder/len:$1/walls:3/steps:$1/dir:$2 $T 1 start
+VERB cage_builder/len:(\d+)/walls:(\d)/steps:([^0].*)/dir:$F _ wall/5 cage_builder/len:$1/walls:$2/steps:$-3/dir:$F 1 place_next_brick
+VERB cage_builder/len:(\d+)/walls:([^0])/steps:0/dir:$F .* cage_builder/len:$1/walls:$-2/steps:$1/dir:$+R $T 1 build_next_wall
+VERB cage_builder/len:(\d+)/walls:0/steps:[01]/dir:.* .* wall/5 $T 1 finish
 # Handle collisions gracefully:
-VERB cage_builder/.*dir:$F wall/.*|cage_builder.* wall/5 $T 1 join_wall
+VERB cage_builder/.*dir:$F (wall/.*|cage_builder.*) wall/5 $T 1 join_wall
 
 
 # uncomment the following to test for runaway particle names... (cage_builder discovered this bug, that's why it's here)
@@ -184,16 +184,17 @@ VERB conga .* conga_head/pos:20 $T .3 start_hapnin_conga
 VERB conga .* conga_head/pos:30 $T .3 start_monsta_conga
 
 # conga_head is the constructor
-# its stateful form is  conga_head/pos:$POS,dir:$DIR  where $POS is an integer and $DIR a compass direction
+# its stateful form is  conga_head/pos:$POS/dir:$DIR  where $POS is an integer and $DIR a compass direction
 # the first rule randomly picks $DIR
-VERB conga_head/pos:(\d+) .* conga_head/dir:$F,pos:$1 $T 1 line_em_up
-VERB conga_head/dir:$F,pos:([1-9]\d*) _ conga_dude/pos:$1 conga_head/dir:$F,pos:$-1 1 partay
-VERB conga_head/dir:.*,pos:0 _ conga_dude/pos:0 _ 1 reach_the_end
+#VERB conga_head/pos:(\d+) .* conga_head/dir:$F/pos:$1 $T 1 line_em_up
+VERB conga_head/pos:(\d+) .* conga_head/dir:e/pos:$1 $T 1 line_em_up
+VERB conga_head/dir:$F/pos:([1-9]\d*) _ conga_dude/pos:$1/next:$-1 conga_head/dir:$F/pos:$-1 1 partay
+VERB conga_head/dir:.*/pos:0 _ conga_dude/pos:0 _ 1 reach_the_end
 
 # this is the energy term that effectively creates a covalent bond between consecutive monomers (conga_dude's)
 # since the energy of this bond is -5, the probability of spontaneously breaking it is 1e-5
 # thus, moves that break a bond will typically be rejected.
-ENERGY conga.*[/,]pos:(\d+) conga.*[/,]pos:$+1 -5
+ENERGY conga.*/next:(\d+)(/.*|) conga.*/pos:\1(/.*|) -5
 
 # jiggle the conga guests at max speed, since most of their random steps are rejected anyway
 VERB conga_dude.* _ $T $S 1 go_nuts
@@ -202,10 +203,10 @@ VERB conga_dude.* .* _ $T .001 expire
 
 # RNA
 # base colors: HSV values with S=1, V=0.5 & H depending on the nucleotide: 0(a), .25(c), .5(g), .75(u)
-NOUN base_a.* 128 0 0
-NOUN base_c.* 64 128 0
-NOUN base_g.* 0 128 128
-NOUN base_u.* 64 0 128
+NOUN (base_|RNA_sequence_[acgu]*)a([^acgu].*|) 128 0 0
+NOUN (base_|RNA_sequence_[acgu]*)c([^acgu].*|) 64 128 0
+NOUN (base_|RNA_sequence_[acgu]*)g([^acgu].*|) 0 128 128
+NOUN (base_|RNA_sequence_[acgu]*)u([^acgu].*|) 64 0 128
 
 # canonical basepairs: RGB components are the the sums of the RGB components of individual bases.
 NOUN basepair_(au|ua).* 192 0 128
@@ -259,10 +260,6 @@ VERB (base|basepair)_.* _ $T $S 1 /drift
 
 
 # now here is the constructor for an RNA sequence
-# fancy: have it pulse blue/cyan by detecting odd/even length sequences in the regexp :)
-NOUN RNA_sequence_([acgu][acgu])*(/.*|) 0 0 255
-NOUN RNA_sequence_[acgu]*(/.*|) 0 255 255
-
 # cycle randomly through dangling bond IDs
 VERB RNA_sequence_[acgu]+ .* $S/next:0 $T 1 /zero_chain_offset
 

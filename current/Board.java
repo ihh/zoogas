@@ -259,10 +259,12 @@ public class Board extends MooreTopology {
 		throw new RuntimeException ("Null outcome of rule: " + oldSourceState.name + " " + oldTargetState.name + " -> " + (newSourceState == null ? "[null]" : newSourceState.name) + " " + (newTargetState == null ? "[null]" : newTargetState.name));
 	    } else {
 		// test energy difference and write, or reject
-		if (energyDeltaAcceptable(sourceCoords,targetCoords,dir,oldSourceState,oldTargetState,newSourceState,newTargetState,energyBarrier))
+		if (energyDeltaAcceptable(sourceCoords,targetCoords,dir,oldSourceState,oldTargetState,newSourceState,newTargetState,energyBarrier)) {
+		    //		    System.err.println ("Firing rule: " + oldSourceState.name + " " + oldTargetState.name + " -> " + newSourceState.name + " " + newTargetState.name + " " + newCellPair.verb);
 		    writeCell (targetCoords, newTargetState);
-		else
+		} else {
 		    newCellPair = null;
+		}
 	    }
 	}
 
