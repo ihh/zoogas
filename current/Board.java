@@ -14,7 +14,7 @@ public class Board extends MooreTopology {
     private HashMap<Point,RemoteCellCoord> remoteCell = null;  // map of connections from off-board Point's to RemoteCellCoord's
 
     // cellular automata rule/particle generator
-    private PatternSet patternSet = new PatternSet();
+    private PatternSet patternSet = new PatternSet(this);
 
     // random number generator
     private Random rnd = null;
@@ -259,7 +259,7 @@ public class Board extends MooreTopology {
 		throw new RuntimeException ("Null outcome of rule: " + oldSourceState.name + " " + oldTargetState.name + " -> " + (newSourceState == null ? "[null]" : newSourceState.name) + " " + (newTargetState == null ? "[null]" : newTargetState.name));
 	    } else {
 		// test energy difference and write, or reject
-		if (energyDeltaAcceptable(sourceCoords,targetCoords,oldSourceState,oldTargetState,newSourceState,newTargetState,energyBarrier))
+		if (energyDeltaAcceptable(sourceCoords,targetCoords,dir,oldSourceState,oldTargetState,newSourceState,newTargetState,energyBarrier))
 		    writeCell (targetCoords, newTargetState);
 		else
 		    newCellPair = null;
@@ -272,17 +272,17 @@ public class Board extends MooreTopology {
 
     // methods to test if a move is energetically acceptable
     public final boolean energyDeltaAcceptable (Point coords, Particle newState, double energyBarrier) {
-	return energyDeltaAcceptable (null, coords, null, readCell(coords), null, newState, energyBarrier);
+	return energyDeltaAcceptable (null, coords, -1, null, readCell(coords), null, newState, energyBarrier);
     }
-    public final boolean energyDeltaAcceptable (Point sourceCoords, Point targetCoords, Particle oldSourceState, Particle oldTargetState, Particle newSourceState, Particle newTargetState) {
-	return energyDeltaAcceptable (sourceCoords, targetCoords, oldSourceState, oldTargetState, newSourceState, newTargetState, 0);
+    public final boolean energyDeltaAcceptable (Point sourceCoords, Point targetCoords, int dir, Particle oldSourceState, Particle oldTargetState, Particle newSourceState, Particle newTargetState) {
+	return energyDeltaAcceptable (sourceCoords, targetCoords, dir, oldSourceState, oldTargetState, newSourceState, newTargetState, 0);
     }
-    public final boolean energyDeltaAcceptable (Point sourceCoords, Point targetCoords, Particle oldSourceState, Particle oldTargetState, Particle newSourceState, Particle newTargetState, double energyBarrier) {
+    public final boolean energyDeltaAcceptable (Point sourceCoords, Point targetCoords, int dir, Particle oldSourceState, Particle oldTargetState, Particle newSourceState, Particle newTargetState, double energyBarrier) {
 
 	double energyDelta = energyBarrier +
 	    (sourceCoords == null
 	     ? neighborhoodEnergyDelta(targetCoords,oldTargetState,newTargetState)
-	     : neighborhoodEnergyDelta(sourceCoords,targetCoords,oldSourceState,oldTargetState,newSourceState,newTargetState));
+	     : neighborhoodEnergyDelta(sourceCoords,targetCoords,dir,oldSourceState,oldTargetState,newSourceState,newTargetState));
 
 	//	if (energyDelta < 0)
 	//	    System.err.println("Gain in energy (" + -energyDelta + "): " + oldSourceState.name + " " + oldTargetState.name + " -> " + newSourceState.name + " " + newTargetState.name);
@@ -312,9 +312,9 @@ public class Board extends MooreTopology {
 		getNeighbor(p,q,d);
 		if (q != exclude && onBoard(q)) {
 		    Particle nbrState = readCell(q);
-		    delta += newState.symmetricPairEnergy(nbrState);
+		    delta += newState.symmetricPairEnergy(nbrState,d);
 		    if (oldState != null)
-			delta -= oldState.symmetricPairEnergy(nbrState);
+			delta -= oldState.symmetricPairEnergy(nbrState,d);
 		}
 	    }
 	}
@@ -323,11 +323,11 @@ public class Board extends MooreTopology {
 
     // method to calculate the change in energy of a joint neighborhood around a given pair of cells in a particular pair-state.
     // ("joint neighborhood" means the union of the neighborhoods of the two cells.)
-    public final double neighborhoodEnergyDelta (Point sourceCoords, Point targetCoords, Particle oldSourceState, Particle oldTargetState, Particle newSourceState, Particle newTargetState) {
+    public final double neighborhoodEnergyDelta (Point sourceCoords, Point targetCoords, int dir, Particle oldSourceState, Particle oldTargetState, Particle newSourceState, Particle newTargetState) {
 	return
 	    neighborhoodEnergyDelta(sourceCoords,oldSourceState,newSourceState,targetCoords)
 	    + neighborhoodEnergyDelta(targetCoords,oldTargetState,newTargetState,sourceCoords)
-	    + newSourceState.symmetricPairEnergy(newTargetState) - oldSourceState.symmetricPairEnergy(oldTargetState);
+	    + newSourceState.symmetricPairEnergy(newTargetState,dir) - oldSourceState.symmetricPairEnergy(oldTargetState,dir);
     }
 
     // debug method (or not...)
@@ -394,7 +394,7 @@ public class Board extends MooreTopology {
     }
 
     public final void loadPatternSetFromFile(String filename) {
-	patternSet = PatternSet.fromFile(filename);
+	patternSet = PatternSet.fromFile(filename,this);
     }
 
     // network helpers

@@ -14,10 +14,10 @@
 //  $%3+2.1 => ($1 + 2) mod 3
 
 public class EnergyRuleMatch extends RuleMatch {
+
     // constructors
     public EnergyRuleMatch(EnergyRulePattern p) { super(p); }
-    public EnergyRuleMatch(EnergyRulePattern p,String a) { super(p); bindSource(a); }
-    public EnergyRuleMatch(EnergyRulePattern p,String a,String b) { super(p); bindSource(a); bindSource(b); }
+    public EnergyRuleMatch(EnergyRulePattern p,Board board,int dir) { super(p,board,dir); }
 
     // rule accessor
     public final EnergyRulePattern energyPattern() { return (EnergyRulePattern) pattern; }

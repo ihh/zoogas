@@ -19,11 +19,11 @@ public class Particle {
 
     // transformation rules
     protected ArrayList<IdentityHashMap<Particle,RandomVariable<ParticlePair>>> pattern = null;  // production rules; array is indexed by neighbor direction, Map is indexed by Particle
-    protected TransformRuleMatch[][] patternTemplate = null;  // generators for production rules; outer array is indexed by neighbor direction, inner array is the set of partially-bound rules for that direction
+    protected TransformRuleMatch[][] transformRuleMatch = null;  // generators for production rules; outer array is indexed by neighbor direction, inner array is the set of partially-bound rules for that direction
 
     // energy rules
-    protected IdentityHashMap<Particle,Double> energy = null;  // interaction energies; Map is indexed by Particle
-    protected EnergyRuleMatch[] energyTemplate = null;  // generators for interaction energies
+    protected ArrayList<IdentityHashMap<Particle,Double>> energy = null;  // interaction energies; Map is indexed by Particle
+    protected EnergyRuleMatch[][] energyRuleMatch = null;  // generators for interaction energies
 
     // reference counting
     private Board board = null;
@@ -45,20 +45,20 @@ public class Particle {
 	this.color = color;
 	this.board = board;
 	this.patternSet = ps;
-	// init transformation rule patterns
+	// init transformation & energy rule patterns in each direction
 	int N = board.neighborhoodSize();
-	// The following is what we really want here, but backward compatibility of Java generics prevents initialization of an array of generics:
-	//	pattern = new IdentityHashMap<Particle,RandomVariable<ParticlePair>> [N];
-	pattern = new ArrayList<IdentityHashMap<Particle, RandomVariable<ParticlePair>>>(N);   // Ugly, but no longer causes a warning. Thanks, Java!
-	patternTemplate = new TransformRuleMatch[N][];
+	pattern = new ArrayList<IdentityHashMap<Particle, RandomVariable<ParticlePair>>>(N);
+	transformRuleMatch = new TransformRuleMatch[N][];
+	energy = new ArrayList<IdentityHashMap<Particle,Double>>();
+	energyRuleMatch = new EnergyRuleMatch[N][];
 	for (int n = 0; n < N; ++n) {
 	    pattern.add(new IdentityHashMap<Particle,RandomVariable<ParticlePair>>());
-	    patternTemplate[n] = patternSet.getSourceTransformRules (name, board, n);
+	    transformRuleMatch[n] = patternSet.getSourceTransformRules(name,n);
+
+	    energy.add(new IdentityHashMap<Particle,Double>());
+	    energyRuleMatch[n] = patternSet.getSourceEnergyRules(name,n);
 	}
-	// init energy rule patterns
-	energy = new IdentityHashMap<Particle,Double>();
-	energyTemplate = patternSet.getSourceEnergyRules(name);
-	// register with the Board to prevent garbage collection
+	// register with the Board for name lookup (NB this may prevent garbage collection, so we deregister later)
 	board.registerParticle(this);
     }
 
@@ -108,10 +108,10 @@ public class Particle {
     }
 
     // method to test if a Particle is active (i.e. has any transformation rules) in a given direction
-    public final boolean isActive(int dir) { return patternTemplate[dir].length > 0; }
+    public final boolean isActive(int dir) { return transformRuleMatch[dir].length > 0; }
 
     // method to test if a Particle has energy rules
-    public final boolean hasEnergy() { return energyTemplate.length > 0; }
+    public final boolean hasEnergy() { return energyRuleMatch.length > 0; }
 
     // helper to sample a new (source,target) pair
     // returns null if no rule found
@@ -122,7 +122,7 @@ public class Particle {
 	} else {
 	    // if no RV, look for rule generator(s) that match this neighbor, and use them to create a set of rules
 	    if (patternSet != null) {
-		rv = patternSet.compileTransformRules(dir,this,oldTarget,board);
+		rv = patternSet.compileTransformRules(this,oldTarget,dir);
 		pattern.get(dir).put (oldTarget, rv);
 		remember(oldTarget);
 	    }
@@ -135,16 +135,16 @@ public class Particle {
     }
 
     // helper to calculate pairwise interaction energy with another Particle (one-way)
-    public final double pairEnergy (Particle p) {
+    public final double pairEnergy (Particle p, int dir) {
 	double E = 0;
 	if (hasEnergy()) {
-	    if (energy.containsKey(p)) {
-		E = energy.get(p).doubleValue();
+	    if (energy.get(dir).containsKey(p)) {
+		E = energy.get(dir).get(p).doubleValue();
 	    } else {
 		// look for rule generator(s) that match this neighbor, and use them to calculate energy
 		if (patternSet != null) {
-		    E = patternSet.compileEnergyRules(this,p);
-		    energy.put (p, new Double(E));
+		    E = patternSet.compileEnergyRules(this,p,dir);
+		    energy.get(dir).put (p, new Double(E));
 		    remember(p);
 		}
 	    }
@@ -154,8 +154,10 @@ public class Particle {
     }
 
     // helper to calculate symmetric form of pairEnergy
-    public final double symmetricPairEnergy (Particle p) {
-	return pairEnergy(p) + p.pairEnergy(this);
+    public final double symmetricPairEnergy (Particle p,int dir) {
+	int ns = board.neighborhoodSize();
+	int opposite = (dir + ns/2) % ns;
+	return pairEnergy(p,dir) + p.pairEnergy(this,opposite);
     }
 
     // helpers to remember/forget a neighbor

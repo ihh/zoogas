@@ -222,16 +222,16 @@ NOUN basepair_uu.* 96 0 192
 # define the covalent bond between consecutive bases on the same chain
 # bond endpoint identifiers are /5p and /3p
 # start with base->...
-ENERGY base_.*/5p:(\d+).* (RNA_sequence|base|basepair)_.*/3p:$1(/.*|) -10
+ENERGY base_.*/5p:(\d+).* (RNA_sequence|base|basepair)_.*/3p:\1(/.*|) -10
 
 # define the basepair->base and basepair->RNA_sequence bonds
 # (RNA_sequence is a constructor for a chain of bases)
-ENERGY basepair_.*/5p:(\d+).* (RNA_sequence|base)_.*/3p:$1(/.*|) -10
+ENERGY basepair_.*/5p:(\d+).* (RNA_sequence|base)_.*/3p:\1(/.*|) -10
 
 # define the basepair->basepair bond a bit more carefully
 # we have to specify the f and r strand linkages separately, because individual ENERGY rules only fire once (just like individual VERBs)
-ENERGY basepair_.*/f[^r]*/5p:(\d+).* basepair_.*/f[^r]*/3p:$1(/.*|) -10
-ENERGY basepair_.*/r[^f]*/5p:(\d+).* basepair_.*/r[^f]*/3p:$1(/.*|) -10
+ENERGY basepair_.*/f[^r]*/5p:(\d+).* basepair_.*/f[^r]*/3p:\1(/.*|) -10
+ENERGY basepair_.*/r[^f]*/5p:(\d+).* basepair_.*/r[^f]*/3p:\1(/.*|) -10
 
 # define the stabilizing self-energy of a Watson-Crick basepair
 # this will fire once for every cell in the neighborhood (i.e. eight times for the Moore topology), so keep the energy low

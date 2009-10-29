@@ -12,21 +12,35 @@ import java.io.*;
 public class RuleMatch {
     // data
     protected RulePattern pattern = null;
-    private Pattern aPattern = null, bPattern = null;
-    private String A = null, B = null;
-    private Matcher am = null, bm = null;
-    private boolean aMatched = false, bMatched = false;
+    private Board board = null;
+    private int dir = -1;
+
+    private Pattern aPattern = null, abPattern = null;
+    protected String A = null, B = null;
+    protected Matcher am = null, abm = null;
+    private boolean aMatched = false, abMatched = false;
 
     // constructors
     public RuleMatch(RulePattern p) { pattern = p; }
+    public RuleMatch(RulePattern p,Board board,int dir) { this(p); bindDir(board,dir); }
 
     // lhs methods
+    public final boolean bindDir(Board b,int d) {
+	if (!dirBound()) {
+	    board = b;
+	    dir = d;
+	    aPattern = Pattern.compile(regexA());
+	    abPattern = Pattern.compile(regexAB());
+	    return true;
+	}
+	// throw AlreadyBoundException
+	return false;
+    }
+
     public final boolean bindSource(String a) {
 	if (!sourceBound()) {
 	    A = a;
-	    if (aPattern == null)
-		aPattern = Pattern.compile(regexA());
-	    am = aPattern.matcher(a);
+	    am = aPattern.matcher(A);
 	    aMatched = am.matches();
 	    return aMatched;
 	}
@@ -37,11 +51,9 @@ public class RuleMatch {
     public final boolean bindTarget(String b) {
 	if (aMatched && !targetBound()) {
 	    B = b;
-	    if (bPattern == null)
-		bPattern = Pattern.compile(regexB());
-	    bm = bPattern.matcher(b);
-	    bMatched = bm.matches();
-	    return bMatched;
+	    abm = abPattern.matcher(A+' '+B);
+	    abMatched = abm.matches();
+	    return abMatched;
 	}
 	// throw AlreadyBoundException
 	return false;
@@ -49,22 +61,22 @@ public class RuleMatch {
 
     // unbinding
     public final void unbindTarget() {
-	bm = null;
+	abm = null;
 	B = null;
-	bMatched = false;
+	abMatched = false;
     }
 
-    public final void unbindSource() {
+    public final void unbindSourceAndTarget() {
 	unbindTarget();
 	am = null;
 	A = null;
-	bPattern = null;
 	aMatched = false;
     }
 
     public void unbind() {
-	unbindSource();
-	aPattern = null;
+	unbindSourceAndTarget();
+	aPattern = abPattern = null;
+	dir = -1;
     }
 
     // matches() returns true if the rule has matched *so far*
@@ -72,31 +84,67 @@ public class RuleMatch {
 	return
 	    am == null
 	    ? true
-	    : (aMatched && (bm == null
-				? true
-				: bMatched));
+	    : (aMatched && (abm == null
+			    ? true
+			    : abMatched));
+    }
+
+    // versions of matches() that bind temporarily, then unbind
+    public final boolean matches(String a) {
+	boolean m = bindSource(a);
+	unbindSourceAndTarget();
+	return m;
+    }
+
+    public final boolean matches(String a,String b) {
+	boolean m = bindSource(a) && bindTarget(b);
+	unbindSourceAndTarget();
+	return m;
     }
 
     // methods to test if the rule is fully or partly bound
+    public final boolean dirBound() { return dir >= 0; }
     public final boolean targetBound() { return B != null; }
     public final boolean sourceBound() { return A != null; }
 
     // expanded pattern methods
-    public String regexA() { return pattern.A; }
-    public String regexB() { return expandLHS(pattern.B); }
+    public final String regexA() { return expandDir(pattern.A); }
+    public final String regexAB() { return expandDir(pattern.A+' '+pattern.B); }
     public final String A() { return A; }
     public final String B() { return B; }
 
     // main expand() methods
-    // expansion of B
-    protected final String expandLHS (String s) {
-	return expandMod(expandDec(expandInc(expandGroupOrSource(s))));
+    protected final String expand(String s) {
+	return expandTarget(expandMod(expandDec(expandInc(expandGroupOrSource(expandDir(s))))));
     }
 
     // expansion of $F, $B, $L, $R
-    // (overridden in TransformRuleMatch)
+    private static Pattern dirPattern = Pattern.compile("\\$(F|B|L|R|\\+L|\\+\\+L|\\+R|\\+\\+R)");
     protected String expandDir (String s) {
-	return s;
+	Matcher m = dirPattern.matcher(s);
+	StringBuffer sb = new StringBuffer();
+	while (m.find()) {
+	    String var = m.group(1);
+	    int nbrs = board.neighborhoodSize();
+	    if (var.equals("F"))
+		m.appendReplacement(sb,board.dirString(dir));
+	    else if (var.equals("B"))
+		m.appendReplacement(sb,board.dirString((dir + nbrs/2) % nbrs));
+	    else if (var.equals("L"))
+		m.appendReplacement(sb,board.dirString((dir + nbrs-1) % nbrs));
+	    else if (var.equals("+L"))
+		m.appendReplacement(sb,board.dirString((dir + nbrs-2) % nbrs));
+	    else if (var.equals("++L"))
+		m.appendReplacement(sb,board.dirString((dir + nbrs-3) % nbrs));
+	    else if (var.equals("R"))
+		m.appendReplacement(sb,board.dirString((dir + 1) % nbrs));
+	    else if (var.equals("+R"))
+		m.appendReplacement(sb,board.dirString((dir + 2) % nbrs));
+	    else if (var.equals("++R"))
+		m.appendReplacement(sb,board.dirString((dir + 3) % nbrs));
+	}
+	m.appendTail(sb);
+	return sb.toString();
     }
 
     // expansion of $1, $2, ... and $S
@@ -203,14 +251,12 @@ public class RuleMatch {
 	String val = "";
 	try {
 	    int n = new Integer(group).intValue();
-	    if (n <= am.groupCount())
-		val = am.group(n);
-	    else if (bm != null) {
-		n -= am.groupCount();
-		if (n <= bm.groupCount())
-		    val = bm.group(n);
-	    }
-	} catch (NumberFormatException e) { }
+	    if (n <= abm.groupCount())
+		val = abm.group(n);
+	} catch (Exception e) {
+	    System.err.println("While trying to get group $"+group+" matching "+A+" "+B+" to "+abPattern.pattern());
+	    e.printStackTrace();
+	}
 	return val;
     }
 
