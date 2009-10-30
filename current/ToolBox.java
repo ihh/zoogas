@@ -51,22 +51,20 @@ public class ToolBox {
 
     // refill method
     void refill(double scale) {
-	for (Enumeration<SprayTool> iter = tool.elements(); iter.hasMoreElements(); )
-	    iter.nextElement().refill(scale);
+	for(SprayTool st : tool)
+	    st.refill(scale);
     }
 
     // process keypress
     boolean hotKeyPressed (char c) {
-	boolean foundKey = false;
-	for (int t = 0; t < tool.size(); ++t) {
-	    SprayTool st = tool.elementAt(t);
+	for(SprayTool st : tool)
+	{
 	    if (st.isHotKey(c)) {
-		foundKey = true;
 		currentTool = st;
-		break;
+		return true;
 	    }
 	}
-	return foundKey;
+	return false;
     }
 
     // process click-select

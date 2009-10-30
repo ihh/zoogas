@@ -48,9 +48,9 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     // tools and cheats
     String toolboxFilename = "TOOLS.txt";
     ToolBox toolBox = null;
-    char cheatKey = '/';  // allows player to see the hidden parts of state names, i.e. the part behind the '/'
-    char stopKey = '.';  // stops the action on this board (does not block incoming network events)
-    char slowKey = ',';  // slows the action on this board (does not block incoming network events)
+    final char cheatKey = '/';  // allows player to see the hidden parts of state names, i.e. the part behind the '/'
+    final char stopKey = '.';  // stops the action on this board (does not block incoming network events)
+    final char slowKey = ',';  // slows the action on this board (does not block incoming network events)
     int slowFactor = 40;  // rate at which the board slows down when slowKey is pressed (actually the rate between buffer refreshes)
 
     // cellular automata state list
@@ -438,19 +438,36 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 
     public void keyPressed(KeyEvent e) {
 	char c = e.getKeyChar();
-	boolean foundKey = toolBox.hotKeyPressed(c);
-	if (foundKey)
+	if (toolBox.hotKeyPressed(c))
 	    mouseDown = true;
-	else if (c == cheatKey)
-	    cheatPressed = true;
-	else if (c == stopKey)
-	    stopPressed = true;
-	else if (c == slowKey)
-	    slowPressed = true;
+	else
+	{
+	    switch(c){
+	        case cheatKey: 
+	            cheatPressed = true;
+		    break;
+	        case stopKey:
+	            stopPressed = true;
+		    break;
+	        case slowKey:
+	            slowPressed = true;
+	            break;
+	    }
+	}
     }
 
     public void keyReleased(KeyEvent e) {
 	mouseDown = false;
-	slowPressed = stopPressed = cheatPressed = false;
+	switch(e.getKeyChar()){
+	    case cheatKey: 
+	        cheatPressed = false;
+	        break;
+	    case stopKey:
+	        stopPressed = false;
+		break;
+	    case slowKey:
+	        slowPressed = false;
+	        break;
+        }
     }
 }
