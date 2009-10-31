@@ -232,7 +232,7 @@ public class Board extends MooreTopology {
 
 	    if (oldSourceState.name.equals("_")) {
 		System.err.println("_ is active");
-		Set<Particle> actives = oldSourceState.pattern.get(dir).keySet();
+		Set<Particle> actives = oldSourceState.transform.get(dir).keySet();
 		for (Iterator<Particle> a = actives.iterator(); a.hasNext(); )
 		    System.err.println("_ " + a.next().name);
 	    }
@@ -313,9 +313,9 @@ public class Board extends MooreTopology {
 	//	    System.err.println("Gain in energy (" + -energyDelta + "): " + oldSourceState.name + " " + oldTargetState.name + " -> " + newSourceState.name + " " + newTargetState.name);
 
 	return
-	    energyDelta <= 0
+	    energyDelta > 0
 	    ? true
-	    : rnd.nextDouble() < Math.pow(10,-energyDelta);
+	    : rnd.nextDouble() < Math.pow(10,energyDelta);
     }
 
     // method to calculate the absolute interaction energy of a cell with its neighbors.

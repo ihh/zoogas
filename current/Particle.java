@@ -18,7 +18,7 @@ public class Particle {
     PatternSet patternSet = null;
 
     // transformation rules
-    protected ArrayList<IdentityHashMap<Particle,RandomVariable<ParticlePair>>> pattern = null;  // production rules; array is indexed by neighbor direction, Map is indexed by Particle
+    protected ArrayList<IdentityHashMap<Particle,RandomVariable<ParticlePair>>> transform = null;  // production rules; array is indexed by neighbor direction, Map is indexed by Particle
     protected TransformRuleMatch[][] transformRuleMatch = null;  // generators for production rules; outer array is indexed by neighbor direction, inner array is the set of partially-bound rules for that direction
     protected double[] transformRate = null;  // sum of transformation regex rates, indexed by direction
     protected double totalTransformRate = 0;  // sum of transformation regex rates in all directions
@@ -48,14 +48,14 @@ public class Particle {
 	this.patternSet = ps;
 	// init transformation & energy rule patterns in each direction
 	int N = board.neighborhoodSize();
-	pattern = new ArrayList<IdentityHashMap<Particle, RandomVariable<ParticlePair>>>(N);
+	transform = new ArrayList<IdentityHashMap<Particle, RandomVariable<ParticlePair>>>(N);
 	transformRuleMatch = new TransformRuleMatch[N][];
 	transformRate = new double[N];
 	energy = new ArrayList<IdentityHashMap<Particle,Double>>();
 	energyRuleMatch = new EnergyRuleMatch[N][];
 	
 	for (int n = 0; n < N; ++n) {
-	    pattern.add(new IdentityHashMap<Particle,RandomVariable<ParticlePair>>());
+	    transform.add(new IdentityHashMap<Particle,RandomVariable<ParticlePair>>());
 	    transformRuleMatch[n] = patternSet.getSourceTransformRules(name,n);
 
 	    transformRate[n] = 0;
@@ -96,8 +96,8 @@ public class Particle {
 
     // helper to "close" all patterns, adding a do-nothing rule for patterns whose RHS probabilities sum to <1
     protected final void closePatterns() {
-	for (int n = 0; n < pattern.size(); ++n) {
-	    Iterator<Map.Entry<Particle,RandomVariable<ParticlePair>>> iter = pattern.get(n).entrySet().iterator();
+	for (int n = 0; n < transform.size(); ++n) {
+	    Iterator<Map.Entry<Particle,RandomVariable<ParticlePair>>> iter = transform.get(n).entrySet().iterator();
 	    while (iter.hasNext()) {
 		Map.Entry<Particle,RandomVariable<ParticlePair>> keyval = (Map.Entry<Particle,RandomVariable<ParticlePair>>) iter.next();
 		Particle target = (Particle) keyval.getKey();
@@ -110,7 +110,7 @@ public class Particle {
     }
 
     // normalizedTotalTransformRate
-    public final double normalizedTotalTransformRate() { return Math.min (totalTransformRate, 1); }
+    public final double normalizedTotalTransformRate() { return Math.min (totalTransformRate / transformRuleMatch.length, 1); }
 
     // method to test if a Particle is active (i.e. has any transformation rules) in a given direction
     public final boolean isActive(int dir) { return transformRuleMatch[dir].length > 0; }
@@ -131,13 +131,13 @@ public class Particle {
     // returns null if no rule found
     public final ParticlePair samplePair (int dir, Particle oldTarget, Random rnd, Board board) {
 	RandomVariable<ParticlePair> rv = null;
-	if (pattern.get(dir).containsKey(oldTarget)) {
-	    rv = pattern.get(dir).get (oldTarget);
+	if (transform.get(dir).containsKey(oldTarget)) {
+	    rv = transform.get(dir).get (oldTarget);
 	} else {
 	    // if no RV, look for rule generator(s) that match this neighbor, and use them to create a set of rules
 	    if (patternSet != null) {
 		rv = compileTransformRules(oldTarget,dir);
-		pattern.get(dir).put (oldTarget, rv);
+		transform.get(dir).put (oldTarget, rv);
 	    }
 	}
 	// have we got an RV?
@@ -225,8 +225,8 @@ public class Particle {
 
     // helper to flush caches
     protected void flushCaches() {
-	for (int d = 0; d < pattern.size(); ++d) {
-	    pattern.get(d).clear();
+	for (int d = 0; d < transform.size(); ++d) {
+	    transform.get(d).clear();
 	    energy.get(d).clear();
 	}
     }
@@ -234,8 +234,8 @@ public class Particle {
     // helpers to count number of compiled transformation & energy rules
     protected int transformationRules() {
 	int r = 0;
-	for (int d = 0; d < pattern.size(); ++d)
-	    r += pattern.get(d).size();
+	for (int d = 0; d < transform.size(); ++d)
+	    r += transform.get(d).size();
 	return r;
     }
 
@@ -246,8 +246,8 @@ public class Particle {
     // helper to count number of compiled transformation rule outcomes
     protected int outcomes() {
 	int o = 0;
-	for (int d = 0; d < pattern.size(); ++d)
-	    for (Iterator<RandomVariable<ParticlePair>> iter = pattern.get(d).values().iterator(); iter.hasNext(); )
+	for (int d = 0; d < transform.size(); ++d)
+	    for (Iterator<RandomVariable<ParticlePair>> iter = transform.get(d).values().iterator(); iter.hasNext(); )
 		o += iter.next().size();
 	return o;
     }

@@ -1,310 +1,313 @@
 # The different colored species particles
 # The species follow a simple (unrealistic) cyclic ecology.
 # The species number is prefixed by "/=".
-NOUN _ 0 0 0
-NOUN .*/=0 255 0 0
-NOUN .*/=1 255 81 0
-NOUN .*/=2 255 161 0
-NOUN .*/=3 255 242 0
-NOUN .*/=4 188 255 0
-NOUN .*/=5 107 255 0
-NOUN .*/=6 27 255 0
-NOUN .*/=7 0 255 54
-NOUN .*/=8 0 255 134
-NOUN .*/=9 0 255 215
-NOUN .*/=10 0 215 255
-NOUN .*/=11 0 134 255
-NOUN .*/=12 0 54 255
-NOUN .*/=13 27 0 255
-NOUN .*/=14 107 0 255
-NOUN .*/=15 188 0 255
-NOUN .*/=16 255 0 242
-NOUN .*/=17 255 0 161
+NOUN n=_ c=000000
+NOUN n=.*/=0 c=ff0000
+NOUN n=.*/=1 c=ff5100
+NOUN n=.*/=2 c=ffa100
+NOUN n=.*/=3 c=fff200
+NOUN n=.*/=4 c=bcff00
+NOUN n=.*/=5 c=6bff00
+NOUN n=.*/=6 c=1bff00
+NOUN n=.*/=7 c=00ff36
+NOUN n=.*/=8 c=00ff86
+NOUN n=.*/=9 c=00ffd7
+NOUN n=.*/=10 c=00d7ff
+NOUN n=.*/=11 c=0086ff
+NOUN n=.*/=12 c=0036ff
+NOUN n=.*/=13 c=1b00ff
+NOUN n=.*/=14 c=6b00ff
+NOUN n=.*/=15 c=bc00ff
+NOUN n=.*/=16 c=ff00f2
+NOUN n=.*/=17 c=ff00a1
 
 # The tools and behavior accessible to the player
-NOUN wall/1 43 43 43
-NOUN wall/2 85 85 85
-NOUN wall/3 128 128 128
-NOUN wall/4 170 170 170
-NOUN wall/5 213 213 213
-NOUN cement 255 255 255
-NOUN acid 64 64 64
-NOUN perfume 128 64 84
-NOUN mutator 255 128 168
-NOUN lava 255 96 96
-NOUN lava/.* 224 96 96
-NOUN wall/basalt 255 200 0
-NOUN zoo_guest.* 254 254 254
+NOUN n=wall/1 c=2b2b2b
+NOUN n=wall/2 c=555555
+NOUN n=wall/3 c=808080
+NOUN n=wall/4 c=aaaaaa
+NOUN n=wall/5 c=d5d5d5
+NOUN n=cement c=ffffff
+NOUN n=acid c=404040
+NOUN n=perfume c=804054
+NOUN n=mutator c=ff80a8
+NOUN n=lava c=ff6060
+NOUN n=lava/.* c=e06060
+NOUN n=wall/basalt c=ffc800
+NOUN n=zoo_guest.* c=fefefe
 
 # Beacon: an example directional particle
-NOUN (beacon|photon).* 192 192 0
-VERB beacon _ beacon photon/$F .5 shine
-VERB beacon _ _ _ .01 extinguish
-VERB photon/$F _ $T $S 1 beam
-VERB photon/$F [^_].* _ $T .9 absorb
-VERB photon/$F [^_].* photon/$++L $T .1 reflect
-VERB photon/$F [^_].* photon/$++R $T .05 reflect
+NOUN n=(beacon|photon).* c=c0c000
+VERB s=beacon t=_ S=beacon T=photon/$F p=.5 v=shine
+VERB s=beacon t=_ S=_ T=_ p=.01 v=extinguish
+VERB s=photon/$F t=_ S=$T T=$S p=10 v=beam
+VERB s=photon/$F t=[^_].* S=_ T=$T p=.9 v=absorb
+VERB s=photon/$F t=[^_].* S=photon/$++L T=$T p=.1 v=reflect
+VERB s=photon/$F t=[^_].* S=photon/$++R T=$T p=.05 v=reflect
 # Without this last rule, photons at uncrossable borders will never die
-VERB photon/$B .* _ $T .001 scatter
+VERB s=photon/$B t=.* S=_ T=$T p=.001 v=scatter
 
 # Initial conditions
-VERB /INIT.* _ beacon _ 1 /start
-#VERB /INIT.* _ _ _ 1 /start
+VERB s=/INIT.* t=_ S=beacon T=_ v=/start
+#VERB s=/INIT.* t=_ S=_ T=_ v=/start
 
 # Animal rules. This is where the ecology actually happens.
 # Successful predation
-VERB .*/=0 .*/=([1-9]) $S $S .024 eat
-VERB .*/=1 .*/=([2-9]|10) $S $S .024 eat
-VERB .*/=2 .*/=([3-9]|1[0-1]) $S $S .024 eat
-VERB .*/=3 .*/=([4-9]|1[0-2]) $S $S .024 eat
-VERB .*/=4 .*/=([5-9]|1[0-3]) $S $S .024 eat
-VERB .*/=5 .*/=([6-9]|1[0-4]) $S $S .024 eat
-VERB .*/=6 .*/=([7-9]|1[0-5]) $S $S .024 eat
-VERB .*/=7 .*/=([8-9]|1[0-6]) $S $S .024 eat
-VERB .*/=8 .*/=(9|1[0-7]) $S $S .024 eat
-VERB .*/=9 .*/=(0|1[0-7]) $S $S .024 eat
-VERB .*/=10 .*/=([0-1]|1[1-7]) $S $S .024 eat
-VERB .*/=11 .*/=([0-2]|1[2-7]) $S $S .024 eat
-VERB .*/=12 .*/=([0-3]|1[3-7]) $S $S .024 eat
-VERB .*/=13 .*/=([0-4]|1[4-7]) $S $S .024 eat
-VERB .*/=14 .*/=([0-5]|1[5-7]) $S $S .024 eat
-VERB .*/=15 .*/=([0-6]|1[6-7]) $S $S .024 eat
-VERB .*/=16 .*/=([0-7]|17) $S $S .024 eat
-VERB .*/=17 .*/=([0-8]) $S $S .024 eat
+VERB s=.*/=0 t=.*/=([1-9]) S=$S T=$S p=.024 v=eat
+VERB s=.*/=1 t=.*/=([2-9]|10) S=$S T=$S p=.024 v=eat
+VERB s=.*/=2 t=.*/=([3-9]|1[0-1]) S=$S T=$S p=.024 v=eat
+VERB s=.*/=3 t=.*/=([4-9]|1[0-2]) S=$S T=$S p=.024 v=eat
+VERB s=.*/=4 t=.*/=([5-9]|1[0-3]) S=$S T=$S p=.024 v=eat
+VERB s=.*/=5 t=.*/=([6-9]|1[0-4]) S=$S T=$S p=.024 v=eat
+VERB s=.*/=6 t=.*/=([7-9]|1[0-5]) S=$S T=$S p=.024 v=eat
+VERB s=.*/=7 t=.*/=([8-9]|1[0-6]) S=$S T=$S p=.024 v=eat
+VERB s=.*/=8 t=.*/=(9|1[0-7]) S=$S T=$S p=.024 v=eat
+VERB s=.*/=9 t=.*/=(0|1[0-7]) S=$S T=$S p=.024 v=eat
+VERB s=.*/=10 t=.*/=([0-1]|1[1-7]) S=$S T=$S p=.024 v=eat
+VERB s=.*/=11 t=.*/=([0-2]|1[2-7]) S=$S T=$S p=.024 v=eat
+VERB s=.*/=12 t=.*/=([0-3]|1[3-7]) S=$S T=$S p=.024 v=eat
+VERB s=.*/=13 t=.*/=([0-4]|1[4-7]) S=$S T=$S p=.024 v=eat
+VERB s=.*/=14 t=.*/=([0-5]|1[5-7]) S=$S T=$S p=.024 v=eat
+VERB s=.*/=15 t=.*/=([0-6]|1[6-7]) S=$S T=$S p=.024 v=eat
+VERB s=.*/=16 t=.*/=([0-7]|17) S=$S T=$S p=.024 v=eat
+VERB s=.*/=17 t=.*/=([0-8]) S=$S T=$S p=.024 v=eat
 
 # Unsuccessful predation
-VERB .*/=0 .*/=([1-9]) $S $S .006 kill
-VERB .*/=1 .*/=([2-9]|10) $S $S .006 kill
-VERB .*/=2 .*/=([3-9]|1[0-1]) $S $S .006 kill
-VERB .*/=3 .*/=([4-9]|1[0-2]) $S $S .006 kill
-VERB .*/=4 .*/=([5-9]|1[0-3]) $S $S .006 kill
-VERB .*/=5 .*/=([6-9]|1[0-4]) $S $S .006 kill
-VERB .*/=6 .*/=([7-9]|1[0-5]) $S $S .006 kill
-VERB .*/=7 .*/=([8-9]|1[0-6]) $S $S .006 kill
-VERB .*/=8 .*/=(9|1[0-7]) $S $S .006 kill
-VERB .*/=9 .*/=(0|1[0-7]) $S $S .006 kill
-VERB .*/=10 .*/=([0-1]|1[1-7]) $S $S .006 kill
-VERB .*/=11 .*/=([0-2]|1[2-7]) $S $S .006 kill
-VERB .*/=12 .*/=([0-3]|1[3-7]) $S $S .006 kill
-VERB .*/=13 .*/=([0-4]|1[4-7]) $S $S .006 kill
-VERB .*/=14 .*/=([0-5]|1[5-7]) $S $S .006 kill
-VERB .*/=15 .*/=([0-6]|1[6-7]) $S $S .006 kill
-VERB .*/=16 .*/=([0-7]|17) $S $S .006 kill
-VERB .*/=17 .*/=([0-8]) $S $S .006 kill
+VERB s=.*/=0 t=.*/=([1-9]) S=$S T=$S p=.006 v=kill
+VERB s=.*/=1 t=.*/=([2-9]|10) S=$S T=$S p=.006 v=kill
+VERB s=.*/=2 t=.*/=([3-9]|1[0-1]) S=$S T=$S p=.006 v=kill
+VERB s=.*/=3 t=.*/=([4-9]|1[0-2]) S=$S T=$S p=.006 v=kill
+VERB s=.*/=4 t=.*/=([5-9]|1[0-3]) S=$S T=$S p=.006 v=kill
+VERB s=.*/=5 t=.*/=([6-9]|1[0-4]) S=$S T=$S p=.006 v=kill
+VERB s=.*/=6 t=.*/=([7-9]|1[0-5]) S=$S T=$S p=.006 v=kill
+VERB s=.*/=7 t=.*/=([8-9]|1[0-6]) S=$S T=$S p=.006 v=kill
+VERB s=.*/=8 t=.*/=(9|1[0-7]) S=$S T=$S p=.006 v=kill
+VERB s=.*/=9 t=.*/=(0|1[0-7]) S=$S T=$S p=.006 v=kill
+VERB s=.*/=10 t=.*/=([0-1]|1[1-7]) S=$S T=$S p=.006 v=kill
+VERB s=.*/=11 t=.*/=([0-2]|1[2-7]) S=$S T=$S p=.006 v=kill
+VERB s=.*/=12 t=.*/=([0-3]|1[3-7]) S=$S T=$S p=.006 v=kill
+VERB s=.*/=13 t=.*/=([0-4]|1[4-7]) S=$S T=$S p=.006 v=kill
+VERB s=.*/=14 t=.*/=([0-5]|1[5-7]) S=$S T=$S p=.006 v=kill
+VERB s=.*/=15 t=.*/=([0-6]|1[6-7]) S=$S T=$S p=.006 v=kill
+VERB s=.*/=16 t=.*/=([0-7]|17) S=$S T=$S p=.006 v=kill
+VERB s=.*/=17 t=.*/=([0-8]) S=$S T=$S p=.006 v=kill
 
 # Breeding, overcrowding
-VERB .*/=\d+ _ $S $S .0007 spawn
-VERB .*/=\d+ .*/=\d+ _ $T 0.0015 choke
+VERB s=.*/=\d+ t=_ S=$S T=$S p=.0007 v=spawn
+VERB s=.*/=\d+ t=.*/=\d+ S=_ T=$T p=0.0015 v=choke
 
 # Movement
-VERB .*/=\d+ _ $T $S 0.02 step
+VERB s=.*/=\d+ t=_ S=$T T=$S p=0.02 v=step
 
 # Other behaviors of animals
 # Animals eat guests:
-VERB .*/=\d+ zoo_guest.* _ $S 1.0 maul
+VERB s=.*/=\d+ t=zoo_guest.* S=_ T=$S p=1.0 v=maul
 # Imps feed on lava:
-VERB .*_imp/=\d+ lava.* $S $S .01 frolic
+VERB s=.*_imp/=\d+ t=lava.* S=$S T=$S p=.01 v=frolic
 
 
 
 # Walls and cement
-VERB wall/([2-9a-z]) .* wall/$-1 $T .00022 decay
-VERB wall/([2-9a-z]) wall.* wall/$-1 $T .00018 decay
-VERB wall/([2-9a-z]) acid wall/$-1 $T 0.001 decay
-VERB wall/1 .* _ $T 2.2E-4 decay
-VERB wall/1 wall.* _ $T .00018 decay
-VERB wall/1 acid _ $T 0.001 decay
-VERB cement [^_].* wall/4 $T 0.2 set
-VERB cement wall.* wall/4 $T 0.9 stick
-VERB cement _ $T $S .99 drift
-VERB cement .* _ $T .01 drain
+VERB s=wall/([2-9a-z]) t=.* S=wall/$-1 T=$T p=.00022 v=decay
+VERB s=wall/([2-9a-z]) t=wall.* S=wall/$-1 T=$T p=.00018 v=decay
+VERB s=wall/([2-9a-z]) t=acid S=wall/$-1 T=$T p=0.001 v=decay
+VERB s=wall/1 t=.* S=_ T=$T p=2.2E-4 v=decay
+VERB s=wall/1 t=wall.* S=_ T=$T p=.00018 v=decay
+VERB s=wall/1 t=acid S=_ T=$T p=0.001 v=decay
+VERB s=cement t=[^_].* S=wall/4 T=$T p=0.2 v=set
+VERB s=cement t=wall.* S=wall/4 T=$T p=0.9 v=stick
+VERB s=cement t=_ S=$T T=$S p=.99 v=drift
+VERB s=cement t=.* S=_ T=$T p=.01 v=drain
 
 
 # Cage builders: a simple geometric program with nested loops (bricks/walls).
-NOUN cage_builder.* 128 128 192
+NOUN n=cage_builder.* c=8080c0
 # Choose size and orientation:
-VERB cage_builder .* cage_builder/len:5 $T .3 plan_small_cage
-VERB cage_builder .* cage_builder/len:11 $T .3 plan_medium_cage
-VERB cage_builder .* cage_builder/len:21 $T .3 plan_large_cage
-VERB cage_builder/len:(\d+) .* cage_builder/len:$1/dir:$F $T 1 choose_orientation
+VERB s=cage_builder t=.* S=cage_builder/len:5 T=$T p=.3 v=plan_small_cage
+VERB s=cage_builder t=.* S=cage_builder/len:11 T=$T p=.3 v=plan_medium_cage
+VERB s=cage_builder t=.* S=cage_builder/len:21 T=$T p=.3 v=plan_large_cage
+VERB s=cage_builder/len:(\d+) t=.* S=cage_builder/len:$1/dir:$F T=$T p=1 v=choose_orientation
 # Exclude diagonal cages (or animals can escape through the cracks)
-VERB cage_builder/len:(\d+)/dir:(ne|nw|se|sw) .* cage_builder/len:$1/dir:$F $T 1 rethink_orientation
+VERB s=cage_builder/len:(\d+)/dir:(ne|nw|se|sw) t=.* S=cage_builder/len:$1/dir:$F T=$T p=1 v=rethink_orientation
 # OK, here's the program that actually builds the cage. It's a simple state machine: build, turn, stop.
-VERB cage_builder/len:(\d+)/dir:(.) .* cage_builder/len:$1/walls:3/steps:$1/dir:$2 $T 1 start
-VERB cage_builder/len:(\d+)/walls:(\d)/steps:([^0].*)/dir:$F _ wall/5 cage_builder/len:$1/walls:$2/steps:$-3/dir:$F 1 place_next_brick
-VERB cage_builder/len:(\d+)/walls:([^0])/steps:0/dir:$F .* cage_builder/len:$1/walls:$-2/steps:$1/dir:$+R $T 1 build_next_wall
-VERB cage_builder/len:(\d+)/walls:0/steps:[01]/dir:.* .* wall/5 $T 1 finish
+VERB s=cage_builder/len:(\d+)/dir:(.) t=.* S=cage_builder/len:$1/walls:3/steps:$1/dir:$2 T=$T p=1 v=start
+VERB s=cage_builder/len:(\d+)/walls:(\d)/steps:([^0].*)/dir:$F t=_ S=wall/5 T=cage_builder/len:$1/walls:$2/steps:$-3/dir:$F p=1 v=place_next_brick
+VERB s=cage_builder/len:(\d+)/walls:([^0])/steps:0/dir:$F t=.* S=cage_builder/len:$1/walls:$-2/steps:$1/dir:$+R T=$T p=1 v=build_next_wall
+VERB s=cage_builder/len:(\d+)/walls:0/steps:[01]/dir:.* t=.* S=wall/5 T=$T p=1 v=finish
 # Handle collisions gracefully:
-VERB cage_builder/.*dir:$F (wall/.*|cage_builder.*) wall/5 $T 1 join_wall
+VERB s=cage_builder/.*dir:$F t=(wall/.*|cage_builder.*) S=wall/5 T=$T p=1 v=join_wall
 
 
 # uncomment the following to test for runaway particle names... (cage_builder discovered this bug, that's why it's here)
-# VERB cage_builder/(.*) .* $S$1 $T 1 example_regex_bug
+# VERB s=cage_builder/(.*) t=.* S=$S$1 T=$T p=1 v=example_regex_bug
 
 
 # Acid dissolves everything; usually, it is then "used up"
-VERB acid .* $S _ 0.1 dissolve
-VERB acid .* _ _ 0.9 dissolve
+VERB s=acid t=.* S=$S T=_ p=0.1 v=dissolve
+VERB s=acid t=.* S=_ T=_ p=0.9 v=dissolve
 # Override "Acid dissolves everything" rules for basalt, lava & empty space
-VERB acid wall/basalt|lava|_ $S _ 0.0 dissolve
-VERB acid wall/basalt|lava|_ _ _ 0.0 dissolve
+VERB s=acid t=wall/basalt|lava|_ S=$S T=_ p=0.0 v=dissolve
+VERB s=acid t=wall/basalt|lava|_ S=_ T=_ p=0.0 v=dissolve
 # Instead, acid turns basalt into lava
-VERB acid wall/basalt $S lava 0.3 dissolve
+VERB s=acid t=wall/basalt S=$S T=lava p=0.3 v=dissolve
 # Acid does fast Brownian motion
-VERB acid _ $T $S 1.0 drift
-VERB acid .* _ $T .005 drain
+VERB s=acid t=_ S=$T T=$S p=1.0 v=drift
+VERB s=acid t=.* S=_ T=$T p=.005 v=drain
 
 # Perfume
-VERB perfume .*/=\d+ $T $T 1.0 hornify
-VERB .*/=\d+ perfume $S $S 1.0 breed
-VERB perfume _ _ $T 0.1 disperse
-VERB perfume _ $S $S 0.09 billow
-VERB perfume _ $T $S 0.81 drift
+VERB s=perfume t=.*/=\d+ S=$T T=$T p=1.0 v=hornify
+VERB s=.*/=\d+ t=perfume S=$S T=$S p=1.0 v=breed
+VERB s=perfume t=_ S=_ T=$T p=0.1 v=disperse
+VERB s=perfume t=_ S=$S T=$S p=0.09 v=billow
+VERB s=perfume t=_ S=$T T=$S p=0.81 v=drift
 
 # Mutator gas: change the species number.
-VERB mutator (.*)/=(\d+) _ mutant/=$%18+1.2 1.0 mutate
-VERB mutator (.*)/=(\d+) _ mutant/=$%18+17.2 1.0 mutate
-VERB mutator (.*)/=(\d+) _ mutant/=$%18+2.2 0.1 mutate
-VERB mutator (.*)/=(\d+) _ mutant/=$%18+16.2 0.1 mutate
-VERB mutator _ _ _ 0.1 disperse
-VERB mutator _ $T $S 0.9 drift
-VERB mutator perfume $T $T 1.0 react
+VERB s=mutator t=(.*)/=(\d+) S=_ T=mutant/=$%18+1.2 p=1.0 v=mutate
+VERB s=mutator t=(.*)/=(\d+) S=_ T=mutant/=$%18+17.2 p=1.0 v=mutate
+VERB s=mutator t=(.*)/=(\d+) S=_ T=mutant/=$%18+2.2 p=0.1 v=mutate
+VERB s=mutator t=(.*)/=(\d+) S=_ T=mutant/=$%18+16.2 p=0.1 v=mutate
+VERB s=mutator t=_ S=_ T=_ p=0.1 v=disperse
+VERB s=mutator t=_ S=$T T=$S p=0.9 v=drift
+VERB s=mutator t=perfume S=$T T=$T p=1.0 v=react
 
 # Lava. Sticks around longer than cement (long enough to make diffusion-limited aggregation fractals).
-VERB lava.* wall/. wall/basalt $T 0.01 set
-VERB lava.* wall/basalt $T $T 1.0 set
+VERB s=lava.* t=wall/. S=wall/basalt T=$T p=0.01 v=set
+VERB s=lava.* t=wall/basalt S=$T T=$T p=1.0 v=set
 # lava flows...
-VERB lava.* _ $T lava/$F 0.3 flow
+VERB s=lava.* t=_ S=$T T=lava/$F p=0.3 v=flow
 # lava flows slightly faster forwards, and slower backwards
-VERB lava/$F _ $T lava/$F 0.4 flow
-VERB lava/$L _ $T lava/$F 0.01 flow
-VERB lava/$R _ $T lava/$F 0.01 flow
-VERB lava/$+L _ $T lava/$F 0.0001 flow
-VERB lava/$+R _ $T lava/$F 0.0001 flow
-VERB lava/$++L _ $T lava/$F 0 flow
-VERB lava/$++R _ $T lava/$F 0 flow
-VERB lava/$B _ $T lava/$F 0 flow
-VERB lava .* _ $T .00001 drain
+VERB s=lava/$F t=_ S=$T T=lava/$F p=0.4 v=flow
+VERB s=lava/$L t=_ S=$T T=lava/$F p=0.01 v=flow
+VERB s=lava/$R t=_ S=$T T=lava/$F p=0.01 v=flow
+VERB s=lava/$+L t=_ S=$T T=lava/$F p=0.0001 v=flow
+VERB s=lava/$+R t=_ S=$T T=lava/$F p=0.0001 v=flow
+VERB s=lava/$++L t=_ S=$T T=lava/$F p=0 v=flow
+VERB s=lava/$++R t=_ S=$T T=lava/$F p=0 v=flow
+VERB s=lava/$B t=_ S=$T T=lava/$F p=0 v=flow
+VERB s=lava t=.* S=_ T=$T p=.00001 v=drain
 
 # zoo guests do bugger all except stroll around the place and get mauled
-VERB zoo_guest.* _ $T $S 0.01 perambulate
+VERB s=zoo_guest.* t=_ S=$T T=$S p=0.01 v=perambulate
 
 
 # conga line
 # this models a simple polymer (e.g. a hydrocarbon) by creating energetically favored adjacencies between consecutive monomers
 # the builder is directional to avoid intractable tangles (the polymer is initially stretched in a straight line, but quickly relaxes)
-NOUN conga.* 128 192 192
+NOUN n=conga.* c=80c0c0
 
 # initial production rule:  conga -> conga_head/pos:$POS   where $POS \in { 10, 20, 30 }
 # this (as you can probably guess) sets the length of the conga line at 10, 20 or 30
-VERB conga .* conga_head/pos:10 $T .3 start_lil_conga
-VERB conga .* conga_head/pos:20 $T .3 start_hapnin_conga
-VERB conga .* conga_head/pos:30 $T .3 start_monsta_conga
+VERB s=conga t=.* S=conga_head/pos:10 T=$T p=.3 v=start_lil_conga
+VERB s=conga t=.* S=conga_head/pos:20 T=$T p=.3 v=start_hapnin_conga
+VERB s=conga t=.* S=conga_head/pos:30 T=$T p=.3 v=start_monsta_conga
 
 # conga_head is the constructor
 # its stateful form is  conga_head/pos:$POS/dir:$DIR  where $POS is an integer and $DIR a compass direction
 # the first rule randomly picks $DIR
-#VERB conga_head/pos:(\d+) .* conga_head/dir:$F/pos:$1 $T 1 line_em_up
-VERB conga_head/pos:(\d+) .* conga_head/dir:e/pos:$1 $T 1 line_em_up
-VERB conga_head/dir:$F/pos:([1-9]\d*) _ conga_dude/pos:$1/next:$-1 conga_head/dir:$F/pos:$-1 1 partay
-VERB conga_head/dir:.*/pos:0 _ conga_dude/pos:0 _ 1 reach_the_end
+#VERB s=conga_head/pos:(\d+) t=.* S=conga_head/dir:$F/pos:$1 T=$T p=1 v=line_em_up
+VERB s=conga_head/pos:(\d+) t=.* S=conga_head/dir:e/pos:$1 T=$T p=1 v=line_em_up
+VERB s=conga_head/dir:$F/pos:([1-9]\d*) t=_ S=conga_dude/pos:$1/next:$-1 T=conga_head/dir:$F/pos:$-1 p=1 v=partay
+VERB s=conga_head/dir:.*/pos:0 t=_ S=conga_dude/pos:0 T=_ p=1 v=reach_the_end
 
 # this is the energy term that effectively creates a covalent bond between consecutive monomers (conga_dude's)
 # since the energy of this bond is -5, the probability of spontaneously breaking it is 1e-5
 # thus, moves that break a bond will typically be rejected.
-ENERGY conga.*/next:(\d+)(/.*|) conga.*/pos:\1(/.*|) -5
+BOND s=conga.*/next:(\d+)(/.*|) t=conga.*/pos:\1(/.*|) e=+5
 
 # jiggle the conga guests at max speed, since most of their random steps are rejected anyway
-VERB conga_dude.* _ $T $S 1 go_nuts
-VERB conga_dude.* .* _ $T .001 expire
+VERB s=conga_dude.* t=_ S=$T T=$S p=1 v=go_nuts
+VERB s=conga_dude.* t=.* S=_ T=$T p=.001 v=expire
 
 
 # RNA
 # base colors: HSV values with S=1, V=0.5 & H depending on the nucleotide: 0(a), .25(c), .5(g), .75(u)
-NOUN (base_|RNA_sequence_[acgu]*)a([^acgu].*|) 128 0 0
-NOUN (base_|RNA_sequence_[acgu]*)c([^acgu].*|) 64 128 0
-NOUN (base_|RNA_sequence_[acgu]*)g([^acgu].*|) 0 128 128
-NOUN (base_|RNA_sequence_[acgu]*)u([^acgu].*|) 64 0 128
+NOUN n=(base_|RNA_sequence_[acgu]*)a([^acgu].*|) c=800000
+NOUN n=(base_|RNA_sequence_[acgu]*)c([^acgu].*|) c=408000
+NOUN n=(base_|RNA_sequence_[acgu]*)g([^acgu].*|) c=008080
+NOUN n=(base_|RNA_sequence_[acgu]*)u([^acgu].*|) c=400080
 
 # canonical basepairs: RGB components are the the sums of the RGB components of individual bases.
-NOUN basepair_(au|ua).* 192 0 128
-NOUN basepair_(cg|gc).* 64 255 128
-NOUN basepair_(ac|ca).* 192 128 0
-NOUN basepair_(ag|ga|cu|uc).* 128 128 128
-NOUN basepair_(gu|ug).* 64 128 255
+NOUN n=basepair_(au|ua).* c=c00080
+NOUN n=basepair_(cg|gc).* c=40ff80
+NOUN n=basepair_(ac|ca).* c=c08000
+NOUN n=basepair_(ag|ga|cu|uc).* c=808080
+NOUN n=basepair_(gu|ug).* c=4080ff
 # non-canonical basepairs are a bit dimmer (3/4 as bright as a straight sum).
-NOUN basepair_aa.* 192 0 0
-NOUN basepair_cc.* 96 192 0
-NOUN basepair_gg.* 0 192 192
-NOUN basepair_uu.* 96 0 192
+NOUN n=basepair_aa.* c=c00000
+NOUN n=basepair_cc.* c=60c000
+NOUN n=basepair_gg.* c=00c0c0
+NOUN n=basepair_uu.* c=6000c0
 
 # define the covalent bond between consecutive bases on the same chain
 # bond endpoint identifiers are /5p and /3p
 # start with base->...
-ENERGY base_.*/5p:(\d+).* (RNA_sequence|base|basepair)_.*/3p:\1(/.*|) -10
+BOND s=base_.*/5p:(\d+).* t=(RNA_sequence|base|basepair)_.*/3p:\1(/.*|) e=+10
 
 # define the basepair->base and basepair->RNA_sequence bonds
 # (RNA_sequence is a constructor for a chain of bases)
-ENERGY basepair_.*/5p:(\d+).* (RNA_sequence|base)_.*/3p:\1(/.*|) -10
+BOND s=basepair_.*/5p:(\d+).* t=(RNA_sequence|base)_.*/3p:\1(/.*|) e=+10
 
 # define the basepair->basepair bond a bit more carefully
-# we have to specify the f and r strand linkages separately, because individual ENERGY rules only fire once (just like individual VERBs)
-ENERGY basepair_.*/f[^r]*/5p:(\d+).* basepair_.*/f[^r]*/3p:\1(/.*|) -10
-ENERGY basepair_.*/r[^f]*/5p:(\d+).* basepair_.*/r[^f]*/3p:\1(/.*|) -10
+# we have to specify the f and r strand linkages separately, because individual BOND s=rules t=only e=-fire once (just like individual VERBs)
+BOND s=basepair_.*/f[^r]*/5p:(\d+).* t=basepair_.*/f[^r]*/3p:\1(/.*|) e=+10
+BOND s=basepair_.*/r[^f]*/5p:(\d+).* t=basepair_.*/r[^f]*/3p:\1(/.*|) e=+10
 
 # define the stabilizing self-energy of a Watson-Crick basepair
 # this will fire once for every cell in the neighborhood (i.e. eight times for the Moore topology), so keep the energy low
 # obviously some kind of self-energy would be a cleaner & more efficient way to formulate this
-ENERGY basepair_(au|cg|gc|ua)/.* .* -.0125
+BOND s=basepair_(au|cg|gc|ua)/.* t=.* e=+.0125
 
 # define the stabilizing self-energy of a wobble basepair
 # this will fire once for every cell in the neighborhood (i.e. eight times for the Moore topology), so keep the energy low
 # obviously some kind of self-energy would be a cleaner & more efficient way to formulate this
-ENERGY basepair_(gu|ug)/.* .* -.01
+BOND s=basepair_(gu|ug)/.* t=.* e=+.01
 
 # define the destabilizing self-energy of a non-canonical (non-WC or wobble) basepair
 # this will fire once for every cell in the neighborhood (i.e. eight times for the Moore topology), so keep the energy low
 # obviously some kind of self-energy would be a cleaner & more efficient way to formulate this
-ENERGY basepair_(aa|ac|ag|ca|cc|cu|ga|uc|uu)/.* .* +.2
+BOND s=basepair_(aa|ac|ag|ca|cc|cu|ga|uc|uu)/.* t=.* e=-.2
 
 # to make a basepair, merge two bases
-VERB base_(.)/(.*) base_(.)/(.*) basepair_$1$3/f/$2/r/$4 _ 1 pair_$1_to_$3
+VERB s=base_(.)/(.*) t=base_(.)/(.*) S=basepair_$1$3/f/$2/r/$4 T=_ p=1 v=pair_$1_to_$3
 
 # unpairing is the opposite move: we have to pick apart the x and y blocks into two particles. tricky :)
-VERB basepair_(.)(.)/f/(.*)/r/(.*) _ base_$1/$3 base_$2/$4 1 unpair_$1_from_$2
+VERB s=basepair_(.)(.)/f/(.*)/r/(.*) t=_ S=base_$1/$3 T=base_$2/$4 p=1 v=unpair_$1_from_$2
 
 # all bases and basepairs do Brownian drift, subject to their energy constraints
-VERB (base|basepair)_.* _ $T $S 1 /drift
+VERB s=(base|basepair)_.* t=_ S=$T T=$S p=1 v=/drift
 
 
 # now here is the constructor for an RNA sequence
 # cycle randomly through dangling bond IDs
-VERB RNA_sequence_[acgu]+ .* $S/next:0 $T 1 /zero_chain_offset
+VERB s=RNA_sequence_[acgu]+ t=.* S=$S/next:0 T=$T p=1 v=/zero_chain_offset
 
 # cycle randomly through the dangling bond ID
-VERB (RNA_sequence_[acgu]+)/next:(\d+) .* $1/next:$%100+10.2 $T 1 /rotate_chain_offset
+VERB s=(RNA_sequence_[acgu]+)/next:(\d+) t=.* S=$1/next:$%100+10.2 T=$T p=1 v=/rotate_chain_offset
 
 # pick a direction, d
 # To prevent collisions, just set this to east for now; but could use d:$F
 # this rule is slow, to allow adequate sampling of chain IDs via the previous rule
-VERB RNA_sequence_[acgu]+/next:\d+ .* $S/d:e $T .05 /pick_direction
+VERB s=RNA_sequence_[acgu]+/next:\d+ t=.* S=$S/d:e T=$T p=.05 v=/pick_direction
 
 # generate a base
-VERB (RNA_sequence_)([acgu])([acgu]+)(/3p:\d+|)/next:(\d+)(/d:$F) _ base_$2$4/5p:$5 $1$3/3p:$5/next:$%100+1.5$6 1 generate_base_$2
+VERB s=(RNA_sequence_)([acgu])([acgu]+)(/3p:\d+|)/next:(\d+)(/d:$F) t=_ S=base_$2$4/5p:$5 T=$1$3/3p:$5/next:$%100+1.5$6 p=1 v=generate_base_$2
 
 # generate last base
-VERB (RNA_sequence_)([acgu])(/3p:\d+|)/next:(\d+)(/d:$F) .* base_$2$3 $T 1 generate_base_$2
+VERB s=(RNA_sequence_)([acgu])(/3p:\d+|)/next:(\d+)(/d:$F) t=.* S=base_$2$3 T=$T p=1 v=generate_base_$2
 
 
 # allow run-length encoding of RNA sequences
 # again with the blue/cyan pulsing
-NOUN RNA_sequence_([acgu\d][acgu\d])* 0 0 255
-NOUN RNA_sequence_[acgu\d]* 0 255 255
-VERB (RNA_sequence_[acgu]*)([acgu])(\d+)(.*) .* $1$2$2$-3$4 $T 1 /expand_run_length_encoding
+NOUN n=RNA_sequence_([acgu\d][acgu\d])* c=0000ff
+NOUN n=RNA_sequence_[acgu\d]* c=00ffff
+VERB s=(RNA_sequence_[acgu]*)([acgu])(\d+)(.*) t=.* S=$1$2$2$-3$4 T=$T p=1 v=/expand_run_length_encoding
 # override run-length of 2:
-VERB (RNA_sequence_[acgu]*)([acgu])(2)([^\d].*|) .* $1$2$2$-3$4 $T 0 /expand_run_length_encoding
-VERB (RNA_sequence_[acgu]*)([acgu])(2)([^\d].*|) .* $1$2$2$4 $T 1 /expand_run_length_encoding
+VERB s=(RNA_sequence_[acgu]*)([acgu])(2)([^\d].*|) t=.* S=$1$2$2$-3$4 T=$T p=0 v=/expand_run_length_encoding
+VERB s=(RNA_sequence_[acgu]*)([acgu])(2)([^\d].*|) t=.* S=$1$2$2$4 T=$T p=1 v=/expand_run_length_encoding
 
 
 # end of rules
 END
+
+# converted from previous file using the following one-liner
+# perl -i.bak -pe 's/NOUN (\S+) (\d+) (\d+) (\d+)/NOUN n=$1 c=@{[sprintf("%0.6x",$2*65536+$3*256+$4)]}/;s/VERB (\S+) (\S+) (\S+) (\S+) (\S+) (\S+)/VERB s=$1 t=$2 S=$3 T=$4 p=$5 v=$6/;s/ENERGY (\S+) (\S+) (\S+)/BOND s=$1 t=$2 e=@{[-$3]}/' ECOLOGY.txt

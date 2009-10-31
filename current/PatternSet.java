@@ -38,21 +38,22 @@ public class PatternSet {
     }
 
     // method to lay down a template for a Particle
-    void addParticlePattern (String patternString, Color col) {
-	particlePattern.add (new ParticlePattern(patternString,col));
+    void addParticlePattern (RuleSyntax s) {
+	particlePattern.add (new ParticlePattern(s.getValue("n"),s.getValue("c")));
     }
 
     // method to lay down a template for a transformation rule
-    void addTransformRule (String patternString) {
-	TransformRulePattern p = TransformRulePattern.fromString(patternString);
+    void addTransformRule (RuleSyntax s) {
+	TransformRulePattern p = new TransformRulePattern(s.getValue("s"),s.getValue("t"),s.getValue("S"),s.getValue("T"),
+							  Double.parseDouble(s.getValue("p")),s.getValue("v"));
 	transformRulePattern.add (p);
 	for (int d = 0; d < board.neighborhoodSize(); ++d)
 	    transformRuleMatch.get(d).add (new TransformRuleMatch(p,board,d));
     }
 
     // method to lay down a template for an energy rule
-    void addEnergyRule (String patternString) {
-	EnergyRulePattern p = EnergyRulePattern.fromString(patternString);
+    void addEnergyRule (RuleSyntax s) {
+	EnergyRulePattern p = new EnergyRulePattern(s.getValue("s"),s.getValue("t"),Double.parseDouble(s.getValue("e")));
 	energyRulePattern.add (p);
 	for (int d = 0; d < board.neighborhoodSize(); ++d)
 	    energyRuleMatch.get(d).add (new EnergyRuleMatch(p,board,d));
@@ -107,55 +108,35 @@ public class PatternSet {
 	return rm;
     }
 
-    // i/o
-    void toStream (OutputStream out) {
-	PrintStream print = new PrintStream(out);
-	for (Enumeration e = particlePattern.elements(); e.hasMoreElements() ;)
-	    print.println ("NOUN " + (e.nextElement()).toString());
-	for (Enumeration e = transformRulePattern.elements(); e.hasMoreElements() ;)
-	    print.println ("VERB " + (e.nextElement()).toString());
-	for (Enumeration e = energyRulePattern.elements(); e.hasMoreElements() ;)
-	    print.println ("ENERGY " + (e.nextElement()).toString());
-	print.println ("END");
-    }
+    // i/o patterns and syntax parsers
+    static Pattern endRegex = Pattern.compile("END.*");
+    static Pattern commentRegex = Pattern.compile(" *#.*");
+    static Pattern nonWhitespaceRegex = Pattern.compile("\\S");
+    static RuleSyntax nounSyntax = new RuleSyntax("NOUN n= c=");
+    static RuleSyntax verbSyntax = new RuleSyntax("VERB s= t=.* S=$S T=$T p=1 v=_");
+    static RuleSyntax bondSyntax = new RuleSyntax("BOND s= t= e=");
 
-
-    void toFile(String filename) {
-	try {
-	    FileOutputStream fos = new FileOutputStream(filename);
-	    toStream (fos);
-	    fos.close();
-	} catch (Exception e) {
-	    e.printStackTrace();
-	}
-    }
-
+    // i/o methods
     static PatternSet fromStream (InputStream in, Board board) {
 	PatternSet ps = new PatternSet(board);
 	InputStreamReader read = new InputStreamReader(in);
 	BufferedReader buff = new BufferedReader(read);
-	Pattern nounRegex = Pattern.compile("NOUN (.*)");
-	Pattern verbRegex = Pattern.compile("VERB (.*)");
-	Pattern energyRegex = Pattern.compile("ENERGY (.*)");
-	Pattern endRegex = Pattern.compile("END.*");
-	Pattern commentRegex = Pattern.compile(" *#.*");
-	Pattern nonWhitespaceRegex = Pattern.compile("\\S");
 	try {
 	    while (buff.ready()) {
 		String s = buff.readLine();
 		Matcher m = null;
 		if (commentRegex.matcher(s).matches()) {
 		    continue;
-		} else if ((m = nounRegex.matcher(s)).matches()) {
-		    ps.particlePattern.add (new ParticlePattern(m.group(1)));
-		} else if ((m = verbRegex.matcher(s)).matches()) {
-		    ps.addTransformRule(m.group(1));
-		} else if ((m = energyRegex.matcher(s)).matches()) {
-		    ps.addEnergyRule(m.group(1));
+		} else if (nounSyntax.matches(s)) {
+		    ps.addParticlePattern(nounSyntax);
+		} else if (verbSyntax.matches(s)) {
+		    ps.addTransformRule(verbSyntax);
+		} else if (bondSyntax.matches(s)) {
+		    ps.addEnergyRule(bondSyntax);
 		} else if (endRegex.matcher(s).matches()) {
 		    break;
 		} else if (nonWhitespaceRegex.matcher(s).matches()) {
-		    System.err.println("Ignoring line: " + s);
+		    System.err.println("PatternSet: Ignoring unrecognized line: " + s);
 		}
 	    }
 	} catch (IOException e) {

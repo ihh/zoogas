@@ -24,14 +24,6 @@ public class TransformRulePattern extends RulePattern {
 	V = v;
     }
 
-    static TransformRulePattern fromString (String abcdpv) {
-	String[] args = abcdpv.split(" ",6);
-	if (args.length != 6) {
-	    throw new RuntimeException ("Rule '" + abcdpv + "' has " + args.length + " args; expected 6");
-	}
-	return new TransformRulePattern(args[0],args[1],args[2],args[3],Double.parseDouble(args[4]),args[5]);
-    }
-
     // toString method
     public String toString() { return A + " " + B + " " + C + " " + D + " " + P + " " + V; }
 }
