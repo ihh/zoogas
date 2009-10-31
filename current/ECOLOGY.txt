@@ -220,11 +220,11 @@ VERB s=conga_dude.* t=.* S=_ T=$T p=.001 v=expire
 
 
 # RNA
-# base colors: HSV values with S=1, V=0.5 & H depending on the nucleotide: 0(a), .25(c), .5(g), .75(u)
-NOUN n=(base_|RNA_sequence_[acgu]*)a([^acgu].*|) c=800000
-NOUN n=(base_|RNA_sequence_[acgu]*)c([^acgu].*|) c=408000
-NOUN n=(base_|RNA_sequence_[acgu]*)g([^acgu].*|) c=008080
-NOUN n=(base_|RNA_sequence_[acgu]*)u([^acgu].*|) c=400080
+# base colors: HSV values with S=1, V=0.5 & H depending on the first nucleotide: 0(a), .25(c), .5(g), .75(u)
+NOUN n=(base|RNA_sequence)_a.* c=800000
+NOUN n=(base|RNA_sequence)_c.* c=408000
+NOUN n=(base|RNA_sequence)_g.* c=008080
+NOUN n=(base|RNA_sequence)_u.* c=400080
 
 # canonical basepairs: RGB components are the the sums of the RGB components of individual bases.
 NOUN n=basepair_(au|ua).* c=c00080
