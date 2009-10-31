@@ -1,25 +1,25 @@
 # The different colored species particles
 # The species follow a simple (unrealistic) cyclic ecology.
-# The species number is prefixed by "/=".
+# The species number is prefixed by "/s:".
 NOUN n=_ c=000000
-NOUN n=.*/=0 c=ff0000
-NOUN n=.*/=1 c=ff5100
-NOUN n=.*/=2 c=ffa100
-NOUN n=.*/=3 c=fff200
-NOUN n=.*/=4 c=bcff00
-NOUN n=.*/=5 c=6bff00
-NOUN n=.*/=6 c=1bff00
-NOUN n=.*/=7 c=00ff36
-NOUN n=.*/=8 c=00ff86
-NOUN n=.*/=9 c=00ffd7
-NOUN n=.*/=10 c=00d7ff
-NOUN n=.*/=11 c=0086ff
-NOUN n=.*/=12 c=0036ff
-NOUN n=.*/=13 c=1b00ff
-NOUN n=.*/=14 c=6b00ff
-NOUN n=.*/=15 c=bc00ff
-NOUN n=.*/=16 c=ff00f2
-NOUN n=.*/=17 c=ff00a1
+NOUN n=.*/s:0 c=ff0000
+NOUN n=.*/s:1 c=ff5100
+NOUN n=.*/s:2 c=ffa100
+NOUN n=.*/s:3 c=fff200
+NOUN n=.*/s:4 c=bcff00
+NOUN n=.*/s:5 c=6bff00
+NOUN n=.*/s:6 c=1bff00
+NOUN n=.*/s:7 c=00ff36
+NOUN n=.*/s:8 c=00ff86
+NOUN n=.*/s:9 c=00ffd7
+NOUN n=.*/s:10 c=00d7ff
+NOUN n=.*/s:11 c=0086ff
+NOUN n=.*/s:12 c=0036ff
+NOUN n=.*/s:13 c=1b00ff
+NOUN n=.*/s:14 c=6b00ff
+NOUN n=.*/s:15 c=bc00ff
+NOUN n=.*/s:16 c=ff00f2
+NOUN n=.*/s:17 c=ff00a1
 
 # The tools and behavior accessible to the player
 NOUN n=wall/1 c=2b2b2b
@@ -53,57 +53,57 @@ VERB s=/INIT.* t=_ S=beacon T=_ v=/start
 
 # Animal rules. This is where the ecology actually happens.
 # Successful predation
-VERB s=.*/=0 t=.*/=([1-9]) S=$S T=$S p=.024 v=eat
-VERB s=.*/=1 t=.*/=([2-9]|10) S=$S T=$S p=.024 v=eat
-VERB s=.*/=2 t=.*/=([3-9]|1[0-1]) S=$S T=$S p=.024 v=eat
-VERB s=.*/=3 t=.*/=([4-9]|1[0-2]) S=$S T=$S p=.024 v=eat
-VERB s=.*/=4 t=.*/=([5-9]|1[0-3]) S=$S T=$S p=.024 v=eat
-VERB s=.*/=5 t=.*/=([6-9]|1[0-4]) S=$S T=$S p=.024 v=eat
-VERB s=.*/=6 t=.*/=([7-9]|1[0-5]) S=$S T=$S p=.024 v=eat
-VERB s=.*/=7 t=.*/=([8-9]|1[0-6]) S=$S T=$S p=.024 v=eat
-VERB s=.*/=8 t=.*/=(9|1[0-7]) S=$S T=$S p=.024 v=eat
-VERB s=.*/=9 t=.*/=(0|1[0-7]) S=$S T=$S p=.024 v=eat
-VERB s=.*/=10 t=.*/=([0-1]|1[1-7]) S=$S T=$S p=.024 v=eat
-VERB s=.*/=11 t=.*/=([0-2]|1[2-7]) S=$S T=$S p=.024 v=eat
-VERB s=.*/=12 t=.*/=([0-3]|1[3-7]) S=$S T=$S p=.024 v=eat
-VERB s=.*/=13 t=.*/=([0-4]|1[4-7]) S=$S T=$S p=.024 v=eat
-VERB s=.*/=14 t=.*/=([0-5]|1[5-7]) S=$S T=$S p=.024 v=eat
-VERB s=.*/=15 t=.*/=([0-6]|1[6-7]) S=$S T=$S p=.024 v=eat
-VERB s=.*/=16 t=.*/=([0-7]|17) S=$S T=$S p=.024 v=eat
-VERB s=.*/=17 t=.*/=([0-8]) S=$S T=$S p=.024 v=eat
+VERB s=.*/s:0 t=.*/s:([1-9]) S=$S T=$S p=.024 v=eat
+VERB s=.*/s:1 t=.*/s:([2-9]|10) S=$S T=$S p=.024 v=eat
+VERB s=.*/s:2 t=.*/s:([3-9]|1[0-1]) S=$S T=$S p=.024 v=eat
+VERB s=.*/s:3 t=.*/s:([4-9]|1[0-2]) S=$S T=$S p=.024 v=eat
+VERB s=.*/s:4 t=.*/s:([5-9]|1[0-3]) S=$S T=$S p=.024 v=eat
+VERB s=.*/s:5 t=.*/s:([6-9]|1[0-4]) S=$S T=$S p=.024 v=eat
+VERB s=.*/s:6 t=.*/s:([7-9]|1[0-5]) S=$S T=$S p=.024 v=eat
+VERB s=.*/s:7 t=.*/s:([8-9]|1[0-6]) S=$S T=$S p=.024 v=eat
+VERB s=.*/s:8 t=.*/s:(9|1[0-7]) S=$S T=$S p=.024 v=eat
+VERB s=.*/s:9 t=.*/s:(0|1[0-7]) S=$S T=$S p=.024 v=eat
+VERB s=.*/s:10 t=.*/s:([0-1]|1[1-7]) S=$S T=$S p=.024 v=eat
+VERB s=.*/s:11 t=.*/s:([0-2]|1[2-7]) S=$S T=$S p=.024 v=eat
+VERB s=.*/s:12 t=.*/s:([0-3]|1[3-7]) S=$S T=$S p=.024 v=eat
+VERB s=.*/s:13 t=.*/s:([0-4]|1[4-7]) S=$S T=$S p=.024 v=eat
+VERB s=.*/s:14 t=.*/s:([0-5]|1[5-7]) S=$S T=$S p=.024 v=eat
+VERB s=.*/s:15 t=.*/s:([0-6]|1[6-7]) S=$S T=$S p=.024 v=eat
+VERB s=.*/s:16 t=.*/s:([0-7]|17) S=$S T=$S p=.024 v=eat
+VERB s=.*/s:17 t=.*/s:([0-8]) S=$S T=$S p=.024 v=eat
 
 # Unsuccessful predation
-VERB s=.*/=0 t=.*/=([1-9]) S=$S T=$S p=.006 v=kill
-VERB s=.*/=1 t=.*/=([2-9]|10) S=$S T=$S p=.006 v=kill
-VERB s=.*/=2 t=.*/=([3-9]|1[0-1]) S=$S T=$S p=.006 v=kill
-VERB s=.*/=3 t=.*/=([4-9]|1[0-2]) S=$S T=$S p=.006 v=kill
-VERB s=.*/=4 t=.*/=([5-9]|1[0-3]) S=$S T=$S p=.006 v=kill
-VERB s=.*/=5 t=.*/=([6-9]|1[0-4]) S=$S T=$S p=.006 v=kill
-VERB s=.*/=6 t=.*/=([7-9]|1[0-5]) S=$S T=$S p=.006 v=kill
-VERB s=.*/=7 t=.*/=([8-9]|1[0-6]) S=$S T=$S p=.006 v=kill
-VERB s=.*/=8 t=.*/=(9|1[0-7]) S=$S T=$S p=.006 v=kill
-VERB s=.*/=9 t=.*/=(0|1[0-7]) S=$S T=$S p=.006 v=kill
-VERB s=.*/=10 t=.*/=([0-1]|1[1-7]) S=$S T=$S p=.006 v=kill
-VERB s=.*/=11 t=.*/=([0-2]|1[2-7]) S=$S T=$S p=.006 v=kill
-VERB s=.*/=12 t=.*/=([0-3]|1[3-7]) S=$S T=$S p=.006 v=kill
-VERB s=.*/=13 t=.*/=([0-4]|1[4-7]) S=$S T=$S p=.006 v=kill
-VERB s=.*/=14 t=.*/=([0-5]|1[5-7]) S=$S T=$S p=.006 v=kill
-VERB s=.*/=15 t=.*/=([0-6]|1[6-7]) S=$S T=$S p=.006 v=kill
-VERB s=.*/=16 t=.*/=([0-7]|17) S=$S T=$S p=.006 v=kill
-VERB s=.*/=17 t=.*/=([0-8]) S=$S T=$S p=.006 v=kill
+VERB s=.*/s:0 t=.*/s:([1-9]) S=$S T=$S p=.006 v=kill
+VERB s=.*/s:1 t=.*/s:([2-9]|10) S=$S T=$S p=.006 v=kill
+VERB s=.*/s:2 t=.*/s:([3-9]|1[0-1]) S=$S T=$S p=.006 v=kill
+VERB s=.*/s:3 t=.*/s:([4-9]|1[0-2]) S=$S T=$S p=.006 v=kill
+VERB s=.*/s:4 t=.*/s:([5-9]|1[0-3]) S=$S T=$S p=.006 v=kill
+VERB s=.*/s:5 t=.*/s:([6-9]|1[0-4]) S=$S T=$S p=.006 v=kill
+VERB s=.*/s:6 t=.*/s:([7-9]|1[0-5]) S=$S T=$S p=.006 v=kill
+VERB s=.*/s:7 t=.*/s:([8-9]|1[0-6]) S=$S T=$S p=.006 v=kill
+VERB s=.*/s:8 t=.*/s:(9|1[0-7]) S=$S T=$S p=.006 v=kill
+VERB s=.*/s:9 t=.*/s:(0|1[0-7]) S=$S T=$S p=.006 v=kill
+VERB s=.*/s:10 t=.*/s:([0-1]|1[1-7]) S=$S T=$S p=.006 v=kill
+VERB s=.*/s:11 t=.*/s:([0-2]|1[2-7]) S=$S T=$S p=.006 v=kill
+VERB s=.*/s:12 t=.*/s:([0-3]|1[3-7]) S=$S T=$S p=.006 v=kill
+VERB s=.*/s:13 t=.*/s:([0-4]|1[4-7]) S=$S T=$S p=.006 v=kill
+VERB s=.*/s:14 t=.*/s:([0-5]|1[5-7]) S=$S T=$S p=.006 v=kill
+VERB s=.*/s:15 t=.*/s:([0-6]|1[6-7]) S=$S T=$S p=.006 v=kill
+VERB s=.*/s:16 t=.*/s:([0-7]|17) S=$S T=$S p=.006 v=kill
+VERB s=.*/s:17 t=.*/s:([0-8]) S=$S T=$S p=.006 v=kill
 
 # Breeding, overcrowding
-VERB s=.*/=\d+ t=_ S=$S T=$S p=.0007 v=spawn
-VERB s=.*/=\d+ t=.*/=\d+ S=_ T=$T p=0.0015 v=choke
+VERB s=.*/s:\d+ t=_ S=$S T=$S p=.0007 v=spawn
+VERB s=.*/s:\d+ t=.*/s:\d+ S=_ T=$T p=0.0015 v=choke
 
 # Movement
-VERB s=.*/=\d+ t=_ S=$T T=$S p=0.02 v=step
+VERB s=.*/s:\d+ t=_ S=$T T=$S p=0.02 v=step
 
 # Other behaviors of animals
 # Animals eat guests:
-VERB s=.*/=\d+ t=zoo_guest.* S=_ T=$S p=1.0 v=maul
+VERB s=.*/s:\d+ t=zoo_guest.* S=_ T=$S p=1.0 v=maul
 # Imps feed on lava:
-VERB s=.*_imp/=\d+ t=lava.* S=$S T=$S p=.01 v=frolic
+VERB s=.*_imp/s:\d+ t=lava.* S=$S T=$S p=.01 v=frolic
 
 
 
@@ -155,17 +155,17 @@ VERB s=acid t=_ S=$T T=$S p=1.0 v=drift
 VERB s=acid t=.* S=_ T=$T p=.005 v=drain
 
 # Perfume
-VERB s=perfume t=.*/=\d+ S=$T T=$T p=1.0 v=hornify
-VERB s=.*/=\d+ t=perfume S=$S T=$S p=1.0 v=breed
+VERB s=perfume t=.*/s:\d+ S=$T T=$T p=1.0 v=hornify
+VERB s=.*/s:\d+ t=perfume S=$S T=$S p=1.0 v=breed
 VERB s=perfume t=_ S=_ T=$T p=0.1 v=disperse
 VERB s=perfume t=_ S=$S T=$S p=0.09 v=billow
 VERB s=perfume t=_ S=$T T=$S p=0.81 v=drift
 
 # Mutator gas: change the species number.
-VERB s=mutator t=(.*)/=(\d+) S=_ T=mutant/=$%18+1.2 p=1.0 v=mutate
-VERB s=mutator t=(.*)/=(\d+) S=_ T=mutant/=$%18+17.2 p=1.0 v=mutate
-VERB s=mutator t=(.*)/=(\d+) S=_ T=mutant/=$%18+2.2 p=0.1 v=mutate
-VERB s=mutator t=(.*)/=(\d+) S=_ T=mutant/=$%18+16.2 p=0.1 v=mutate
+VERB s=mutator t=(.*)/s:(\d+) S=_ T=mutant/s:$%18+1.2 p=1.0 v=mutate
+VERB s=mutator t=(.*)/s:(\d+) S=_ T=mutant/s:$%18+17.2 p=1.0 v=mutate
+VERB s=mutator t=(.*)/s:(\d+) S=_ T=mutant/s:$%18+2.2 p=0.1 v=mutate
+VERB s=mutator t=(.*)/s:(\d+) S=_ T=mutant/s:$%18+16.2 p=0.1 v=mutate
 VERB s=mutator t=_ S=_ T=_ p=0.1 v=disperse
 VERB s=mutator t=_ S=$T T=$S p=0.9 v=drift
 VERB s=mutator t=perfume S=$T T=$T p=1.0 v=react
