@@ -61,8 +61,6 @@ public class Particle {
 	    transformRate[n] = 0;
 	    for (int i = 0; i < transformRuleMatch[n].length; ++i)
 		transformRate[n] += transformRuleMatch[n][i].P();
-	    if (transformRate[n] > 1)
-		transformRate[n] = 1;
 	    totalTransformRate += transformRate[n];
 
 	    energy.add(new IdentityHashMap<Particle,Double>());
@@ -110,6 +108,9 @@ public class Particle {
 	    }
 	}
     }
+
+    // normalizedTotalTransformRate
+    public final double normalizedTotalTransformRate() { return Math.min (totalTransformRate, 1); }
 
     // method to test if a Particle is active (i.e. has any transformation rules) in a given direction
     public final boolean isActive(int dir) { return transformRuleMatch[dir].length > 0; }
