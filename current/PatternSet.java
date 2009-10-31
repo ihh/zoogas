@@ -74,44 +74,6 @@ public class PatternSet {
 	return p;
     }
 
-    // method to compile transformation rules for a new target Particle
-    RandomVariable<ParticlePair> compileTransformRules (Particle source, Particle target, int dir) {
-	//	System.err.println ("Compiling transformation rules for " + source.name + " " + target.name);
-	RandomVariable<ParticlePair> rv = new RandomVariable<ParticlePair>();
-	for (int n = 0; n < source.transformRuleMatch[dir].length; ++n) {
-
-	    TransformRuleMatch rm = source.transformRuleMatch[dir][n];
-
-	    if (rm.bindSource(source.name) && rm.bindTarget(target.name)) {
-
-		String cName = rm.C();
-		String dName = rm.D();
-		String verb = rm.V();
-		double prob = rm.P();
-
-		// we now have everything we need from rm (cName, dName, verb and prob)
-		// therefore, unbind it so we can call getOrCreateParticle (which will re-bind it)
-		rm.unbindSourceAndTarget();
-
-		Particle newSource = getOrCreateParticle(cName,board);
-		Particle newTarget = getOrCreateParticle(dName,board);
-
-		if (newSource == null || newTarget == null) {
-		    System.err.println ("Null outcome of rule '" + rm.pattern + "': "
-					+ source.name + " " + target.name + " -> " + cName + " " + dName);
-		} else {
-		    ParticlePair pp = new ParticlePair (newSource, newTarget, verb);
-		    rv.add (pp, prob);
-		}
-	    }
-
-	    rm.unbindSourceAndTarget();
-
-	}
-	rv.close (new ParticlePair (source, target, source.defaultVerb));
-	return rv;
-    }
-
     // helper to get a set of transformation rules for a given Particle/direction
     protected TransformRuleMatch[] getSourceTransformRules (String particleName, int dir) {
 	//	System.err.println ("Trying to match particle " + particleName + " to transformation rule generators");
@@ -127,19 +89,6 @@ public class PatternSet {
 	for (int n = 0; n < v.size(); ++n)
 	    rm[n] = v.get(n);
 	return rm;
-    }
-
-    // method to compile energy rules for a new target Particle
-    double compileEnergyRules (Particle source, Particle target, int dir) {
-	//	System.err.println ("Compiling energy rules for " + source.name + " " + target.name);
-	double E = 0;
-	for (int n = 0; n < source.energyRuleMatch[dir].length; ++n) {
-	    EnergyRuleMatch rm = source.energyRuleMatch[dir][n];
-	    if (rm.matches(source.name,target.name))
-		E += rm.E();
-	}
-	//	System.err.println ("Pair   " + source.name + " " + target.name + "   total energy is " + E);
-	return E;
     }
 
     // helper to get a set of energy rules for a given Particle/direction

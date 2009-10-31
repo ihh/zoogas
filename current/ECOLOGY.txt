@@ -53,26 +53,44 @@ VERB /INIT.* _ beacon _ 1 /start
 
 # Animal rules. This is where the ecology actually happens.
 # Successful predation
-VERB .*/=(\d+) .*/=$%18+1.1 $S $S .024 eat
-VERB .*/=(\d+) .*/=$%18+2.1 $S $S .024 eat
-VERB .*/=(\d+) .*/=$%18+3.1 $S $S .024 eat
-VERB .*/=(\d+) .*/=$%18+4.1 $S $S .024 eat
-VERB .*/=(\d+) .*/=$%18+5.1 $S $S .024 eat
-VERB .*/=(\d+) .*/=$%18+6.1 $S $S .024 eat
-VERB .*/=(\d+) .*/=$%18+7.1 $S $S .024 eat
-VERB .*/=(\d+) .*/=$%18+8.1 $S $S .024 eat
-VERB .*/=(\d+) .*/=$%18+9.1 $S $S .024 eat
+VERB .*/=0 .*/=([1-9]) $S $S .024 eat
+VERB .*/=1 .*/=([2-9]|10) $S $S .024 eat
+VERB .*/=2 .*/=([3-9]|1[0-1]) $S $S .024 eat
+VERB .*/=3 .*/=([4-9]|1[0-2]) $S $S .024 eat
+VERB .*/=4 .*/=([5-9]|1[0-3]) $S $S .024 eat
+VERB .*/=5 .*/=([6-9]|1[0-4]) $S $S .024 eat
+VERB .*/=6 .*/=([7-9]|1[0-5]) $S $S .024 eat
+VERB .*/=7 .*/=([8-9]|1[0-6]) $S $S .024 eat
+VERB .*/=8 .*/=(9|1[0-7]) $S $S .024 eat
+VERB .*/=9 .*/=(0|1[0-7]) $S $S .024 eat
+VERB .*/=10 .*/=([0-1]|1[1-7]) $S $S .024 eat
+VERB .*/=11 .*/=([0-2]|1[2-7]) $S $S .024 eat
+VERB .*/=12 .*/=([0-3]|1[3-7]) $S $S .024 eat
+VERB .*/=13 .*/=([0-4]|1[4-7]) $S $S .024 eat
+VERB .*/=14 .*/=([0-5]|1[5-7]) $S $S .024 eat
+VERB .*/=15 .*/=([0-6]|1[6-7]) $S $S .024 eat
+VERB .*/=16 .*/=([0-7]|17) $S $S .024 eat
+VERB .*/=17 .*/=([0-8]) $S $S .024 eat
 
 # Unsuccessful predation
-VERB .*/=(\d+) .*/=$%18+1.1 $S _ .006 kill
-VERB .*/=(\d+) .*/=$%18+2.1 $S _ .006 kill
-VERB .*/=(\d+) .*/=$%18+3.1 $S _ .006 kill
-VERB .*/=(\d+) .*/=$%18+4.1 $S _ .006 kill
-VERB .*/=(\d+) .*/=$%18+5.1 $S _ .006 kill
-VERB .*/=(\d+) .*/=$%18+6.1 $S _ .006 kill
-VERB .*/=(\d+) .*/=$%18+7.1 $S _ .006 kill
-VERB .*/=(\d+) .*/=$%18+8.1 $S _ .006 kill
-VERB .*/=(\d+) .*/=$%18+9.1 $S _ .006 kill
+VERB .*/=0 .*/=([1-9]) $S $S .006 kill
+VERB .*/=1 .*/=([2-9]|10) $S $S .006 kill
+VERB .*/=2 .*/=([3-9]|1[0-1]) $S $S .006 kill
+VERB .*/=3 .*/=([4-9]|1[0-2]) $S $S .006 kill
+VERB .*/=4 .*/=([5-9]|1[0-3]) $S $S .006 kill
+VERB .*/=5 .*/=([6-9]|1[0-4]) $S $S .006 kill
+VERB .*/=6 .*/=([7-9]|1[0-5]) $S $S .006 kill
+VERB .*/=7 .*/=([8-9]|1[0-6]) $S $S .006 kill
+VERB .*/=8 .*/=(9|1[0-7]) $S $S .006 kill
+VERB .*/=9 .*/=(0|1[0-7]) $S $S .006 kill
+VERB .*/=10 .*/=([0-1]|1[1-7]) $S $S .006 kill
+VERB .*/=11 .*/=([0-2]|1[2-7]) $S $S .006 kill
+VERB .*/=12 .*/=([0-3]|1[3-7]) $S $S .006 kill
+VERB .*/=13 .*/=([0-4]|1[4-7]) $S $S .006 kill
+VERB .*/=14 .*/=([0-5]|1[5-7]) $S $S .006 kill
+VERB .*/=15 .*/=([0-6]|1[6-7]) $S $S .006 kill
+VERB .*/=16 .*/=([0-7]|17) $S $S .006 kill
+VERB .*/=17 .*/=([0-8]) $S $S .006 kill
 
 # Breeding, overcrowding
 VERB .*/=\d+ _ $S $S .0007 spawn
@@ -247,7 +265,7 @@ ENERGY basepair_(gu|ug)/.* .* -.01
 # define the destabilizing self-energy of a non-canonical (non-WC or wobble) basepair
 # this will fire once for every cell in the neighborhood (i.e. eight times for the Moore topology), so keep the energy low
 # obviously some kind of self-energy would be a cleaner & more efficient way to formulate this
-ENERGY basepair_(aa|ac|ag|ca|cc|cu|ga|uc|uu)/.* .* +.02
+ENERGY basepair_(aa|ac|ag|ca|cc|cu|ga|uc|uu)/.* .* +.2
 
 # to make a basepair, merge two bases
 VERB base_(.)/(.*) base_(.)/(.*) basepair_$1$3/f/$2/r/$4 _ 1 pair_$1_to_$3

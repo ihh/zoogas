@@ -11,7 +11,6 @@ public class Board extends MooreTopology {
 
     // main board data
     private Cell[][] cell = null;
-    private HashMap<Point,RemoteCellCoord> remoteCell = null;  // map of connections from off-board Point's to RemoteCellCoord's
 
     // cellular automata rule/particle generator
     private PatternSet patternSet = new PatternSet(this);
@@ -19,14 +18,21 @@ public class Board extends MooreTopology {
     // random number generator
     private Random rnd = null;
 
-    // name lookups
+    // particle name registry
     protected Map<String,Particle> nameToParticle = new HashMap<String,Particle>();  // updated by Particle constructor
+
+    // off-board connections
+    private HashMap<Point,RemoteCellCoord> remoteCell = null;  // map of connections from off-board Point's to RemoteCellCoord's
 
     // networking
     private UpdateServer updateServer = null;  // UpdateServer fields UDP requests for cross-border interactions
     private ConnectionServer connectServer = null;   // ConnectionServer runs over TCP (otherwise requests to establish connections can get lost amongst the flood of UDP traffic)
     private int boardServerPort = 4444;
     private String localhost = null;
+
+    // fast quad tree
+    private int K = 0;  // K = log_2(size)
+    private double[] quadRate = null;
 
     // constructor
     public Board (int size) {
@@ -36,6 +42,17 @@ public class Board extends MooreTopology {
 	for (int x = 0; x < size; ++x)
 	    for (int y = 0; y < size; ++y)
 		cell[x][y] = new Cell();
+
+	// quad tree
+	int tmp = size;
+	for (K = 0; tmp > 1; ) {
+	    if ((tmp & 1) != 0)
+		throw new RuntimeException("While building quad tree: board size is not a power of 2");
+	    tmp = tmp >> 1;
+	    ++K;
+	}
+	int totalNodes = (4*size*size - 1) / 3;
+	quadRate = new double[totalNodes];  // initialized to zero
 
 	// net init
 	remoteCell = new HashMap<Point,RemoteCellCoord>();
@@ -69,36 +86,6 @@ public class Board extends MooreTopology {
 	connectBorder (new Point(0,127), new Point(0,128), new Point(1,0), 128, new Point(0,+size), remote);  // south
     }
 
-    // read from image
-    protected final void initFromImage (BufferedImage img, ParticleSet particleSet) {
-	Set<Particle> ps = particleSet.getParticles(this);
-
-	for (int x = 0; x < size; ++x)
-	    for (int y = 0; y < size; ++y) {
-		int c = img.getRGB(x,y);
-		int red = (c & 0x00ff0000) >> 16;
-		int green = (c & 0x0000ff00) >> 8;
-		int blue = c & 0x000000ff;
-
-		// find state with closest color
-		int dmin = 0;
-		Particle s = null;
-		for (Iterator<Particle> e = ps.iterator(); e.hasNext() ;) {
-		    Particle pt = e.next();
-		    Color ct = pt.color;
-		    int rdist = red - ct.getRed(), gdist = green - ct.getGreen(), bdist = blue - ct.getBlue();
-		    int dist = rdist*rdist + gdist*gdist + bdist*bdist;
-		    if (s == null || dist < dmin) {
-			s = pt;
-			dmin = dist;
-			if (dist == 0)
-			    break;
-		    }
-		}
-		writeCell(new Point(x,y), s);
-	    }
-    }
-
     // read/write methods for cells
     public final int getCellWriteCount (Point p) {
 	return cell[p.x][p.y].writeCount;
@@ -110,6 +97,7 @@ public class Board extends MooreTopology {
 
     public final void writeCell (Point p, Particle pc) {
 	writeCell (p, pc, readCell(p));
+	updateQuadTree (p, Math.min (pc.totalTransformRate, 1));
     }
 
     private final void writeCell (Point p, Particle pc, Particle old_pc) {
@@ -130,39 +118,74 @@ public class Board extends MooreTopology {
 		writeCell(p,particle);
     }
 
-    // method to sample a random cell
-    private final  void getRandomPoint (Point p) {
-	p.x = rnd.nextInt(size);
-	p.y = rnd.nextInt(size);
+    // helper to test if a cell is on board
+    public final boolean onBoard (Point p) { return p.x >= 0 && p.x < size && p.y >= 0 && p.y < size; }
+
+    // quad-tree indexing
+    private int quadNodeIndex(Point p,int level) {
+	int nodesBeforeLevel = ((1 << (level << 1)) - 1) / 3;
+	int msbY = p.y >> (K - level);
+	int msbX = p.x >> (K - level);
+	return msbX + (msbY << level) + nodesBeforeLevel;
     }
 
-    // wrapper for topology method
-    private final  int getRandomNeighbor (Point p, Point n) {
-	return getNeighbor(p,n,rnd.nextInt(neighborhoodSize()));
+    private int quadChildIndex(int parentIndex,int parentLevel,int whichChild) {
+	int childLevel = parentLevel + 1;
+	int nodesBeforeParent = ((1 << (parentLevel << 1)) - 1) / 3;
+	int nodesBeforeChild = ((1 << (childLevel << 1)) - 1) / 3;
+	int parentOffset = parentIndex - nodesBeforeParent;
+	int msbParentY = parentOffset >> parentLevel;
+	int msbParentX = parentOffset - (msbParentY << parentLevel);
+	int msbChildY = (msbParentY << 1) | (whichChild >> 1);
+	int msbChildX = (msbParentX << 1) | (whichChild & 1);
+	return msbChildX + (msbChildY << childLevel) + nodesBeforeChild;
     }
+
+    private void updateQuadTree(Point p,double val) {
+	double oldVal = quadRate[quadNodeIndex(p,K)];
+	double diff = val - oldVal;
+	for (int lev = 0; lev <= K; ++lev) {
+	    int n = quadNodeIndex(p,lev);
+	    quadRate[n] = Math.max (quadRate[n] + diff, 0);
+	}
+    }
+
+    private void sampleQuadLeaf(Point p) {
+	int node = 0;
+	p.x = p.y = 0;
+	for (int lev = 0; lev < K; ++lev) {
+	    double prob = rnd.nextDouble() * quadRate[node];
+	    int whichChild = 0, childNode = -1;
+	    while (true) {
+		childNode = quadChildIndex(node,lev,whichChild);
+		prob -= quadRate[childNode];
+		if (prob < 0 || whichChild == 3)
+		    break;
+		++whichChild;
+	    }
+	    node = childNode;
+	    p.y = (p.y << 1) | (whichChild >> 1);
+	    p.x = (p.x << 1) | (whichChild & 1);
+	}
+    }
+
+    private double topQuadRate() { return quadRate[0]; }
 
     // update methods
     // getRandomPair returns dir
     public final int getRandomPair(Point p,Point n) {
-	getRandomPoint(p);
-	int dir = getRandomNeighbor(p,n);
+	sampleQuadLeaf(p);
+	int dir = readCell(p).sampleDir(rnd);
+	getNeighbor(p,n,dir);
 	return dir;
     }
 
-    public final void update(Point p,Point n) {
-	int dir = getRandomPair(p,n);
-	evolvePair(p,n,dir);
-    }
-
-    public final void update(int cycles) {
+    // update() returns number of updated cells
+    public final int update(double boardUpdates,BoardRenderer renderer) {
+	int updatedCells = 0;
 	Point p = new Point(), n = new Point();
-	for (int u = 0; u < cycles; ++u)
-	    update(p,n);
-    }
-
-    public final void update(int cycles,BoardRenderer renderer) {
-	Point p = new Point(), n = new Point();
-	for (int u = 0; u < cycles; ++u) {
+	double maxUpdates = boardUpdates * topQuadRate();
+	for (; updatedCells < maxUpdates; ++updatedCells) {
 
 	    int dir = getRandomPair(p,n);
 	    Particle oldSource = readCell(p);
@@ -182,6 +205,7 @@ public class Board extends MooreTopology {
 		    renderer.showVerb(p,n,oldSource,oldTarget,newPair);
 	    }
 	}
+	return updatedCells;
     }
 
     // evolvePair(sourceCoords,targetCoords,dir) : delegate to appropriate evolve* method.
@@ -374,8 +398,6 @@ public class Board extends MooreTopology {
 	remoteCell.put (new Point(p), new RemoteCellCoord (remoteBoard, pRemote));
     }
 
-    public final boolean onBoard (Point p) { return p.x >= 0 && p.x < size && p.y >= 0 && p.y < size; }
-
 
     // Particle name-indexing methods
     protected final void registerParticle (Particle p) {
@@ -395,6 +417,25 @@ public class Board extends MooreTopology {
 	return patternSet.getOrCreateParticle (name, this);
     }
 
+    protected Collection<Particle> knownParticles() {
+	return nameToParticle.values();
+    }
+
+    // flush particle cache, and flush all particles' transformation rule & energy caches
+    public void flushCaches() {
+	Collection<Particle> particles = knownParticles();
+	LinkedList<Particle> particlesToForget = new LinkedList<Particle>();
+	for (Iterator<Particle> iter = particles.iterator(); iter.hasNext(); ) {
+	    Particle p = iter.next();
+	    p.flushCaches();
+	    if (p.getReferenceCount() <= 0)
+		particlesToForget.add(p);
+	}
+	for (Iterator<Particle> iter = particlesToForget.iterator(); iter.hasNext(); )
+	    deregisterParticle(iter.next());
+    }
+
+    // method to init PatternSet from file
     public final void loadPatternSetFromFile(String filename) {
 	patternSet = PatternSet.fromFile(filename,this);
     }
@@ -403,17 +444,46 @@ public class Board extends MooreTopology {
     public final boolean online() { return updateServer != null; }
     public final boolean connected() { return remoteCell.size() > 0; }
 
+    // read from image
+    protected final void initFromImage (BufferedImage img, ParticleSet particleSet) {
+	Set<Particle> ps = particleSet.getParticles(this);
+
+	for (int x = 0; x < size; ++x)
+	    for (int y = 0; y < size; ++y) {
+		int c = img.getRGB(x,y);
+		int red = (c & 0x00ff0000) >> 16;
+		int green = (c & 0x0000ff00) >> 8;
+		int blue = c & 0x000000ff;
+
+		// find state with closest color
+		int dmin = 0;
+		Particle s = null;
+		for (Iterator<Particle> e = ps.iterator(); e.hasNext() ;) {
+		    Particle pt = e.next();
+		    Color ct = pt.color;
+		    int rdist = red - ct.getRed(), gdist = green - ct.getGreen(), bdist = blue - ct.getBlue();
+		    int dist = rdist*rdist + gdist*gdist + bdist*bdist;
+		    if (s == null || dist < dmin) {
+			s = pt;
+			dmin = dist;
+			if (dist == 0)
+			    break;
+		    }
+		}
+		writeCell(new Point(x,y), s);
+	    }
+    }
+
     // debug
     String debugDumpStats() {
-	int interactions = 0, energyRules = 0, transRules = 0, outcomes = 0;
+	int energyRules = 0, transRules = 0, outcomes = 0;
 	for (Iterator<Particle> iter = nameToParticle.values().iterator(); iter.hasNext(); ) {
 	    Particle p = iter.next();
-	    interactions += p.interactions();
 	    energyRules += p.energyRules();
 	    transRules += p.transformationRules();
 	    outcomes += p.outcomes();
 	}
-	return nameToParticle.size() + " states, " + interactions + " pairs, " + energyRules + " energies, " + transRules + " rules, " + outcomes + " outcomes";
+	return nameToParticle.size() + " states, " + energyRules + " energies, " + transRules + " rules, " + outcomes + " outcomes";
     }
 }
 

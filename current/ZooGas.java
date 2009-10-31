@@ -40,7 +40,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     int toolBarWidth = 100, toolLabelWidth = 200, toolHeight = 30;  // size in pixels of various parts of the tool bar (right of the board)
     int textBarWidth = 400, textHeight = 30;
     int totalWidth, totalHeight;
-    int verbHistoryLength = 10, verbHistoryPos = 0, verbHistoryRefreshPeriod = 100, verbHistoryRefreshCounter = 0, verbsSinceLastRefresh = 0;
+    int verbHistoryLength = 10, verbHistoryPos = 0, verbHistoryRefreshPeriod = 20, verbHistoryRefreshCounter = 0, verbsSinceLastRefresh = 0;
     String[] verbHistory = new String[verbHistoryLength];
     Particle[] nounHistory = new Particle[verbHistoryLength];
     int updatesRow = 0, titleRow = 4, networkRow = 5, nounRow = 8, verbHistoryRow = 12;
@@ -51,19 +51,19 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     char cheatKey = '/';  // allows player to see the hidden parts of state names, i.e. the part behind the '/'
     char stopKey = '.';  // stops the action on this board (does not block incoming network events)
     char slowKey = ',';  // slows the action on this board (does not block incoming network events)
-    int slowFactor = 40;  // rate at which the board slows down when slowKey is pressed (actually the rate between buffer refreshes)
+    double slowFactor = 40;  // rate at which the board slows down when slowKey is pressed (actually the rate between buffer refreshes)
 
     // cellular automata state list
     private Vector<Particle> particleVec = new Vector<Particle>();  // internal to this class
 
     // commentator code ("well done"-type messages)
-    int boardUpdateCount = 0;
-    int[] timeFirstTrue = new int[100];   // indexed by row: tracks the first time when various conditions are true, so that the messages flash at first
+    long boardUpdateCount = 0;
+    long[] timeFirstTrue = new long[100];   // indexed by row: tracks the first time when various conditions are true, so that the messages flash at first
 
     // constant helper vars
     static String spaceParticleName = "_";
     Particle spaceParticle;
-    int patternMatchesPerRefresh;
+    double patternMatchesPerRefresh = 1;
 
     // Swing
     Graphics bfGraphics;
@@ -128,8 +128,6 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	boardSize = board.getBoardSize(size,pixelsPerCell);
 	totalWidth = boardSize + toolBarWidth + toolLabelWidth + textBarWidth;
 	totalHeight = boardSize + belowBoardHeight;
-
-	patternMatchesPerRefresh = (int) (size * size);
 
 	// load patternSet
 	board.loadPatternSetFromFile(patternSetFilename);
@@ -203,9 +201,14 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	drawEverything();
 
 	long lastTimeCheck = System.currentTimeMillis();
-	int timeCheckPeriod = 10;
+	long timeCheckPeriod = 10;
 	while (true)
 	    {
+		Runtime runtime = Runtime.getRuntime();
+		double heapFraction = ((double) (runtime.totalMemory() - runtime.freeMemory())) / (double) runtime.maxMemory();
+		if (heapFraction > .5)
+		    board.flushCaches();
+
 		if (!stopPressed)
 		    evolveStuff();
 		useTools();
@@ -226,7 +229,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 
     // main evolution loop
     private void evolveStuff() {
-	board.update(slowPressed ? (patternMatchesPerRefresh/slowFactor) : patternMatchesPerRefresh,this);
+	board.update(patternMatchesPerRefresh / (slowPressed ? slowFactor : 1),this);
 	++boardUpdateCount;
     }
 
@@ -380,8 +383,8 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	    if (!currentlyShown)
 		timeFirstTrue[row] = boardUpdateCount;
 	    else {
-		int timeSinceFirstTrue = boardUpdateCount - timeFirstTrue[row];
-		int flashesSinceFirstTrue = (timeSinceFirstTrue - minTime) / flashPeriod;
+		long timeSinceFirstTrue = boardUpdateCount - timeFirstTrue[row];
+		long flashesSinceFirstTrue = (timeSinceFirstTrue - minTime) / flashPeriod;
 		reallyShow = timeSinceFirstTrue >= minTime && (maxTime < 0 || timeSinceFirstTrue <= maxTime) && ((flashesSinceFirstTrue > 2*flashes) || (flashesSinceFirstTrue % 2 == 0));
 	    }
 	} else if (!onceOnly)
