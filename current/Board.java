@@ -97,7 +97,7 @@ public class Board extends MooreTopology {
 
     public final void writeCell (Point p, Particle pc) {
 	writeCell (p, pc, readCell(p));
-	updateQuadTree (p, Math.min (pc.totalTransformRate, 1));
+	updateQuadTree (p, pc.normalizedTotalTransformRate());
     }
 
     private final void writeCell (Point p, Particle pc, Particle old_pc) {
@@ -180,8 +180,8 @@ public class Board extends MooreTopology {
 	return dir;
     }
 
-    // update() returns number of updated cells
-    public final int update(double boardUpdates,BoardRenderer renderer) {
+    // update()
+    public final void update(double boardUpdates,BoardRenderer renderer) {
 	int updatedCells = 0;
 	Point p = new Point(), n = new Point();
 	double maxUpdates = boardUpdates * topQuadRate();
@@ -205,7 +205,6 @@ public class Board extends MooreTopology {
 		    renderer.showVerb(p,n,oldSource,oldTarget,newPair);
 	    }
 	}
-	return updatedCells;
     }
 
     // evolvePair(sourceCoords,targetCoords,dir) : delegate to appropriate evolve* method.
