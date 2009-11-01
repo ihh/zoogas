@@ -23,7 +23,7 @@ public class BoardServer extends Thread {
 
 	    // uncomment to log all incoming commands
 	    //	    logCommand (args);
-		    
+
 	    if (match(args,"BYE",1))
 		listening = false;
 
