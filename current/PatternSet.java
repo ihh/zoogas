@@ -113,7 +113,7 @@ public class PatternSet {
     static Pattern commentRegex = Pattern.compile(" *#.*");
     static Pattern nonWhitespaceRegex = Pattern.compile("\\S");
     static RuleSyntax nounSyntax = new RuleSyntax("NOUN n= c=");
-    static RuleSyntax verbSyntax = new RuleSyntax("VERB s= t=.* S=$S T=$T p=1 v=_");
+    static RuleSyntax verbSyntax = new RuleSyntax("VERB s= t=.* S=$S T=$T p=1 v=_ b B");
     static RuleSyntax bondSyntax = new RuleSyntax("BOND s= t= e=");
 
     // i/o methods

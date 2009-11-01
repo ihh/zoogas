@@ -9,17 +9,18 @@ public class RuleSyntax {
 
     // regexes
     static Pattern firstWordPattern = Pattern.compile("^(\\S+)");
-    static Pattern argPattern = Pattern.compile("(.)=(\\S*)");
+    static Pattern defaultArgPattern = Pattern.compile("\\b(\\S)(=(\\S*)|)\\b");
+    static Pattern parsedArgPattern = Pattern.compile("\\b(\\S)=(\\S*)");
     
     // constructor
     RuleSyntax (String init) {
 	Matcher m = firstWordPattern.matcher(init);
 	if (m.find()) {
 	    firstWord = m.group(1);
-	    m = argPattern.matcher(init);
+	    m = defaultArgPattern.matcher(init);
 	    while (m.find()) {
-		String attr = m.group(1), val = m.group(2);
-		defaultArg.put(attr,val);
+		String attr = m.group(1), eq = m.group(2), val = m.group(3);
+		defaultArg.put(attr,eq.length()>0 ? val : null);
 	    }
 	}
     }
@@ -30,9 +31,11 @@ public class RuleSyntax {
 	parsedArg.clear();
 	Matcher m = firstWordPattern.matcher(s);
 	if (m.find() && m.group(1).equals(firstWord)) {
-	    m = argPattern.matcher(s);
+	    m = parsedArgPattern.matcher(s);
 	    while (m.find()) {
 		String arg = m.group(1), val = m.group(2);
+		if (!defaultArg.containsKey(arg))
+		    System.err.println("RuleSyntax: unrecognized argument "+arg+" in "+firstWord+" line");
 		parsedArg.put(arg,val);
 	    }
 	    match = true;
@@ -41,7 +44,7 @@ public class RuleSyntax {
 		String arg = argVal.getKey();
 		String defaultVal = argVal.getValue();
 		String parsedVal = parsedArg.get(arg);
-		if ((parsedVal == null || parsedVal.length() == 0) && (defaultVal == null || defaultVal.length() == 0)) {
+		if ((parsedVal == null || parsedVal.length() == 0) && defaultVal != null && defaultVal.length() == 0) {
 		    System.err.println("RuleSyntax: mandatory argument "+arg+" missing from "+firstWord+" line");
 		    match = false;
 		    break;
@@ -59,7 +62,7 @@ public class RuleSyntax {
 	if (val == null || val.length() == 0)
 	    val = defaultArg.get(arg);
 	if (val == null)
-	    throw new RuntimeException("RuleSyntax: got null value for argument '"+arg+"'");
+	    throw new RuntimeException("RuleSyntax: got null value for argument '"+arg+"' in "+firstWord+" line");
 	return val;
     }
 }

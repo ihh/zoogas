@@ -290,10 +290,10 @@ VERB s=(RNA_sequence_[acgu]+)/next:(\d+) t=.* S=$1/next:$%100+10.2 T=$T p=1 v=/r
 VERB s=RNA_sequence_[acgu]+/next:\d+ t=.* S=$S/d:e T=$T p=.05 v=/pick_direction
 
 # generate a base
-VERB s=(RNA_sequence_)([acgu])([acgu]+)(/3p:\d+|)/next:(\d+)(/d:$F) t=_ S=base_$2$4/5p:$5 T=$1$3/3p:$5/next:$%100+1.5$6 p=1 v=generate_base_$2
+VERB s=(RNA_sequence_)([acgu])([acgu]+)(/3p:\d+|)/next:(\d+)(/d:$F) t=_ S=base_$2$4/5p:$5 T=$1$3/3p:$5/next:$%100+1.5$6 p=1 v=generate_base_$2 B=(s,5to3,t)
 
 # generate last base
-VERB s=(RNA_sequence_)([acgu])(/3p:\d+|)/next:(\d+)(/d:$F) t=.* S=base_$2$3 T=$T p=1 v=generate_base_$2
+VERB s=(RNA_sequence_)([acgu])(/3p:\d+|)/next:(\d+)(/d:$F) t=.* S=base_$2$3 T=$T p=1 v=generate_base_$2 B=(s,5to3,t)
 
 
 # allow run-length encoding of RNA sequences
