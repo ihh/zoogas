@@ -1,6 +1,7 @@
+import java.util.*;
 
-// Syntax for transformation rule patterns:
-//  A B C D P V
+// Transformation rule patterns:
+//  A B C D P V [lhsBond] [rhsBond]
 // where
 //  A is a regexp that must globally match the old source state
 //  B is a regexp that must globally match the old target state
@@ -8,13 +9,15 @@
 //  D is a string that will expand to the new target state
 //  P is a numeric constant that is the probability of the rule
 //  V is a verb describing the action being carried out by the source when this rule fires (no whitespace)
-
+//  lhsBond are bonds that must be present on the LHS
+//  rhsBond are bonds that will be formed on the LHS
 
 public class TransformRulePattern extends RulePattern {
     // data
     String C = null, D = null, V = null;
     double P = 0;
-    
+    Vector<BondPattern> lhsBond = null, rhsBond = null;
+
     // constructors
     public TransformRulePattern (String a, String b, String c, String d, double p, String v) {
 	super(a,b);
@@ -22,6 +25,17 @@ public class TransformRulePattern extends RulePattern {
 	D = d;
 	P = p;
 	V = v;
+    }
+
+    // wrappers to add bonds
+    public void addLhsBonds(String[] b) { addBonds(lhsBond,b); }
+    public void addRhsBonds(String[] b) { addBonds(rhsBond,b); }
+
+    private void addBonds(Vector<BondPattern> bondVec, String[] b) {
+	if (bondVec == null)
+	    bondVec = new Vector<BondPattern>(1);
+	for (int n = 0; n < b.length; ++n)
+	    bondVec.add(BondPattern.fromString(b[n]));
     }
 
     // toString method

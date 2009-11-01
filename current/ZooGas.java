@@ -272,7 +272,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	bfGraphics.fillRect(q.x,q.y,pixelsPerCell,pixelsPerCell);
     }
 
-    public void showVerb (Point p,Point n,Particle oldSource,Particle oldTarget,ParticlePair newPair) {
+    public void showVerb (Point p,Point n,Particle oldSource,Particle oldTarget,UpdateEvent newPair) {
 	if (verbsSinceLastRefresh == 0)
 	    if (cheatPressed || newPair.visibleVerb().length() > 0) {
 		// check for duplicates

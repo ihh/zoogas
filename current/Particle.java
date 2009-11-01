@@ -18,13 +18,13 @@ public class Particle {
     PatternSet patternSet = null;
 
     // transformation rules
-    protected ArrayList<IdentityHashMap<Particle,RandomVariable<ParticlePair>>> transform = null;  // production rules; array is indexed by neighbor direction, Map is indexed by Particle
+    protected ArrayList<HashMap<String,RandomVariable<UpdateEvent>>> transform = null;  // production rules; array is indexed by neighbor direction, Map is indexed by Particle
     protected TransformRuleMatch[][] transformRuleMatch = null;  // generators for production rules; outer array is indexed by neighbor direction, inner array is the set of partially-bound rules for that direction
     protected double[] transformRate = null;  // sum of transformation regex rates, indexed by direction
     protected double totalTransformRate = 0;  // sum of transformation regex rates in all directions
 
     // energy rules
-    protected ArrayList<IdentityHashMap<Particle,Double>> energy = null;  // interaction energies; Map is indexed by Particle
+    protected ArrayList<HashMap<String,Double>> energy = null;  // interaction energies; Map is indexed by Particle
     protected EnergyRuleMatch[][] energyRuleMatch = null;  // generators for interaction energies
 
     // reference counting
@@ -48,14 +48,14 @@ public class Particle {
 	this.patternSet = ps;
 	// init transformation & energy rule patterns in each direction
 	int N = board.neighborhoodSize();
-	transform = new ArrayList<IdentityHashMap<Particle, RandomVariable<ParticlePair>>>(N);
+	transform = new ArrayList<HashMap<String,RandomVariable<UpdateEvent>>>(N);
 	transformRuleMatch = new TransformRuleMatch[N][];
 	transformRate = new double[N];
-	energy = new ArrayList<IdentityHashMap<Particle,Double>>();
+	energy = new ArrayList<HashMap<String,Double>>();
 	energyRuleMatch = new EnergyRuleMatch[N][];
 	
 	for (int n = 0; n < N; ++n) {
-	    transform.add(new IdentityHashMap<Particle,RandomVariable<ParticlePair>>());
+	    transform.add(new HashMap<String,RandomVariable<UpdateEvent>>());
 	    transformRuleMatch[n] = patternSet.getSourceTransformRules(name,n);
 
 	    transformRate[n] = 0;
@@ -63,7 +63,7 @@ public class Particle {
 		transformRate[n] += transformRuleMatch[n][i].P();
 	    totalTransformRate += transformRate[n];
 
-	    energy.add(new IdentityHashMap<Particle,Double>());
+	    energy.add(new HashMap<String,Double>());
 	    energyRuleMatch[n] = patternSet.getSourceEnergyRules(name,n);
 	}
 	// register with the Board for name lookup (NB this may prevent garbage collection, so we deregister later)
@@ -94,21 +94,6 @@ public class Particle {
 	return nonWhitespace.matcher(viz).find() ? viz : "";
     }
 
-    // helper to "close" all patterns, adding a do-nothing rule for patterns whose RHS probabilities sum to <1
-    protected final void closePatterns() {
-	for (int n = 0; n < transform.size(); ++n) {
-	    Iterator<Map.Entry<Particle,RandomVariable<ParticlePair>>> iter = transform.get(n).entrySet().iterator();
-	    while (iter.hasNext()) {
-		Map.Entry<Particle,RandomVariable<ParticlePair>> keyval = (Map.Entry<Particle,RandomVariable<ParticlePair>>) iter.next();
-		Particle target = (Particle) keyval.getKey();
-		//		System.err.println ("Closing pattern " + name + " " + target.name + " -> ...");
-		RandomVariable<ParticlePair> rv = (RandomVariable<ParticlePair>) keyval.getValue();
-		if (rv != null)
-		    rv.close(new ParticlePair (this, target, defaultVerb));
-	    }
-	}
-    }
-
     // normalizedTotalTransformRate
     public final double normalizedTotalTransformRate() { return Math.min (totalTransformRate / transformRuleMatch.length, 1); }
 
@@ -129,15 +114,16 @@ public class Particle {
 
     // helper to sample a new (source,target) pair
     // returns null if no rule found
-    public final ParticlePair samplePair (int dir, Particle oldTarget, Random rnd, Board board) {
-	RandomVariable<ParticlePair> rv = null;
-	if (transform.get(dir).containsKey(oldTarget)) {
-	    rv = transform.get(dir).get (oldTarget);
+    public final UpdateEvent samplePair (int dir, Particle oldTarget, Random rnd, Point sourceCoords, Point targetCoords, Board board) {
+	String desc = board.pairNeighborhoodDescription(sourceCoords,targetCoords);
+	RandomVariable<UpdateEvent> rv = null;
+	if (transform.get(dir).containsKey(desc)) {
+	    rv = transform.get(dir).get(desc);
 	} else {
 	    // if no RV, look for rule generator(s) that match this neighbor, and use them to create a set of rules
 	    if (patternSet != null) {
-		rv = compileTransformRules(oldTarget,dir);
-		transform.get(dir).put (oldTarget, rv);
+		rv = compileTransformRules(oldTarget,dir,sourceCoords,targetCoords);
+		transform.get(dir).put (desc, rv);
 	    }
 	}
 	// have we got an RV?
@@ -151,13 +137,13 @@ public class Particle {
     public final double pairEnergy (Particle p, int dir) {
 	double E = 0;
 	if (hasEnergy()) {
-	    if (energy.get(dir).containsKey(p)) {
-		E = energy.get(dir).get(p).doubleValue();
+	    if (energy.get(dir).containsKey(p.name)) {
+		E = energy.get(dir).get(p.name).doubleValue();
 	    } else {
 		// look for rule generator(s) that match this neighbor, and use them to calculate energy
 		if (patternSet != null) {
 		    E = compileEnergyRules(p,dir);
-		    energy.get(dir).put (p, new Double(E));
+		    energy.get(dir).put (p.name, new Double(E));
 		}
 	    }
 	}
@@ -167,28 +153,29 @@ public class Particle {
 
     // helper to calculate symmetric form of pairEnergy
     public final double symmetricPairEnergy (Particle p,int dir) {
-	int ns = board.neighborhoodSize();
-	int opposite = (dir + ns/2) % ns;
+	int opposite = board.reverseDir(dir);
 	return pairEnergy(p,dir) + p.pairEnergy(this,opposite);
     }
 
     // method to compile transformation rules for a new target Particle
-    RandomVariable<ParticlePair> compileTransformRules (Particle target, int dir) {
+    RandomVariable<UpdateEvent> compileTransformRules (Particle target, int dir, Point sourceCoords, Point targetCoords) {
 	//	System.err.println ("Compiling transformation rules for " + name + " " + target.name);
-	RandomVariable<ParticlePair> rv = new RandomVariable<ParticlePair>();
+	RandomVariable<UpdateEvent> rv = new RandomVariable<UpdateEvent>();
 	for (int n = 0; n < transformRuleMatch[dir].length; ++n) {
 
 	    TransformRuleMatch rm = transformRuleMatch[dir][n];
 
-	    if (rm.bindSource(name) && rm.bindTarget(target.name)) {
+	    if (rm.bindSource(name) && rm.bindTarget(target.name) && rm.bindBonds(sourceCoords,targetCoords)) {
 
 		String cName = rm.C();
 		String dName = rm.D();
 		String verb = rm.V();
 		double prob = rm.P() / transformRate[dir];
 
-		// we now have everything we need from rm (cName, dName, verb and prob)
-		// therefore, unbind it so we can call getOrCreateParticle (which will re-bind it)
+		HashMap<String,Integer> si = rm.sIncoming(), so = rm.sOutgoing(), ti = rm.tIncoming(), to = rm.tOutgoing();
+
+		// we now have everything we need from rm
+		// therefore, unbind it so we can call getOrCreateParticle (which may re-bind and therefore corrupt it)
 		rm.unbindSourceAndTarget();
 
 		Particle newSource = patternSet.getOrCreateParticle(cName,board);
@@ -198,7 +185,11 @@ public class Particle {
 		    System.err.println ("Null outcome of rule '" + rm.pattern + "': "
 					+ name + " " + target.name + " -> " + cName + " " + dName);
 		} else {
-		    ParticlePair pp = new ParticlePair (newSource, newTarget, verb);
+		    UpdateEvent pp = new UpdateEvent (newSource, newTarget, verb);
+		    pp.sIncoming = si;
+		    pp.sOutgoing = si;
+		    pp.tIncoming = ti;
+		    pp.tOutgoing = ti;
 		    rv.add (pp, prob);
 		}
 	    }
@@ -206,7 +197,7 @@ public class Particle {
 	    rm.unbindSourceAndTarget();
 
 	}
-	rv.close (new ParticlePair (this, target, defaultVerb));
+	rv.close (new UpdateEvent (this, target, defaultVerb));
 	return rv;
     }
 
@@ -247,7 +238,7 @@ public class Particle {
     protected int outcomes() {
 	int o = 0;
 	for (int d = 0; d < transform.size(); ++d)
-	    for (Iterator<RandomVariable<ParticlePair>> iter = transform.get(d).values().iterator(); iter.hasNext(); )
+	    for (Iterator<RandomVariable<UpdateEvent>> iter = transform.get(d).values().iterator(); iter.hasNext(); )
 		o += iter.next().size();
 	return o;
     }

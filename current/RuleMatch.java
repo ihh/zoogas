@@ -12,7 +12,7 @@ import java.io.*;
 public class RuleMatch {
     // data
     protected RulePattern pattern = null;
-    private Board board = null;
+    protected Board board = null;
     private int dir = -1;
 
     private Pattern aPattern = null, abPattern = null;

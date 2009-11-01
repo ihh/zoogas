@@ -46,6 +46,12 @@ public class PatternSet {
     void addTransformRule (RuleSyntax s) {
 	TransformRulePattern p = new TransformRulePattern(s.getValue("s"),s.getValue("t"),s.getValue("S"),s.getValue("T"),
 							  Double.parseDouble(s.getValue("p")),s.getValue("v"));
+	if (s.hasValue("b"))
+	    p.addLhsBonds(s.getValue("b").split(" "));
+
+	if (s.hasValue("B"))
+	    p.addRhsBonds(s.getValue("B").split(" "));
+
 	transformRulePattern.add (p);
 	for (int d = 0; d < board.neighborhoodSize(); ++d)
 	    transformRuleMatch.get(d).add (new TransformRuleMatch(p,board,d));
@@ -112,8 +118,8 @@ public class PatternSet {
     static Pattern endRegex = Pattern.compile("END.*");
     static Pattern commentRegex = Pattern.compile(" *#.*");
     static Pattern nonWhitespaceRegex = Pattern.compile("\\S");
-    static RuleSyntax nounSyntax = new RuleSyntax("NOUN n= c=");
-    static RuleSyntax verbSyntax = new RuleSyntax("VERB s= t=.* S=$S T=$T p=1 v=_ b B");
+    static RuleSyntax nounSyntax = new RuleSyntax("NOUN n! c!");
+    static RuleSyntax verbSyntax = new RuleSyntax("VERB s= t=.* S=$S T=$T p=1 v=_ b* B*");
     static RuleSyntax bondSyntax = new RuleSyntax("BOND s= t= e=");
 
     // i/o methods

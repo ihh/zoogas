@@ -53,15 +53,17 @@ public class BoardServer extends Thread {
 		Point localSource = new Point(toInt(args[1]), toInt(args[2]));
 		Particle newSourceState = board.getParticleByName (args[3]);
 		if (newSourceState == null) {
-		    // TODO: create newSourceState as an inert "guest" particle and write it
 		    // TODO: request information about newSourceState from connecting board
 		} else {
 		    double energyInput = toDouble(args[4]);
 		    int oldWriteCount = toInt(args[5]);
 
 		    if (oldWriteCount == board.getCellWriteCount(localSource))
+			// TODO: replace this call to energyDeltaAcceptable with a bond-based test
 			if (board.energyDeltaAcceptable(localSource,newSourceState,-energyInput)) {
+			    board.removeBonds (localSource);
 			    board.writeCell (localSource, newSourceState);
+			    // note that incoming particles are never bonded to anything...
 			    renderer.drawCell (localSource);
 			}
 		}
