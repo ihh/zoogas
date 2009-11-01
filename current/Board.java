@@ -31,8 +31,7 @@ public class Board extends MooreTopology {
     private String localhost = null;
 
     // fast quad tree
-    private int K = 0;  // K = log_2(size)
-    private double[] quadRate = null;
+    QuadTree quad = null;
 
     // constructor
     public Board (int size) {
@@ -44,15 +43,7 @@ public class Board extends MooreTopology {
 		cell[x][y] = new Cell();
 
 	// quad tree
-	int tmp = size;
-	for (K = 0; tmp > 1; ) {
-	    if ((tmp & 1) != 0)
-		throw new RuntimeException("While building quad tree: board size is not a power of 2");
-	    tmp = tmp >> 1;
-	    ++K;
-	}
-	int totalNodes = (4*size*size - 1) / 3;
-	quadRate = new double[totalNodes];  // initialized to zero
+	quad = new QuadTree(size);
 
 	// net init
 	remoteCell = new HashMap<Point,RemoteCellCoord>();
@@ -97,7 +88,7 @@ public class Board extends MooreTopology {
 
     public final void writeCell (Point p, Particle pc) {
 	writeCell (p, pc, readCell(p));
-	updateQuadTree (p, pc.normalizedTotalTransformRate());
+	quad.updateQuadTree (p, pc.normalizedTotalTransformRate());
     }
 
     private final void writeCell (Point p, Particle pc, Particle old_pc) {
@@ -121,60 +112,10 @@ public class Board extends MooreTopology {
     // helper to test if a cell is on board
     public final boolean onBoard (Point p) { return p.x >= 0 && p.x < size && p.y >= 0 && p.y < size; }
 
-    // quad-tree indexing
-    private int quadNodeIndex(Point p,int level) {
-	int nodesBeforeLevel = ((1 << (level << 1)) - 1) / 3;
-	int msbY = p.y >> (K - level);
-	int msbX = p.x >> (K - level);
-	return msbX + (msbY << level) + nodesBeforeLevel;
-    }
-
-    private int quadChildIndex(int parentIndex,int parentLevel,int whichChild) {
-	int childLevel = parentLevel + 1;
-	int nodesBeforeParent = ((1 << (parentLevel << 1)) - 1) / 3;
-	int nodesBeforeChild = ((1 << (childLevel << 1)) - 1) / 3;
-	int parentOffset = parentIndex - nodesBeforeParent;
-	int msbParentY = parentOffset >> parentLevel;
-	int msbParentX = parentOffset - (msbParentY << parentLevel);
-	int msbChildY = (msbParentY << 1) | (whichChild >> 1);
-	int msbChildX = (msbParentX << 1) | (whichChild & 1);
-	return msbChildX + (msbChildY << childLevel) + nodesBeforeChild;
-    }
-
-    private void updateQuadTree(Point p,double val) {
-	double oldVal = quadRate[quadNodeIndex(p,K)];
-	double diff = val - oldVal;
-	for (int lev = 0; lev <= K; ++lev) {
-	    int n = quadNodeIndex(p,lev);
-	    quadRate[n] = Math.max (quadRate[n] + diff, 0);
-	}
-    }
-
-    private void sampleQuadLeaf(Point p) {
-	int node = 0;
-	p.x = p.y = 0;
-	for (int lev = 0; lev < K; ++lev) {
-	    double prob = rnd.nextDouble() * quadRate[node];
-	    int whichChild = 0, childNode = -1;
-	    while (true) {
-		childNode = quadChildIndex(node,lev,whichChild);
-		prob -= quadRate[childNode];
-		if (prob < 0 || whichChild == 3)
-		    break;
-		++whichChild;
-	    }
-	    node = childNode;
-	    p.y = (p.y << 1) | (whichChild >> 1);
-	    p.x = (p.x << 1) | (whichChild & 1);
-	}
-    }
-
-    private double topQuadRate() { return quadRate[0]; }
-
     // update methods
-    // getRandomPair returns dir
+    // getRandomPair places coordinates of a random pair in (p,n) and returns direction from p to n
     public final int getRandomPair(Point p,Point n) {
-	sampleQuadLeaf(p);
+	quad.sampleQuadLeaf(p,rnd);
 	int dir = readCell(p).sampleDir(rnd);
 	getNeighbor(p,n,dir);
 	return dir;
@@ -184,7 +125,7 @@ public class Board extends MooreTopology {
     public final void update(double boardUpdates,BoardRenderer renderer) {
 	int updatedCells = 0;
 	Point p = new Point(), n = new Point();
-	double maxUpdates = boardUpdates * topQuadRate();
+	double maxUpdates = boardUpdates * quad.topQuadRate();
 	for (; updatedCells < maxUpdates; ++updatedCells) {
 
 	    int dir = getRandomPair(p,n);
