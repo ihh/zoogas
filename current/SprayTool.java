@@ -12,18 +12,18 @@ public class SprayTool {
     private Random rnd = new Random();
 
     // constructor
+    static RuleSyntax toolSyntax = new RuleSyntax("TOOL n= k= d=1 p=1 r=1 f=1 w=.1");
     static SprayTool fromString (String toolString, Board board) {
 	SprayTool stat = null;
-	String[] toolArgs = toolString.split(" ");
-	if (toolArgs.length == 7) {
+	if (toolSyntax.matches(toolString)) {
 	    stat = new SprayTool();
-	    stat.particleName = toolArgs[0];
-	    stat.hotKey = toolArgs[1].charAt(0);
-	    stat.sprayDiameter = new Double(toolArgs[2]).doubleValue();
-	    stat.sprayPower = new Double(toolArgs[3]).doubleValue();
-	    stat.maxReserve = new Double(toolArgs[4]).doubleValue();
-	    stat.refillRate = new Double(toolArgs[5]).doubleValue();
-	    stat.barWidth = new Double(toolArgs[6]).doubleValue();
+	    stat.particleName = toolSyntax.getValue("n");
+	    stat.hotKey = toolSyntax.getValue("k").charAt(0);
+	    stat.sprayDiameter = Double.parseDouble(toolSyntax.getValue("d"));
+	    stat.sprayPower = Double.parseDouble(toolSyntax.getValue("p"));
+	    stat.maxReserve = Double.parseDouble(toolSyntax.getValue("r"));
+	    stat.refillRate = Double.parseDouble(toolSyntax.getValue("f"));
+	    stat.barWidth = Double.parseDouble(toolSyntax.getValue("w"));
 	} else
 	    System.err.println("Wrong no. of args in toolString '" + toolString + "'");
 	stat.particle = board.getOrCreateParticle (stat.particleName);

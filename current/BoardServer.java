@@ -1,7 +1,6 @@
 import java.net.*;
 import java.util.regex.*;
 import java.io.*;
-import java.awt.*;
 
 public class BoardServer extends Thread {
     protected Board board = null;
@@ -23,7 +22,7 @@ public class BoardServer extends Thread {
 
 	    // uncomment to log all incoming commands
 	    //	    logCommand (args);
-		    
+
 	    if (match(args,"BYE",1))
 		listening = false;
 
@@ -53,17 +52,18 @@ public class BoardServer extends Thread {
 		Point localSource = new Point(toInt(args[1]), toInt(args[2]));
 		Particle newSourceState = board.getParticleByName (args[3]);
 		if (newSourceState == null) {
-		    // TODO: create newSourceState as an inert "guest" particle and write it
 		    // TODO: request information about newSourceState from connecting board
 		} else {
 		    double energyInput = toDouble(args[4]);
 		    int oldWriteCount = toInt(args[5]);
 
-		    if (oldWriteCount == board.getCellWriteCount(localSource))
-			if (board.energyDeltaAcceptable(localSource,newSourceState,-energyInput)) {
-			    board.writeCell (localSource, newSourceState);
-			    renderer.drawCell (localSource);
-			}
+		    if (oldWriteCount == board.getCellWriteCount(localSource)) {
+			board.removeBonds (localSource);
+			board.writeCell (localSource, newSourceState);
+			// note that incoming particles are never bonded to anything...
+			// ...so we always accept the move regardless of the energy input
+			renderer.drawCell (localSource);
+		    }
 		}
 
 	    } else if (match(args,"CONNECT",7)) {
@@ -95,7 +95,7 @@ public class BoardServer extends Thread {
 
     private static void logCommand (String[] args) {
 	StringBuffer join = new StringBuffer("BoardServer: >>");
-	for (int a = 0; a < args.length - 1; ++a) {
+	for (int a = 0; a < args.length; ++a) {
 	    join.append (" " + args[a]);
 	}
 	System.err.println (join + " <<");
@@ -103,7 +103,7 @@ public class BoardServer extends Thread {
 
     static void sendDatagram (InetAddress addr, int port, String data) {
 	// uncomment to log all outgoing datagrams
-	// System.err.println ("Send UDP datagram '" + data + "' to " + addr + " port " + port);
+	//	System.err.println ("Send UDP datagram '" + data + "' to " + addr + " port " + port);
 	try {
 	    // get a datagram socket
 	    DatagramSocket socket = new DatagramSocket();

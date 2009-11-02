@@ -1,7 +1,6 @@
 import java.net.*;
 import java.util.regex.*;
 import java.io.*;
-import java.awt.*;
 
 public class UpdateServer extends BoardServer {
     private DatagramSocket socket = null;

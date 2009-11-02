@@ -17,7 +17,7 @@ all zoogas: classfiles
 classfiles class: $(CLASSFILES)
 
 clean:
-	rm $(CLASSFILES)
+	rm *.class
 
 testserver: classfiles
 	$(JAVA) $(ZOOGAS) 4444

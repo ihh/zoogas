@@ -2,17 +2,15 @@ import java.lang.*;
 import java.util.*;
 import java.util.regex.*;
 import java.text.*;
-import java.awt.*;
 import java.net.*;
 import java.io.*;
 
 
 // RuleMatch - a partially- or fully-bound RulePattern.
-// For minilanguage syntax see subclasses TransformRuleMatch, EnergyRuleMatch
 public class RuleMatch {
     // data
     protected RulePattern pattern = null;
-    private Board board = null;
+    protected Board board = null;
     private int dir = -1;
 
     private Pattern aPattern = null, abPattern = null;

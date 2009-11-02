@@ -17,10 +17,19 @@ public class EnergyRuleMatch extends RuleMatch {
 
     // constructors
     public EnergyRuleMatch(EnergyRulePattern p) { super(p); }
-    public EnergyRuleMatch(EnergyRulePattern p,Board board,int dir) { super(p,board,dir); }
+    public EnergyRuleMatch(EnergyRulePattern p,Board board) { super(p,board,-1); }
 
     // rule accessor
     public final EnergyRulePattern energyPattern() { return (EnergyRulePattern) pattern; }
+
+    // override expandDir to do nothing (hacky; refactor at some point to put expandDir in TransformRuleMatch)
+    protected String expandDir (String s) { return s; }
+
+    // overload matches
+    public boolean matches(String sourceName, String targetName, long sourceTargetTaxiLen) {
+	EnergyRulePattern rp = energyPattern();
+	return super.matches(sourceName,targetName) && sourceTargetTaxiLen >= rp.minLen && sourceTargetTaxiLen <= rp.maxLen;
+    }
 
     // other public methods
     public final double E() { return energyPattern().E; }

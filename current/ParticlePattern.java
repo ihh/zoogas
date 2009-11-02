@@ -1,8 +1,8 @@
 import java.lang.*;
 import java.util.*;
 import java.util.regex.*;
+import java.awt.Color;
 import java.text.*;
-import java.awt.*;
 import java.net.*;
 import java.io.*;
 
@@ -12,17 +12,19 @@ public class ParticlePattern {
     Color color = null;
     
     // constructors
+    static Pattern catchAllPattern = Pattern.compile(".*");
     public ParticlePattern (String n, Color c) {
-	namePattern = Pattern.compile(n);
+	try {
+	    namePattern = Pattern.compile(n);
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    namePattern = catchAllPattern;
+	}
 	color = c;
     }
 
-    public ParticlePattern (String nc) {
-	String[] args = nc.split(" ");
-	if (args.length >= 4) {
-	    namePattern = Pattern.compile (args[0]);
-	    color = new Color (Integer.parseInt(args[1]), Integer.parseInt(args[2]), Integer.parseInt(args[3]));
-	}
+    public ParticlePattern (String n, String colorString) {
+	this(n,new Color(Integer.parseInt(colorString,16)));
     }
 
     // method to match a name and return a Particle, or null if match fails
