@@ -48,8 +48,8 @@ VERB s=photon/$F t=[^_].* S=photon/$++R T=$T p=.05 v=reflect
 VERB s=photon/$B t=.* S=_ T=$T p=.001 v=scatter
 
 # Initial conditions
-VERB s=/INIT.* t=_ S=beacon T=_ v=/start
-#VERB s=/INIT.* t=_ S=_ T=_ v=/start
+#VERB s=/INIT.* t=_ S=beacon T=_ v=/start
+VERB s=/INIT.* t=_ S=_ T=_ v=/start
 
 # Animal rules. This is where the ecology actually happens.
 # Successful predation

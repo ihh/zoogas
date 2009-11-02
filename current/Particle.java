@@ -121,6 +121,7 @@ public class Particle {
 
     // method to compile transformation rules for a new target Particle
     RandomVariable<UpdateEvent> compileTransformRules (Particle target, int dir) {
+
 	//	System.err.println ("Compiling transformation rules for " + name + " " + target.name);
 	RandomVariable<UpdateEvent> rv = new RandomVariable<UpdateEvent>();
 	for (int n = 0; n < transformRuleMatch[dir].length; ++n) {
@@ -134,6 +135,8 @@ public class Particle {
 		String verb = rm.V();
 		double prob = rm.P() / transformRate[dir];
 
+		TransformRulePattern trp = rm.transformPattern();
+
 		// we now have everything we need from rm
 		// therefore, unbind it so we can call getOrCreateParticle (which may re-bind and therefore corrupt it)
 		rm.unbindSourceAndTarget();
@@ -145,7 +148,8 @@ public class Particle {
 		    System.err.println ("Null outcome of rule '" + rm.pattern + "': "
 					+ name + " " + target.name + " -> " + cName + " " + dName);
 		} else {
-		    UpdateEvent pp = new UpdateEvent (newSource, newTarget, verb, rm.transformPattern());
+
+		    UpdateEvent pp = new UpdateEvent (this, target, newSource, newTarget, verb, trp);
 		    rv.add (pp, prob);
 		}
 	    }

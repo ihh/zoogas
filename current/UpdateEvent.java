@@ -9,15 +9,27 @@ public class UpdateEvent {
     private HashMap<String,Point> bondLabel = null;
     HashMap<String,Point> sIncoming = null, sOutgoing = null, tIncoming = null, tOutgoing = null;
     Point sourceCoords = null, targetCoords = null;
+    Particle oldSource = null, oldTarget = null;
 
     // methods
     // constructor
-    public UpdateEvent (Particle s, Particle t, String v, TransformRulePattern p) {
+    public UpdateEvent (Particle sOld, Particle tOld, Particle s, Particle t, String v, TransformRulePattern p) {
 	source = s;
 	target = t;
 	verb = v;
 	pattern = p;
+	oldSource = sOld;
+	oldTarget = tOld;
 	initBondLabel();
+    }
+
+    // bond pattern accessors
+    protected boolean keepsSourceBonds() {
+	return source == oldSource && sIncoming == null && sOutgoing == null;
+    }
+
+    protected boolean keepsTargetBonds() {
+	return target == oldTarget && tIncoming == null && tOutgoing == null;
     }
 
     // bondLabel init method
@@ -33,6 +45,7 @@ public class UpdateEvent {
 	boolean match = true;
 	sourceCoords = sc;
 	targetCoords = tc;
+
 	if (bondLabel != null) {
 	    bondLabel.clear();
 
@@ -146,25 +159,29 @@ public class UpdateEvent {
     // helpers
     public double energyDelta(Board board) {
 	double oldEnergy = 0, newEnergy = 0;
-	boolean sourceHere = sourceCoords != null && board.onBoard(sourceCoords);
-	boolean targetHere = sourceCoords != null && board.onBoard(sourceCoords);
-	if (sourceHere && targetHere) {
+	boolean sourceChanged = sourceCoords != null && board.onBoard(sourceCoords) && !keepsSourceBonds();
+	boolean targetChanged = targetCoords != null && board.onBoard(targetCoords) && !keepsTargetBonds();
+	if (sourceChanged && targetChanged) {
 	    oldEnergy = board.bondEnergy(sourceCoords,targetCoords);
 	    newEnergy = board.bondEnergy(sourceCoords,targetCoords,source,target,sIncoming,sOutgoing,tIncoming,tOutgoing);
-	} else if (sourceHere && !targetHere) {
+	} else if (sourceChanged && !targetChanged) {
 	    oldEnergy = board.bondEnergy(sourceCoords);
 	    newEnergy = board.bondEnergy(sourceCoords,source,sIncoming,sOutgoing);
-	} else if (!sourceHere && targetHere) {
+	} else if (!sourceChanged && targetChanged) {
 	    oldEnergy = board.bondEnergy(targetCoords);
 	    newEnergy = board.bondEnergy(targetCoords,target,tIncoming,tOutgoing);
 	}
+
 	return newEnergy - oldEnergy;
     }
 
     public void write(Board board) {
-	board.removeBonds(targetCoords);
+
+	if (!keepsTargetBonds())
+	    board.removeBonds(targetCoords);
 	if (sourceCoords != null && board.onBoard(sourceCoords)) {
-	    board.removeBonds(sourceCoords);
+	    if (!keepsSourceBonds())
+		board.removeBonds(sourceCoords);
 	    board.writeCell(sourceCoords,source);
 	    board.addIncoming(sourceCoords,sIncoming);
 	    board.addOutgoing(sourceCoords,sOutgoing);
