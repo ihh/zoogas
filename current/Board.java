@@ -276,7 +276,7 @@ public class Board extends MooreTopology {
 	    pp = evolveLocalSourceAndLocalTarget (sourceCoords, targetCoords, dir);
 	} else {
 	    // request remote evolveLocalTargetForRemoteSource
-	    RemoteCellCoord remoteCoords = (RemoteCellCoord) remoteCell.get (targetCoords);
+	    RemoteCellCoord remoteCoords = remoteCell.get (targetCoords);
 	    if (remoteCoords != null)
 		evolveLocalSourceAndRemoteTarget (sourceCoords, remoteCoords, dir);
 	}
@@ -286,16 +286,17 @@ public class Board extends MooreTopology {
     // evolveLocalSourceAndRemoteTarget: send an EVOLVE datagram to the network address of a remote cell.
     protected final void evolveLocalSourceAndRemoteTarget (Point sourceCoords, RemoteCellCoord remoteCoords, int dir) {
 	Particle oldSourceState = readCell(sourceCoords);
+
 	if (oldSourceState.isActive(dir)) {
 
 	    if (oldSourceState.name.equals("_")) {
 		System.err.println("Oops, this can't be good: empty space (_) is active. Rules:");
-		Set<String> actives = oldSourceState.transform.get(dir).keySet();
-		for (Iterator<String> a = actives.iterator(); a.hasNext(); )
-		    System.err.println("_ " + a.next());
+		Set<Particle> actives = oldSourceState.transform.get(dir).keySet();
+		for (Iterator<Particle> a = actives.iterator(); a.hasNext(); )
+		    System.err.println("_ " + a.next().name);
 	    }
 
-	    double energyBarrier = -bondEnergy(sourceCoords);
+	    double energyBarrier = -bondEnergy(sourceCoords);  // activation energy for a cross-border move involves breaking all local bonds
 	    BoardServer.sendEvolveDatagram (remoteCoords.addr, remoteCoords.port, remoteCoords.p, oldSourceState, sourceCoords, dir, energyBarrier, localhost, boardServerPort, getCellWriteCount(sourceCoords));
 	}
     }
@@ -327,43 +328,29 @@ public class Board extends MooreTopology {
 	Particle oldTargetState = readCell (targetCoords);
 
 	// sample new state-pair
-	UpdateEvent newCellPair = oldSourceState.samplePair (dir, oldTargetState, rnd, sourceCoords, targetCoords);
+	UpdateEvent proposedUpdate = oldSourceState.samplePair (dir, oldTargetState, rnd);
+	UpdateEvent acceptedUpdate = null;
 
-	if (newCellPair != null) {
-	    Particle newSourceState = newCellPair.source;
-	    Particle newTargetState = newCellPair.target;
-	    // test for null
-	    if (newSourceState == null || newTargetState == null) {
-		throw new RuntimeException ("Null outcome of rule: " + oldSourceState.name + " " + oldTargetState.name + " -> " + (newSourceState == null ? "[null]" : newSourceState.name) + " " + (newTargetState == null ? "[null]" : newTargetState.name));
-	    } else {
-		// update particles and bonds
-		//		System.err.println("Firing rule "+newCellPair.verb+" from "+sourceCoords+" to "+targetCoords);
-		removeBonds(targetCoords);
-		if (onBoard(sourceCoords)) {
-		    removeBonds(sourceCoords);
-		    writeCell (sourceCoords, newSourceState, oldSourceState);
-		    addIncoming(sourceCoords,newCellPair.sIncoming);
-		    addOutgoing(sourceCoords,newCellPair.sOutgoing);
+	// if move is non-null, bonds match and energy difference is acceptable, then write the update
+	if (proposedUpdate != null)
+	    if (proposedUpdate.bindBonds(sourceCoords,targetCoords,this))
+		if (acceptUpdate(proposedUpdate,energyBarrier)) {  // must call bindBonds before acceptUpdate
+		    proposedUpdate.write(this);
+		    acceptedUpdate = proposedUpdate;
 		}
-		writeCell (targetCoords, newTargetState, oldTargetState);
-		addIncoming(targetCoords,newCellPair.tIncoming);
-		addOutgoing(targetCoords,newCellPair.tOutgoing);
-	    }
-	}
 
 	// return
-	return newCellPair;
+	return acceptedUpdate;
     }
 
-    // methods to return the "Hastings ratio" for a given energy delta
-    public final double hastingsRatio (double energyDelta) {
-	return
-	    energyDelta > 0
-	    ? 1
-	    : Math.pow(10,energyDelta);
+    // method to accept or reject a move based on the "Hastings ratio" for a given energy delta
+    public final boolean acceptUpdate (UpdateEvent e, double energyBarrier) {
+	double energyDelta = energyBarrier + e.energyDelta(this);
+	boolean accept = energyDelta > 0 ? true : (rnd.nextDouble() < Math.pow(10,energyDelta));
+	return accept;
     }
 
-    // method to calculate the interaction energy of a cell with its bond partners.
+    // method to calculate the interaction energy of a cell (p) with its bond partners.
     // if q != null, then q will be excluded from the set of partners.
     public final double bondEnergy (Point p, Point q, Particle pState, Map<String,Point> incoming, Map<String,Point> outgoing) {
 	double E = 0;
@@ -387,7 +374,12 @@ public class Board extends MooreTopology {
 	return E;
     }
 
-    // method to calculate the bond energy of two cells.
+    // wrapper for bondEnergy with no excluded point
+    public final double bondEnergy (Point p, Particle pState, Map<String,Point> incoming, Map<String,Point> outgoing) {
+	return bondEnergy(p,null,pState,incoming,outgoing);
+    }
+
+    // method to calculate the bond energy of two cells with given states and bonds.
     public final double bondEnergy (Point p, Point q, Particle pState, Particle qState, Map<String,Point> pIn, Map<String,Point> pOut, Map<String,Point> qIn, Map<String,Point> qOut) {
 	double E = 0;
 	Point n = new Point();
@@ -456,8 +448,17 @@ public class Board extends MooreTopology {
     }
 
     protected final void addRemoteCellCoord (Point p, InetSocketAddress remoteBoard, Point pRemote) {
-	System.err.println("Connecting (" + p.x + "," + p.y + ") to (" + pRemote.x + "," + pRemote.y + ") on " + remoteBoard);
-	remoteCell.put (new Point(p), new RemoteCellCoord (remoteBoard, pRemote));
+	System.err.println("Connecting " + p + " to " + pRemote + " on " + remoteBoard);
+	Point q = new Point(p);
+	Point r = new Point(p);
+	remoteCell.put (q, new RemoteCellCoord (remoteBoard, pRemote));
+	/*
+	    System.err.println(q+" "+q.hashCode());
+	    System.err.println(r+" "+r.hashCode());
+	    System.err.println(q.equals(r) ? "equal" : "inequal");
+	    System.err.println(remoteCell.get(q)!=null ? "q stored" : "q lost");
+	    System.err.println(remoteCell.get(r)!=null ? "r found" : "r not found");
+	*/
     }
 
     // Particle name-indexing methods

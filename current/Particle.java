@@ -17,7 +17,7 @@ public class Particle {
     PatternSet patternSet = null;
 
     // transformation rules
-    protected ArrayList<HashMap<String,RandomVariable<UpdateEvent>>> transform = null;  // production rules; array is indexed by neighbor direction, Map is indexed by Particle
+    protected ArrayList<HashMap<Particle,RandomVariable<UpdateEvent>>> transform = null;  // production rules; array is indexed by neighbor direction, Map is indexed by Particle
     protected TransformRuleMatch[][] transformRuleMatch = null;  // generators for production rules; outer array is indexed by neighbor direction, inner array is the set of partially-bound rules for that direction
     protected double[] transformRate = null;  // sum of transformation regex rates, indexed by direction
     protected double totalTransformRate = 0;  // sum of transformation regex rates in all directions
@@ -43,12 +43,12 @@ public class Particle {
 	this.patternSet = ps;
 	// init transformation rule patterns in each direction
 	int N = board.neighborhoodSize();
-	transform = new ArrayList<HashMap<String,RandomVariable<UpdateEvent>>>(N);
+	transform = new ArrayList<HashMap<Particle,RandomVariable<UpdateEvent>>>(N);
 	transformRuleMatch = new TransformRuleMatch[N][];
 	transformRate = new double[N];
 	
 	for (int n = 0; n < N; ++n) {
-	    transform.add(new HashMap<String,RandomVariable<UpdateEvent>>());
+	    transform.add(new HashMap<Particle,RandomVariable<UpdateEvent>>());
 	    transformRuleMatch[n] = patternSet.getSourceTransformRules(name,n);
 
 	    transformRate[n] = 0;
@@ -101,16 +101,15 @@ public class Particle {
 
     // helper to sample a new (source,target) pair
     // returns null if no rule found
-    public final UpdateEvent samplePair (int dir, Particle oldTarget, Random rnd, Point sourceCoords, Point targetCoords) {
-	String desc = board.pairNeighborhoodDescription(sourceCoords,targetCoords);
+    public final UpdateEvent samplePair (int dir, Particle oldTarget, Random rnd) {
 	RandomVariable<UpdateEvent> rv = null;
-	if (transform.get(dir).containsKey(desc)) {
-	    rv = transform.get(dir).get(desc);
+	if (transform.get(dir).containsKey(oldTarget)) {
+	    rv = transform.get(dir).get(oldTarget);
 	} else {
 	    // if no RV, look for rule generator(s) that match this neighbor, and use them to create a set of rules
 	    if (patternSet != null) {
-		rv = compileTransformRules(oldTarget,dir,sourceCoords,targetCoords);
-		transform.get(dir).put (desc, rv);
+		rv = compileTransformRules(oldTarget,dir);
+		transform.get(dir).put (oldTarget, rv);
 	    }
 	}
 	// have we got an RV?
@@ -121,25 +120,19 @@ public class Particle {
     }
 
     // method to compile transformation rules for a new target Particle
-    RandomVariable<UpdateEvent> compileTransformRules (Particle target, int dir, Point sourceCoords, Point targetCoords) {
+    RandomVariable<UpdateEvent> compileTransformRules (Particle target, int dir) {
 	//	System.err.println ("Compiling transformation rules for " + name + " " + target.name);
 	RandomVariable<UpdateEvent> rv = new RandomVariable<UpdateEvent>();
 	for (int n = 0; n < transformRuleMatch[dir].length; ++n) {
 
 	    TransformRuleMatch rm = transformRuleMatch[dir][n];
 
-	    if (rm.bindSource(name) && rm.bindTarget(target.name) && rm.bindBonds(sourceCoords,targetCoords)) {
+	    if (rm.bindSource(name) && rm.bindTarget(target.name)) {
 
 		String cName = rm.C();
 		String dName = rm.D();
 		String verb = rm.V();
 		double prob = rm.P() / transformRate[dir];
-
-		HashMap<String,Point>
-		    si = rm.sIncoming(),
-		    so = rm.sOutgoing(),
-		    ti = rm.tIncoming(),
-		    to = rm.tOutgoing();
 
 		// we now have everything we need from rm
 		// therefore, unbind it so we can call getOrCreateParticle (which may re-bind and therefore corrupt it)
@@ -152,16 +145,8 @@ public class Particle {
 		    System.err.println ("Null outcome of rule '" + rm.pattern + "': "
 					+ name + " " + target.name + " -> " + cName + " " + dName);
 		} else {
-		    UpdateEvent pp = new UpdateEvent (newSource, newTarget, verb);
-		    pp.sIncoming = si;
-		    pp.sOutgoing = so;
-		    pp.tIncoming = ti;
-		    pp.tOutgoing = to;
-		    double newEnergy = board.bondEnergy(sourceCoords,targetCoords,newSource,newTarget,si,so,ti,to);
-		    double oldEnergy = board.bondEnergy(sourceCoords,targetCoords);
-		    double energyDelta = newEnergy - oldEnergy;
-		    pp.energyDelta = energyDelta;
-		    rv.add (pp, prob * board.hastingsRatio(energyDelta));
+		    UpdateEvent pp = new UpdateEvent (newSource, newTarget, verb, rm.transformPattern());
+		    rv.add (pp, prob);
 		}
 	    }
 	    rm.unbindSourceAndTarget();

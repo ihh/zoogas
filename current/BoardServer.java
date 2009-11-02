@@ -61,6 +61,7 @@ public class BoardServer extends Thread {
 			board.removeBonds (localSource);
 			board.writeCell (localSource, newSourceState);
 			// note that incoming particles are never bonded to anything...
+			// ...so we always accept the move regardless of the energy input
 			renderer.drawCell (localSource);
 		    }
 		}
@@ -94,7 +95,7 @@ public class BoardServer extends Thread {
 
     private static void logCommand (String[] args) {
 	StringBuffer join = new StringBuffer("BoardServer: >>");
-	for (int a = 0; a < args.length - 1; ++a) {
+	for (int a = 0; a < args.length; ++a) {
 	    join.append (" " + args[a]);
 	}
 	System.err.println (join + " <<");
@@ -102,7 +103,7 @@ public class BoardServer extends Thread {
 
     static void sendDatagram (InetAddress addr, int port, String data) {
 	// uncomment to log all outgoing datagrams
-	// System.err.println ("Send UDP datagram '" + data + "' to " + addr + " port " + port);
+	//	System.err.println ("Send UDP datagram '" + data + "' to " + addr + " port " + port);
 	try {
 	    // get a datagram socket
 	    DatagramSocket socket = new DatagramSocket();

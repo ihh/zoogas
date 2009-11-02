@@ -12,6 +12,6 @@ public class RemoteCellCoord {
 	this.sockAddr = sockAddr;
 	this.addr = sockAddr.getAddress();
 	this.port = sockAddr.getPort();
-	this.p = p;
+	this.p = new Point(p);
     }
 }

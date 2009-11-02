@@ -48,8 +48,8 @@ VERB s=photon/$F t=[^_].* S=photon/$++R T=$T p=.05 v=reflect
 VERB s=photon/$B t=.* S=_ T=$T p=.001 v=scatter
 
 # Initial conditions
-#VERB s=/INIT.* t=_ S=beacon T=_ v=/start
-VERB s=/INIT.* t=_ S=_ T=_ v=/start
+VERB s=/INIT.* t=_ S=beacon T=_ v=/start
+#VERB s=/INIT.* t=_ S=_ T=_ v=/start
 
 # Animal rules. This is where the ecology actually happens.
 # Successful predation
@@ -216,7 +216,7 @@ BOND s=conga.* t=conga.* n=handsToHips e=+5
 
 # jiggle the conga guests at max speed, since most of their random steps are rejected anyway
 VERB s=conga_dude t=_ S=$T T=$S p=1 v=go_nuts k=(x,handsToHips,sT) k=(sT,handsToHips,y)
-VERB s=conga_dude t=.* S=_ T=$T p=.001 v=expire
+VERB s=conga_dude t=.* S=_ T=$T p=.01 v=expire
 
 
 # RNA
@@ -259,24 +259,21 @@ VERB s=basepair_(.)(.) t=_ S=base_$1 T=base_$2 p=1 v=unpair_$1_from_$2 b=(s,f5to
 # all bases and basepairs do Brownian drift
 VERB s=(base|basepair)_.* t=_ S=$T T=$S p=1 v=/drift k=(sT,5to3,x) k=(y,5to3,sT) k=(sT,f5to3,xf) k=(yf,f5to3,sT) k=(sT,r5to3,xr) k=(yr,r5to3,sT)
 
-# all bases and basepairs will eventually disappear if they become unbonded
-VERB s=(base|basepair)_.* S=_ p=.01 v=/drain
+# all bases, basepairs and constructors will eventually disappear if they become unbonded
+VERB s=(base|basepair)_.* S=_ p=.01 v=/degrade
 
 
 # now here is the constructor for an RNA sequence
 # pick a direction, d
 # To prevent collisions, just set this to east for now; but could use d:$F
 # this rule is slow, to allow adequate sampling of chain IDs via the previous rule
-VERB s=RNA_sequence_[acgu]+ t=.* S=$S/begin/d:e T=$T p=.05 v=/pick_direction
+VERB s=RNA_sequence_[acgu]+ t=.* S=$S/d:e T=$T p=.05 v=/pick_direction
 
 # generate first base
-VERB s=(RNA_sequence_)([acgu])([acgu]+)/begin(/d:$F) t=_ S=base_$2 T=$1$3$4 p=1 v=generate_first_base_$2 B=(s,5to3,t)
+VERB s=(RNA_sequence_)([acgu])([acgu]+)(/d:$F) t=_ S=base_$2 T=$1$3$4 p=1 v=generate_base_$2 B=(s,5to3,t) k=(x,5to3,s)
 
-# generate internal base
-VERB s=(RNA_sequence_)([acgu])([acgu]+)(/d:$F) t=_ S=base_$2 T=$1$3$4 p=1 v=generate_internal_base_$2 B=(s,5to3,t) b=(x,5to3,s) B=(x,5to3,s)
-
-# generate last base (NB won't handle one-base sequences)
-VERB s=(RNA_sequence_)([acgu])/.* t=.* S=base_$2 T=$T p=1 v=generate_last_base_$2 b=(x,5to3,s) B=(x,5to3,s)
+# generate last base
+VERB s=(RNA_sequence_)([acgu])/.* t=.* S=base_$2 T=$T p=1 v=generate_last_base_$2 k=(x,5to3,s)
 
 
 # allow run-length encoding of RNA sequences
