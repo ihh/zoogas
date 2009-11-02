@@ -1,6 +1,5 @@
 import java.util.*;
 import java.util.regex.*;
-import java.awt.Point;
 
 // Syntax for regexp-based production rule generators:
 //  A B C D P V
@@ -35,8 +34,10 @@ public class TransformRuleMatch extends RuleMatch {
 
     // bondLabel init method
     private void initBondLabel() {
-	if (transformPattern().lhsBond != null && transformPattern().lhsBond.size() > 0)
+	if ((transformPattern().lhsBond != null && transformPattern().lhsBond.size() > 0)
+	    || (transformPattern().rhsBond != null && transformPattern().rhsBond.size() > 0)) {
 	    bondLabel = new HashMap<String,Point>();
+	}
     }
 
     // rule accessor
@@ -45,14 +46,34 @@ public class TransformRuleMatch extends RuleMatch {
     // binding methods for bonds
     // this is currently not quite a first-class binding method (unlike bindSource or bindTarget), since it is ignored by the superclass matches() method
     public boolean bindBonds (Point sourceCoords, Point targetCoords) {
-	boolean lhsBondMatches = true;
+	boolean match = true;
 	if (bondLabel != null) {
 	    bondLabel.clear();
+	    // s and t are bound to source & target cells
 	    bondLabel.put("s",sourceCoords);
 	    bondLabel.put("t",targetCoords);
+	    // sT and tS are bound to source & target cells on LHS, but are switched on RHS (to help with diffusion moves)
+	    bondLabel.put("sT",sourceCoords);
+	    bondLabel.put("tS",targetCoords);
 	    Vector<BondPattern> lhsBond = transformPattern().lhsBond;
-	    if (lhsBond != null)
-		for (int n = 0; lhsBondMatches && n < lhsBond.size(); ++n) {
+	    Vector<BondPattern> excludedLhsBond = transformPattern().excludedLhsBond;
+	    // test for excluded bonds
+	    if (excludedLhsBond != null)
+		for (int n = 0; match && n < excludedLhsBond.size(); ++n) {
+		    BondPattern bp = excludedLhsBond.get(n);
+		    if (bondLabel.containsKey(bp.beginPointLabel)) {
+			Point beginPoint = bondLabel.get(bp.beginPointLabel);
+			Point bondEndPoint = board.outgoing(beginPoint,bp.bondName);
+			if (bondLabel.containsKey(bp.endPointLabel)) {
+			    Point endPoint = bondLabel.get(bp.endPointLabel);
+			    if (endPoint.equals(bondEndPoint))
+				match = false;
+			}
+		    }
+		}
+	    // bind bond labels
+	    if (match && lhsBond != null)
+		for (int n = 0; n < lhsBond.size(); ++n) {
 		    BondPattern bp = lhsBond.get(n);
 		    if (bondLabel.containsKey(bp.beginPointLabel)) {
 			Point beginPoint = bondLabel.get(bp.beginPointLabel);
@@ -60,46 +81,50 @@ public class TransformRuleMatch extends RuleMatch {
 			if (bondLabel.containsKey(bp.endPointLabel)) {
 			    Point endPoint = bondLabel.get(bp.endPointLabel);
 			    Point bondBeginPoint = board.incoming(endPoint,bp.bondName);
-			    if (!endPoint.equals(bondEndPoint) || !beginPoint.equals(bondBeginPoint))
-				lhsBondMatches = false;
+			    if (!endPoint.equals(bondEndPoint) || !beginPoint.equals(bondBeginPoint)) {
+				System.err.println("bond mismatch");
+			    }
 			} else {
-			    if (bondEndPoint == null)
-				lhsBondMatches = false;
-			    else
+			    if (bondEndPoint != null)
 				bondLabel.put(bp.endPointLabel,bondEndPoint);
 			}
 		    } else if (bondLabel.containsKey(bp.endPointLabel)) {
 			Point endPoint = bondLabel.get(bp.endPointLabel);
 			Point bondBeginPoint = board.incoming(endPoint,bp.bondName);
-			if (bondBeginPoint == null)
-			    lhsBondMatches = false;
-			else
+			if (bondBeginPoint != null)
 			    bondLabel.put(bp.beginPointLabel,bondBeginPoint);
 		    }
 		}
+	    // swap sT and tS
+	    bondLabel.put("sT",targetCoords);
+	    bondLabel.put("tS",sourceCoords);
 	}
-	return lhsBondMatches;
+	return match;
     }
 
-    public HashMap<String,Integer> sIncoming() { return getHashMap("s",false); }
-    public HashMap<String,Integer> sOutgoing() { return getHashMap("s",true); }
-    public HashMap<String,Integer> tIncoming() { return getHashMap("t",false); }
-    public HashMap<String,Integer> tOutgoing() { return getHashMap("t",true); }
+    public HashMap<String,Point> sIncoming() { return getHashMap("s",false,""); }
+    public HashMap<String,Point> sOutgoing() { return getHashMap("s",true,""); }
+    public HashMap<String,Point> tIncoming() { return getHashMap("t",false,"s"); }
+    public HashMap<String,Point> tOutgoing() { return getHashMap("t",true,"s"); }
 
-    private HashMap<String,Integer> getHashMap(String label,boolean begin) {
-	HashMap<String,Integer> bondDir = null;
-	
+    private HashMap<String,Point> getHashMap(String label,boolean begin,String ignoreLabel) {
+	HashMap<String,Point> bondDir = null;
+
 	if (bondLabel != null) {
 	    Vector<BondPattern> rhsBond = transformPattern().rhsBond;
 	    if (rhsBond != null) {
 		Point coords = bondLabel.get(label);
 		for (int n = 0; n < rhsBond.size(); ++n) {
 		    BondPattern bp = rhsBond.get(n);
-		    if (label.equals(begin ? bp.beginPointLabel : bp.endPointLabel)) {
+		    String bpLabel = begin ? bp.beginPointLabel : bp.endPointLabel;
+		    if (bondLabel.containsKey(bpLabel) && bondLabel.get(bpLabel).equals(coords)) {
 			String otherLabel = begin ? bp.endPointLabel : bp.beginPointLabel;
-			if (bondDir == null)
-			    bondDir = new HashMap<String,Integer>();
-			bondDir.put(bp.bondName,board.getNeighborDirection(coords,bondLabel.get(otherLabel)));
+			if (bondLabel.containsKey(otherLabel) && !otherLabel.equals(ignoreLabel)) {
+			    Point otherCoords = bondLabel.get(otherLabel);
+			    if (bondDir == null)
+				bondDir = new HashMap<String,Point>();
+			    bondDir.put(bp.bondName,otherCoords.subtract(coords));
+			}
 		    }
 		}
 	    }

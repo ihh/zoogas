@@ -1,7 +1,7 @@
 import java.lang.*;
 import java.util.*;
 import java.text.*;
-import java.awt.*;
+import java.awt.Color;
 import java.awt.image.*;
 import java.net.*;
 import java.io.*;
@@ -88,7 +88,6 @@ public class Board extends MooreTopology {
 
     public final void writeCell (Point p, Particle pc) {
 	writeCell (p, pc, readCell(p));
-	quad.updateQuadTree (p, pc.normalizedTotalTransformRate());
     }
 
     private final void writeCell (Point p, Particle pc, Particle old_pc) {
@@ -98,22 +97,23 @@ public class Board extends MooreTopology {
 	    if (old_pc != null)
 		old_pc.decReferenceCount();
 	    pc.incReferenceCount();
+	    quad.updateQuadTree (p, pc.normalizedTotalTransformRate());
 	}
     }
 
     // bond accessors
-    public Map<String,Integer> incoming (Point p) {
+    public Map<String,Point> incoming (Point p) {
 	return cell[p.x][p.y].incoming;
     }
 
-    public Map<String,Integer> outgoing (Point p) {
+    public Map<String,Point> outgoing (Point p) {
 	return cell[p.x][p.y].outgoing;
     }
 
     public Point incoming (Point p, String bond) {
 	if (cell[p.x][p.y].incoming.containsKey(bond)) {
-	    Point q = new Point();
-	    getNeighbor(p,q,cell[p.x][p.y].incoming.get(bond));
+	    Point delta = cell[p.x][p.y].incoming.get(bond);
+	    Point q = p.add(delta);
 	    return q;
 	}
 	return null;
@@ -121,30 +121,31 @@ public class Board extends MooreTopology {
 
     public Point outgoing (Point p, String bond) {
 	if (cell[p.x][p.y].outgoing.containsKey(bond)) {
-	    Point q = new Point();
-	    getNeighbor(p,q,cell[p.x][p.y].outgoing.get(bond));
+	    Point delta = cell[p.x][p.y].outgoing.get(bond);
+	    Point q = p.add(delta);
 	    return q;
 	}
 	return null;
     }
 
-
     public void removeBonds (Point p) {
-	Map<String,Integer> in = incoming(p), out = outgoing(p);
+	Map<String,Point> in = incoming(p), out = outgoing(p);
 	if (in.size() > 0 || out.size() > 0) {
 	    Point q = new Point();
-	    for (Iterator<Map.Entry<String,Integer>> iter = in.entrySet().iterator(); iter.hasNext(); ) {
-		Map.Entry<String,Integer> kv = iter.next();
-		getNeighbor(p,q,kv.getValue().intValue());
+	    for (Iterator<Map.Entry<String,Point>> iter = in.entrySet().iterator(); iter.hasNext(); ) {
+		Map.Entry<String,Point> kv = iter.next();
+		p.add(kv.getValue(),q);
 		if (onBoard(q))
 		    outgoing(q).remove(kv.getKey());
+		//		System.err.println("Removing bond "+kv.getKey()+" from "+q+" to "+p);
 	    }
 	    in.clear();
-	    for (Iterator<Map.Entry<String,Integer>> iter = out.entrySet().iterator(); iter.hasNext(); ) {
-		Map.Entry<String,Integer> kv = iter.next();
-		getNeighbor(p,q,kv.getValue().intValue());
+	    for (Iterator<Map.Entry<String,Point>> iter = out.entrySet().iterator(); iter.hasNext(); ) {
+		Map.Entry<String,Point> kv = iter.next();
+		p.add(kv.getValue(),q);
 		if (onBoard(q))
 		    incoming(q).remove(kv.getKey());
+		//		System.err.println("Removing bond "+kv.getKey()+" from "+p+" to "+q);
 	    }
 	    out.clear();
 	}
@@ -154,30 +155,31 @@ public class Board extends MooreTopology {
 	int ns = neighborhoodSize();
 	int dir = getNeighborDirection(p,q);
 	int rev = reverseDir(dir);
-	outgoing(p).put(bond,dir);
-	incoming(q).put(bond,rev);
+	outgoing(p).put(bond,q.subtract(p));
+	incoming(q).put(bond,p.subtract(q));
+	//	System.err.println("Adding bond "+bond+" from "+p+" to "+q);
     }
 
-    public void addIncoming (Point p, Map<String,Integer> bondDir) {
+    public void addIncoming (Point p, Map<String,Point> bondDir) {
 	if (bondDir != null && bondDir.size() > 0) {
 	    Point q = new Point();
-	    for (Iterator<Map.Entry<String,Integer>> iter = bondDir.entrySet().iterator(); iter.hasNext(); ) {
-		Map.Entry<String,Integer> kv = iter.next();
-		getNeighbor(p,q,kv.getValue().intValue());
+	    for (Iterator<Map.Entry<String,Point>> iter = bondDir.entrySet().iterator(); iter.hasNext(); ) {
+		Map.Entry<String,Point> kv = iter.next();
+		p.add(kv.getValue(),q);
 		if (onBoard(q))
-		    addBond(p,q,kv.getKey());
+		    addBond(q,p,kv.getKey());
 	    }
 	}
     }
 
-    public void addOutgoing (Point p, Map<String,Integer> bondDir) {
+    public void addOutgoing (Point p, Map<String,Point> bondDir) {
 	if (bondDir != null && bondDir.size() > 0) {
 	    Point q = new Point();
-	    for (Iterator<Map.Entry<String,Integer>> iter = bondDir.entrySet().iterator(); iter.hasNext(); ) {
-		Map.Entry<String,Integer> kv = iter.next();
-		getNeighbor(p,q,reverseDir(kv.getValue().intValue()));
+	    for (Iterator<Map.Entry<String,Point>> iter = bondDir.entrySet().iterator(); iter.hasNext(); ) {
+		Map.Entry<String,Point> kv = iter.next();
+		p.add(kv.getValue(),q);
 		if (onBoard(q))
-		    addBond(q,p,kv.getKey());
+		    addBond(p,q,kv.getKey());
 	    }
 	}
     }
@@ -209,6 +211,22 @@ public class Board extends MooreTopology {
     public int reverseDir(int dir) {
 	int ns = neighborhoodSize();
 	return (dir + (ns >> 1)) % ns;
+    }
+
+    // helper to turn a vector into a string
+    public String vectorString(Point delta) {
+	StringBuffer sb = new StringBuffer();
+	if (delta.y > 0)
+	    sb.append("s" + (delta.y > 1 ? delta.y : ""));
+	else if (delta.y < 0)
+	    sb.append("n" + (delta.y < -1 ? -delta.y : ""));
+	if (delta.x > 0)
+	    sb.append("e" + (delta.x > 1 ? delta.x : ""));
+	else if (delta.x < 0)
+	    sb.append("w" + (delta.x < -1 ? -delta.x : ""));
+	else if (delta.y == 0)  // delta.x == 0 && delta.y == 0
+	    sb.append("0");
+	return sb.toString();
     }
 
     // update methods
@@ -271,13 +289,13 @@ public class Board extends MooreTopology {
 	if (oldSourceState.isActive(dir)) {
 
 	    if (oldSourceState.name.equals("_")) {
-		System.err.println("_ is active");
+		System.err.println("Oops, this can't be good: empty space (_) is active. Rules:");
 		Set<String> actives = oldSourceState.transform.get(dir).keySet();
 		for (Iterator<String> a = actives.iterator(); a.hasNext(); )
 		    System.err.println("_ " + a.next());
 	    }
 
-	    double energyBarrier = -neighborhoodEnergy(sourceCoords);
+	    double energyBarrier = -bondEnergy(sourceCoords);
 	    BoardServer.sendEvolveDatagram (remoteCoords.addr, remoteCoords.port, remoteCoords.p, oldSourceState, sourceCoords, dir, energyBarrier, localhost, boardServerPort, getCellWriteCount(sourceCoords));
 	}
     }
@@ -287,10 +305,7 @@ public class Board extends MooreTopology {
     // returns a UpdateEvent
     synchronized public final UpdateEvent evolveLocalSourceAndLocalTarget (Point sourceCoords, Point targetCoords, int dir)
     {
-	UpdateEvent newCellPair = evolveTargetForSource(sourceCoords,targetCoords,readCell(sourceCoords),dir,0);
-	if (newCellPair != null)
-	    writeCell (sourceCoords, newCellPair.source);
-	return newCellPair;
+	return evolveTargetForSource(sourceCoords,targetCoords,readCell(sourceCoords),dir,0);
     }
 
     // SYNCHRONIZED : this is one of two synchronized methods in this class
@@ -303,7 +318,7 @@ public class Board extends MooreTopology {
     }
 
     // evolveTargetForSource : given a source state, and the co-ords of a target cell,
-    // sample the new (source,target) state configuration, accept/reject based on energy difference,
+    // sample the new (source,target) state configuration,
     // write the updated target, and return the updated (source,target) pair.
     // The source cell coords are provided, but may be null if the source cell is off-board.
     public final UpdateEvent evolveTargetForSource (Point sourceCoords, Point targetCoords, Particle oldSourceState, int dir, double energyBarrier)
@@ -312,7 +327,7 @@ public class Board extends MooreTopology {
 	Particle oldTargetState = readCell (targetCoords);
 
 	// sample new state-pair
-	UpdateEvent newCellPair = oldSourceState.samplePair (dir, oldTargetState, rnd, sourceCoords, targetCoords, this);
+	UpdateEvent newCellPair = oldSourceState.samplePair (dir, oldTargetState, rnd, sourceCoords, targetCoords);
 
 	if (newCellPair != null) {
 	    Particle newSourceState = newCellPair.source;
@@ -321,22 +336,18 @@ public class Board extends MooreTopology {
 	    if (newSourceState == null || newTargetState == null) {
 		throw new RuntimeException ("Null outcome of rule: " + oldSourceState.name + " " + oldTargetState.name + " -> " + (newSourceState == null ? "[null]" : newSourceState.name) + " " + (newTargetState == null ? "[null]" : newTargetState.name));
 	    } else {
-		// test energy difference and write, or reject
-		// TODO: replace this with a test based on old & new bond energies
-		if (energyDeltaAcceptable(sourceCoords,targetCoords,dir,oldSourceState,oldTargetState,newSourceState,newTargetState,energyBarrier)) {
-		    //		    System.err.println ("Firing rule: " + oldSourceState.name + " " + oldTargetState.name + " -> " + newSourceState.name + " " + newTargetState.name + " " + newCellPair.verb);
-		    removeBonds(targetCoords);
-		    if (onBoard(sourceCoords))
-			removeBonds(sourceCoords);
-		    writeCell (targetCoords, newTargetState);
+		// update particles and bonds
+		//		System.err.println("Firing rule "+newCellPair.verb+" from "+sourceCoords+" to "+targetCoords);
+		removeBonds(targetCoords);
+		if (onBoard(sourceCoords)) {
+		    removeBonds(sourceCoords);
+		    writeCell (sourceCoords, newSourceState, oldSourceState);
 		    addIncoming(sourceCoords,newCellPair.sIncoming);
 		    addOutgoing(sourceCoords,newCellPair.sOutgoing);
-		    addIncoming(targetCoords,newCellPair.tIncoming);
-		    addOutgoing(targetCoords,newCellPair.tOutgoing);
-		    // TODO: add new bonds
-		} else {
-		    newCellPair = null;
 		}
+		writeCell (targetCoords, newTargetState, oldTargetState);
+		addIncoming(targetCoords,newCellPair.tIncoming);
+		addOutgoing(targetCoords,newCellPair.tOutgoing);
 	    }
 	}
 
@@ -344,78 +355,74 @@ public class Board extends MooreTopology {
 	return newCellPair;
     }
 
-    // methods to test if a move is energetically acceptable
-    public final boolean energyDeltaAcceptable (Point coords, Particle newState, double energyBarrier) {
-	return energyDeltaAcceptable (null, coords, -1, null, readCell(coords), null, newState, energyBarrier);
-    }
-    public final boolean energyDeltaAcceptable (Point sourceCoords, Point targetCoords, int dir, Particle oldSourceState, Particle oldTargetState, Particle newSourceState, Particle newTargetState) {
-	return energyDeltaAcceptable (sourceCoords, targetCoords, dir, oldSourceState, oldTargetState, newSourceState, newTargetState, 0);
-    }
-    public final boolean energyDeltaAcceptable (Point sourceCoords, Point targetCoords, int dir, Particle oldSourceState, Particle oldTargetState, Particle newSourceState, Particle newTargetState, double energyBarrier) {
-
-	double energyDelta = energyBarrier +
-	    (sourceCoords == null
-	     ? neighborhoodEnergyDelta(targetCoords,oldTargetState,newTargetState)
-	     : neighborhoodEnergyDelta(sourceCoords,targetCoords,dir,oldSourceState,oldTargetState,newSourceState,newTargetState));
-
-	//	if (energyDelta < 0)
-	//	    System.err.println("Gain in energy (" + -energyDelta + "): " + oldSourceState.name + " " + oldTargetState.name + " -> " + newSourceState.name + " " + newTargetState.name);
-
+    // methods to return the "Hastings ratio" for a given energy delta
+    public final double hastingsRatio (double energyDelta) {
 	return
 	    energyDelta > 0
-	    ? true
-	    : rnd.nextDouble() < Math.pow(10,energyDelta);
+	    ? 1
+	    : Math.pow(10,energyDelta);
     }
 
-    // method to calculate the absolute interaction energy of a cell with its neighbors.
-    public final double neighborhoodEnergy (Point p) {
-	return neighborhoodEnergyDelta (p, null, readCell(p), null);
-    }
-
-    // methods to calculate the energy of a cell neighborhood, if the cell is in a particular state.
-    // a single neighbor can optionally be excluded from the sum (this aids in pair-cell neighborhood calculations).
-    public final double neighborhoodEnergyDelta (Point p, Particle oldState, Particle newState) {
-	return oldState == newState ? 0 : neighborhoodEnergyDelta (p, oldState, newState, null);
-    }
-    public final double neighborhoodEnergyDelta (Point p, Particle oldState, Particle newState, Point exclude) {
-	double delta = 0;
-	if (oldState != newState) {
-	    int N = neighborhoodSize();
-	    Point q = new Point();
-	    for (int d = 0; d < N; ++d) {
-		getNeighbor(p,q,d);
-		if (q != exclude && onBoard(q)) {
-		    Particle nbrState = readCell(q);
-		    delta += newState.symmetricPairEnergy(nbrState,d);
-		    if (oldState != null)
-			delta -= oldState.symmetricPairEnergy(nbrState,d);
-		}
+    // method to calculate the interaction energy of a cell with its bond partners.
+    // if q != null, then q will be excluded from the set of partners.
+    public final double bondEnergy (Point p, Point q, Particle pState, Map<String,Point> incoming, Map<String,Point> outgoing) {
+	double E = 0;
+	Point n = new Point();
+	if (incoming != null)
+	    for (Iterator<Map.Entry<String,Point>> iter = incoming.entrySet().iterator(); iter.hasNext(); ) {
+		Map.Entry<String,Point> kv = iter.next();
+		Point delta = kv.getValue();
+		p.add(delta,n);
+		if (onBoard(n) && (q == null || !n.equals(q)))
+		    E += patternSet.getEnergy(readCell(n).name,pState.name,kv.getKey(),delta);
 	    }
-	}
-	return delta;
+	if (outgoing != null)
+	    for (Iterator<Map.Entry<String,Point>> iter = outgoing.entrySet().iterator(); iter.hasNext(); ) {
+		Map.Entry<String,Point> kv = iter.next();
+		Point delta = kv.getValue();
+		p.add(delta,n);
+		if (onBoard(n) && (q == null || !n.equals(q)))
+		    E += patternSet.getEnergy(pState.name,readCell(n).name,kv.getKey(),delta);
+	    }
+	return E;
     }
 
-    // method to calculate the change in energy of a joint neighborhood around a given pair of cells in a particular pair-state.
-    // ("joint neighborhood" means the union of the neighborhoods of the two cells.)
-    public final double neighborhoodEnergyDelta (Point sourceCoords, Point targetCoords, int dir, Particle oldSourceState, Particle oldTargetState, Particle newSourceState, Particle newTargetState) {
-	return
-	    neighborhoodEnergyDelta(sourceCoords,oldSourceState,newSourceState,targetCoords)
-	    + neighborhoodEnergyDelta(targetCoords,oldTargetState,newTargetState,sourceCoords)
-	    + newSourceState.symmetricPairEnergy(newTargetState,dir) - oldSourceState.symmetricPairEnergy(oldTargetState,dir);
+    // method to calculate the bond energy of two cells.
+    public final double bondEnergy (Point p, Point q, Particle pState, Particle qState, Map<String,Point> pIn, Map<String,Point> pOut, Map<String,Point> qIn, Map<String,Point> qOut) {
+	double E = 0;
+	Point n = new Point();
+	if (pOut != null)
+	    for (Iterator<Map.Entry<String,Point>> iter = pOut.entrySet().iterator(); iter.hasNext(); ) {
+		Map.Entry<String,Point> kv = iter.next();
+		Point delta = kv.getValue();
+		p.add(delta,n);
+		if (n.equals(q))
+		    E += patternSet.getEnergy(pState.name,qState.name,kv.getKey(),delta);
+	    }
+	return E + bondEnergy(p,q,pState,pIn,pOut) + bondEnergy(q,p,qState,qIn,qOut);
+    }
+
+    // bondEnergy wrappers that read incoming & outgoing bond sets from the Board
+    public final double bondEnergy (Point p) {
+	return bondEnergy (p, null, readCell(p), incoming(p), outgoing(p));
+    }
+
+    public final double bondEnergy (Point p, Point q) {
+	return bondEnergy (p, q, readCell(p), readCell(q), incoming(p), outgoing(p), incoming(q), outgoing(q));
     }
 
     // method returning a description of a cell neighborhood (including incoming & outgoing bonds) as a String
-    private final String singleNeighborhoodDescription(Point p,boolean includeSelf) {
+    protected final String singleNeighborhoodDescription(Point p,boolean includeSelf) {
 	StringBuffer sb = new StringBuffer();
 	if (includeSelf)
 	    sb.append(readCell(p).name+" ");
-	for (Iterator<Map.Entry<String,Integer>> iter = incoming(p).entrySet().iterator(); iter.hasNext(); ) {
-	    Map.Entry<String,Integer> kv = iter.next();
-	    sb.append("<"+dirString(kv.getValue().intValue())+":"+kv.getKey());
+	for (Iterator<Map.Entry<String,Point>> iter = incoming(p).entrySet().iterator(); iter.hasNext(); ) {
+	    Map.Entry<String,Point> kv = iter.next();
+	    sb.append("<"+vectorString(kv.getValue())+":"+kv.getKey());
 	}
-	for (Iterator<Map.Entry<String,Integer>> iter = outgoing(p).entrySet().iterator(); iter.hasNext(); ) {
-	    Map.Entry<String,Integer> kv = iter.next();
-	    sb.append(">"+dirString(kv.getValue().intValue())+":"+kv.getKey());
+	for (Iterator<Map.Entry<String,Point>> iter = outgoing(p).entrySet().iterator(); iter.hasNext(); ) {
+	    Map.Entry<String,Point> kv = iter.next();
+	    sb.append(">"+vectorString(kv.getValue())+":"+kv.getKey());
 	}
 	return sb.toString();
     }
@@ -452,7 +459,6 @@ public class Board extends MooreTopology {
 	System.err.println("Connecting (" + p.x + "," + p.y + ") to (" + pRemote.x + "," + pRemote.y + ") on " + remoteBoard);
 	remoteCell.put (new Point(p), new RemoteCellCoord (remoteBoard, pRemote));
     }
-
 
     // Particle name-indexing methods
     protected final void registerParticle (Particle p) {
@@ -531,14 +537,13 @@ public class Board extends MooreTopology {
 
     // debug
     String debugDumpStats() {
-	int energyRules = 0, transRules = 0, outcomes = 0;
+	int transRules = 0, outcomes = 0;
 	for (Iterator<Particle> iter = nameToParticle.values().iterator(); iter.hasNext(); ) {
 	    Particle p = iter.next();
-	    energyRules += p.energyRules();
 	    transRules += p.transformationRules();
 	    outcomes += p.outcomes();
 	}
-	return nameToParticle.size() + " states, " + energyRules + " energies, " + transRules + " rules, " + outcomes + " outcomes";
+	return nameToParticle.size() + " states, " + transRules + " rules, " + outcomes + " outcomes";
     }
 }
 

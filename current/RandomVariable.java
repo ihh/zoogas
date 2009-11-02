@@ -7,7 +7,7 @@ public class RandomVariable<V> {
     // private data
     private SortedMap<Double,V> cumprob2obj = new TreeMap<Double,V>();
     private Map<V,Double> obj2prob = new HashMap<V,Double>();
-    private double totalWeight = 0;
+    private double totalWeight = 0, closedWeight = 0;
 
     // private methods
     private final void rebuild() {
@@ -30,26 +30,26 @@ public class RandomVariable<V> {
 
     public final void add (V o, double p) {
 	if (obj2prob.containsKey(o)) {
-	    obj2prob.put (o, new Double(p));
+	    if (p > 0)
+		obj2prob.put (o, new Double(p));
+	    else
+		obj2prob.remove (o);
 	    rebuild();
-	} else {
+	} else if (p > 0) {
 	    obj2prob.put (o, new Double(p));
 	    accumulate (o, p);
 	}
     }
 
-    public final void close (V o) {
-	if (totalWeight < 1 && size() > 0)
-	    add (o, 1 - totalWeight);
-	else if (totalWeight > 1) {
-	    //	    System.err.println ("Warning: closing pattern with totalWeight " + totalWeight);
-	}
+    public final void close() {
+	closedWeight = totalWeight < 1 ? 1 : totalWeight;
     }
 
     public final V sample (Random rnd) {
 	if (size() > 0) {
-	    double p = rnd.nextDouble() * totalWeight;
-	    return cumprob2obj.get (cumprob2obj.headMap(new Double(p)).lastKey());
+	    double p = rnd.nextDouble() * closedWeight;
+	    if (p <= totalWeight)
+		return cumprob2obj.get (cumprob2obj.headMap(new Double(p)).lastKey());
 	}
 	return null;
     }

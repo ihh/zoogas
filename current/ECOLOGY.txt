@@ -48,8 +48,8 @@ VERB s=photon/$F t=[^_].* S=photon/$++R T=$T p=.05 v=reflect
 VERB s=photon/$B t=.* S=_ T=$T p=.001 v=scatter
 
 # Initial conditions
-VERB s=/INIT.* t=_ S=beacon T=_ v=/start
-#VERB s=/INIT.* t=_ S=_ T=_ v=/start
+#VERB s=/INIT.* t=_ S=beacon T=_ v=/start
+VERB s=/INIT.* t=_ S=_ T=_ v=/start
 
 # Animal rules. This is where the ecology actually happens.
 # Successful predation
@@ -206,17 +206,17 @@ VERB s=conga t=.* S=conga_head/pos:30 T=$T p=.3 v=start_monsta_conga
 # the first rule randomly picks $DIR
 #VERB s=conga_head/pos:(\d+) t=.* S=conga_head/dir:$F/pos:$1 T=$T p=1 v=line_em_up
 VERB s=conga_head/pos:(\d+) t=.* S=conga_head/dir:e/pos:$1 T=$T p=1 v=line_em_up
-VERB s=conga_head/dir:$F/pos:([1-9]\d*) t=_ S=conga_dude/pos:$1/next:$-1 T=conga_head/dir:$F/pos:$-1 p=1 v=partay
-VERB s=conga_head/dir:.*/pos:0 t=_ S=conga_dude/pos:0 T=_ p=1 v=reach_the_end
+VERB s=conga_head/dir:$F/pos:([1-9]\d*) t=_ S=conga_dude T=conga_head/dir:$F/pos:$-1 p=1 v=partay B=(s,handsToHips,t) k=(x,handsToHips,s)
+VERB s=conga_head/dir:.*/pos:0 t=_ S=conga_dude T=_ p=1 v=reach_the_end k=(x,handsToHips,s)
 
 # this is the energy term that effectively creates a covalent bond between consecutive monomers (conga_dude's)
 # since the energy of this bond is -5, the probability of spontaneously breaking it is 1e-5
 # thus, moves that break a bond will typically be rejected.
-BOND s=conga.*/next:(\d+)(/.*|) t=conga.*/pos:\1(/.*|) e=+5
+BOND s=conga.* t=conga.* n=handsToHips e=+5
 
 # jiggle the conga guests at max speed, since most of their random steps are rejected anyway
-VERB s=conga_dude.* t=_ S=$T T=$S p=1 v=go_nuts
-VERB s=conga_dude.* t=.* S=_ T=$T p=.001 v=expire
+VERB s=conga_dude t=_ S=$T T=$S p=1 v=go_nuts k=(x,handsToHips,sT) k=(sT,handsToHips,y)
+VERB s=conga_dude t=.* S=_ T=$T p=.001 v=expire
 
 
 # RNA
@@ -241,59 +241,42 @@ NOUN n=basepair_uu.* c=6000c0
 # define the covalent bond between consecutive bases on the same chain
 # bond endpoint identifiers are /5p and /3p
 # start with base->...
-BOND s=base_.*/5p:(\d+).* t=(RNA_sequence|base|basepair)_.*/3p:\1(/.*|) e=+10
+BOND n=5to3 s=(RNA_sequence|base|basepair)_.* t=(RNA_sequence|base|basepair)_.* e=+10
+BOND n=f5to3 s=(RNA_sequence|base|basepair)_.* t=(RNA_sequence|base|basepair)_.* e=+10
+BOND n=r5to3 s=(RNA_sequence|base|basepair)_.* t=(RNA_sequence|base|basepair)_.* e=+10
 
-# define the basepair->base and basepair->RNA_sequence bonds
-# (RNA_sequence is a constructor for a chain of bases)
-BOND s=basepair_.*/5p:(\d+).* t=(RNA_sequence|base)_.*/3p:\1(/.*|) e=+10
-
-# define the basepair->basepair bond a bit more carefully
-# we have to specify the f and r strand linkages separately, because individual BOND s=rules t=only e=-fire once (just like individual VERBs)
-BOND s=basepair_.*/f[^r]*/5p:(\d+).* t=basepair_.*/f[^r]*/3p:\1(/.*|) e=+10
-BOND s=basepair_.*/r[^f]*/5p:(\d+).* t=basepair_.*/r[^f]*/3p:\1(/.*|) e=+10
-
-# define the stabilizing self-energy of a Watson-Crick basepair
-# this will fire once for every cell in the neighborhood (i.e. eight times for the Moore topology), so keep the energy low
+# define the stabilizing energy of a Watson-Crick basepair, and the destabilizing energy of other basepairs
 # obviously some kind of self-energy would be a cleaner & more efficient way to formulate this
-BOND s=basepair_(au|cg|gc|ua)/.* t=.* e=+.0125
+BOND n=f5to3 s=basepair_(au|cg|gc|ua) e=+.1
+BOND n=f5to3 s=basepair_(aa|ac|ag|ca|cc|cu|ga|gg|uc|uu) e=-5
 
-# define the stabilizing self-energy of a wobble basepair
-# this will fire once for every cell in the neighborhood (i.e. eight times for the Moore topology), so keep the energy low
-# obviously some kind of self-energy would be a cleaner & more efficient way to formulate this
-BOND s=basepair_(gu|ug)/.* t=.* e=+.01
+# to make a basepair, merge two bases and their upstream(x) and downstream(y) bonds
+VERB s=base_(.) t=base_(.) S=basepair_$1$2 T=_ p=1 v=pair_$1_to_$2 x=(s,5to3,t) x=(t,5to3,s) b=(s,5to3,xf) B=(s,f5to3,xf) b=(yf,5to3,s) B=(yf,f5to3,s) b=(t,5to3,xr) B=(s,r5to3,xr) b=(yr,5to3,t) B=(yr,r5to3,s)
 
-# define the destabilizing self-energy of a non-canonical (non-WC or wobble) basepair
-# this will fire once for every cell in the neighborhood (i.e. eight times for the Moore topology), so keep the energy low
-# obviously some kind of self-energy would be a cleaner & more efficient way to formulate this
-BOND s=basepair_(aa|ac|ag|ca|cc|cu|ga|uc|uu)/.* t=.* e=-.2
+# unpairing is the opposite move: we have to pick apart the x and y bonds
+VERB s=basepair_(.)(.) t=_ S=base_$1 T=base_$2 p=1 v=unpair_$1_from_$2 b=(s,f5to3,xf) B=(s,5to3,xf) b=(yf,f5to3,s) B=(yf,5to3,s) b=(s,r5to3,xr) B=(t,5to3,xr) b=(yr,r5to3,s) B=(yr,5to3,t)
 
-# to make a basepair, merge two bases
-VERB s=base_(.)/(.*) t=base_(.)/(.*) S=basepair_$1$3/f/$2/r/$4 T=_ p=1 v=pair_$1_to_$3
+# all bases and basepairs do Brownian drift
+VERB s=(base|basepair)_.* t=_ S=$T T=$S p=1 v=/drift k=(sT,5to3,x) k=(y,5to3,sT) k=(sT,f5to3,xf) k=(yf,f5to3,sT) k=(sT,r5to3,xr) k=(yr,r5to3,sT)
 
-# unpairing is the opposite move: we have to pick apart the x and y blocks into two particles. tricky :)
-VERB s=basepair_(.)(.)/f/(.*)/r/(.*) t=_ S=base_$1/$3 T=base_$2/$4 p=1 v=unpair_$1_from_$2
-
-# all bases and basepairs do Brownian drift, subject to their energy constraints
-VERB s=(base|basepair)_.* t=_ S=$T T=$S p=1 v=/drift
+# all bases and basepairs will eventually disappear if they become unbonded
+VERB s=(base|basepair)_.* S=_ p=.01 v=/drain
 
 
 # now here is the constructor for an RNA sequence
-# cycle randomly through dangling bond IDs
-VERB s=RNA_sequence_[acgu]+ t=.* S=$S/next:0 T=$T p=1 v=/zero_chain_offset
-
-# cycle randomly through the dangling bond ID
-VERB s=(RNA_sequence_[acgu]+)/next:(\d+) t=.* S=$1/next:$%100+10.2 T=$T p=1 v=/rotate_chain_offset
-
 # pick a direction, d
 # To prevent collisions, just set this to east for now; but could use d:$F
 # this rule is slow, to allow adequate sampling of chain IDs via the previous rule
-VERB s=RNA_sequence_[acgu]+/next:\d+ t=.* S=$S/d:e T=$T p=.05 v=/pick_direction
+VERB s=RNA_sequence_[acgu]+ t=.* S=$S/begin/d:e T=$T p=.05 v=/pick_direction
 
-# generate a base
-VERB s=(RNA_sequence_)([acgu])([acgu]+)(/3p:\d+|)/next:(\d+)(/d:$F) t=_ S=base_$2$4/5p:$5 T=$1$3/3p:$5/next:$%100+1.5$6 p=1 v=generate_base_$2 B=(s,5to3,t)
+# generate first base
+VERB s=(RNA_sequence_)([acgu])([acgu]+)/begin(/d:$F) t=_ S=base_$2 T=$1$3$4 p=1 v=generate_first_base_$2 B=(s,5to3,t)
 
-# generate last base
-VERB s=(RNA_sequence_)([acgu])(/3p:\d+|)/next:(\d+)(/d:$F) t=.* S=base_$2$3 T=$T p=1 v=generate_base_$2 B=(s,5to3,t)
+# generate internal base
+VERB s=(RNA_sequence_)([acgu])([acgu]+)(/d:$F) t=_ S=base_$2 T=$1$3$4 p=1 v=generate_internal_base_$2 B=(s,5to3,t) b=(x,5to3,s) B=(x,5to3,s)
+
+# generate last base (NB won't handle one-base sequences)
+VERB s=(RNA_sequence_)([acgu])/.* t=.* S=base_$2 T=$T p=1 v=generate_last_base_$2 b=(x,5to3,s) B=(x,5to3,s)
 
 
 # allow run-length encoding of RNA sequences
@@ -309,5 +292,3 @@ VERB s=(RNA_sequence_[acgu]*)([acgu])(2)([^\d].*|) t=.* S=$1$2$2$4 T=$T p=1 v=/e
 # end of rules
 END
 
-# converted from previous file using the following one-liner
-# perl -i.bak -pe 's/NOUN (\S+) (\d+) (\d+) (\d+)/NOUN n=$1 c=@{[sprintf("%0.6x",$2*65536+$3*256+$4)]}/;s/VERB (\S+) (\S+) (\S+) (\S+) (\S+) (\S+)/VERB s=$1 t=$2 S=$3 T=$4 p=$5 v=$6/;s/ENERGY (\S+) (\S+) (\S+)/BOND s=$1 t=$2 e=@{[-$3]}/' ECOLOGY.txt

@@ -7,14 +7,16 @@
 
 public class EnergyRulePattern extends RulePattern {
     // data
+    String bondName = null;
+    int minLen = 1, maxLen = 1;
     double E = 0;
     
     // constructors
-    public EnergyRulePattern (String a, String b, double e) {
+    public EnergyRulePattern (String a, String b, String n, double e, int k, int l) {
 	super(a,b);
+	bondName = n;
+	minLen = k;
+	maxLen = l;
 	E = e;
     }
-
-    // toString method
-    public String toString() { return A + " " + B + " " + E; }
 }

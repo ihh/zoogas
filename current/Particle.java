@@ -1,8 +1,8 @@
 import java.lang.*;
 import java.util.*;
 import java.util.regex.*;
+import java.awt.Color;
 import java.text.*;
-import java.awt.*;
 import java.net.*;
 import java.io.*;
 
@@ -11,10 +11,9 @@ public class Particle {
     // appearance
     public static int maxNameLength = 256;  // maximum length of a Particle name. Introduced to stop runaway regex rules from crashing the engine
     public String name = null;  // noun uniquely identifying this Particle (no whitespace)
-    public String defaultVerb = null;
     public Color color = null;
 
-    // the PatternSet, i.e. the authority for all transformation, energy and color rules about this Particle
+    // the PatternSet, i.e. the authority for all transformation and color rules about this Particle
     PatternSet patternSet = null;
 
     // transformation rules
@@ -22,10 +21,6 @@ public class Particle {
     protected TransformRuleMatch[][] transformRuleMatch = null;  // generators for production rules; outer array is indexed by neighbor direction, inner array is the set of partially-bound rules for that direction
     protected double[] transformRate = null;  // sum of transformation regex rates, indexed by direction
     protected double totalTransformRate = 0;  // sum of transformation regex rates in all directions
-
-    // energy rules
-    protected ArrayList<HashMap<String,Double>> energy = null;  // interaction energies; Map is indexed by Particle
-    protected EnergyRuleMatch[][] energyRuleMatch = null;  // generators for interaction energies
 
     // reference counting
     private Board board = null;
@@ -46,13 +41,11 @@ public class Particle {
 	this.color = color;
 	this.board = board;
 	this.patternSet = ps;
-	// init transformation & energy rule patterns in each direction
+	// init transformation rule patterns in each direction
 	int N = board.neighborhoodSize();
 	transform = new ArrayList<HashMap<String,RandomVariable<UpdateEvent>>>(N);
 	transformRuleMatch = new TransformRuleMatch[N][];
 	transformRate = new double[N];
-	energy = new ArrayList<HashMap<String,Double>>();
-	energyRuleMatch = new EnergyRuleMatch[N][];
 	
 	for (int n = 0; n < N; ++n) {
 	    transform.add(new HashMap<String,RandomVariable<UpdateEvent>>());
@@ -62,9 +55,6 @@ public class Particle {
 	    for (int i = 0; i < transformRuleMatch[n].length; ++i)
 		transformRate[n] += transformRuleMatch[n][i].P();
 	    totalTransformRate += transformRate[n];
-
-	    energy.add(new HashMap<String,Double>());
-	    energyRuleMatch[n] = patternSet.getSourceEnergyRules(name,n);
 	}
 	// register with the Board for name lookup (NB this may prevent garbage collection, so we deregister later)
 	board.registerParticle(this);
@@ -109,12 +99,9 @@ public class Particle {
 	return d;
     }
 
-    // method to test if a Particle has energy rules
-    public final boolean hasEnergy() { return energyRuleMatch.length > 0; }
-
     // helper to sample a new (source,target) pair
     // returns null if no rule found
-    public final UpdateEvent samplePair (int dir, Particle oldTarget, Random rnd, Point sourceCoords, Point targetCoords, Board board) {
+    public final UpdateEvent samplePair (int dir, Particle oldTarget, Random rnd, Point sourceCoords, Point targetCoords) {
 	String desc = board.pairNeighborhoodDescription(sourceCoords,targetCoords);
 	RandomVariable<UpdateEvent> rv = null;
 	if (transform.get(dir).containsKey(desc)) {
@@ -133,30 +120,6 @@ public class Particle {
 	return null;
     }
 
-    // helper to calculate pairwise interaction energy with another Particle (one-way)
-    public final double pairEnergy (Particle p, int dir) {
-	double E = 0;
-	if (hasEnergy()) {
-	    if (energy.get(dir).containsKey(p.name)) {
-		E = energy.get(dir).get(p.name).doubleValue();
-	    } else {
-		// look for rule generator(s) that match this neighbor, and use them to calculate energy
-		if (patternSet != null) {
-		    E = compileEnergyRules(p,dir);
-		    energy.get(dir).put (p.name, new Double(E));
-		}
-	    }
-	}
-	// return
-	return E;
-    }
-
-    // helper to calculate symmetric form of pairEnergy
-    public final double symmetricPairEnergy (Particle p,int dir) {
-	int opposite = board.reverseDir(dir);
-	return pairEnergy(p,dir) + p.pairEnergy(this,opposite);
-    }
-
     // method to compile transformation rules for a new target Particle
     RandomVariable<UpdateEvent> compileTransformRules (Particle target, int dir, Point sourceCoords, Point targetCoords) {
 	//	System.err.println ("Compiling transformation rules for " + name + " " + target.name);
@@ -172,7 +135,11 @@ public class Particle {
 		String verb = rm.V();
 		double prob = rm.P() / transformRate[dir];
 
-		HashMap<String,Integer> si = rm.sIncoming(), so = rm.sOutgoing(), ti = rm.tIncoming(), to = rm.tOutgoing();
+		HashMap<String,Point>
+		    si = rm.sIncoming(),
+		    so = rm.sOutgoing(),
+		    ti = rm.tIncoming(),
+		    to = rm.tOutgoing();
 
 		// we now have everything we need from rm
 		// therefore, unbind it so we can call getOrCreateParticle (which may re-bind and therefore corrupt it)
@@ -187,51 +154,34 @@ public class Particle {
 		} else {
 		    UpdateEvent pp = new UpdateEvent (newSource, newTarget, verb);
 		    pp.sIncoming = si;
-		    pp.sOutgoing = si;
+		    pp.sOutgoing = so;
 		    pp.tIncoming = ti;
-		    pp.tOutgoing = ti;
-		    rv.add (pp, prob);
+		    pp.tOutgoing = to;
+		    double newEnergy = board.bondEnergy(sourceCoords,targetCoords,newSource,newTarget,si,so,ti,to);
+		    double oldEnergy = board.bondEnergy(sourceCoords,targetCoords);
+		    double energyDelta = newEnergy - oldEnergy;
+		    pp.energyDelta = energyDelta;
+		    rv.add (pp, prob * board.hastingsRatio(energyDelta));
 		}
 	    }
-
 	    rm.unbindSourceAndTarget();
-
 	}
-	rv.close (new UpdateEvent (this, target, defaultVerb));
+	rv.close();
 	return rv;
-    }
-
-    // method to compile energy rules for a new target Particle
-    double compileEnergyRules (Particle target, int dir) {
-	//	System.err.println ("Compiling energy rules for " + name + " " + target.name);
-	double E = 0;
-	for (int n = 0; n < energyRuleMatch[dir].length; ++n) {
-	    EnergyRuleMatch rm = energyRuleMatch[dir][n];
-	    if (rm.matches(name,target.name))
-		E += rm.E();
-	}
-	//	System.err.println ("Pair   " + name + " " + target.name + "   total energy is " + E);
-	return E;
     }
 
     // helper to flush caches
     protected void flushCaches() {
-	for (int d = 0; d < transform.size(); ++d) {
+	for (int d = 0; d < transform.size(); ++d)
 	    transform.get(d).clear();
-	    energy.get(d).clear();
-	}
     }
 
-    // helpers to count number of compiled transformation & energy rules
+    // helpers to count number of compiled transformation rules
     protected int transformationRules() {
 	int r = 0;
 	for (int d = 0; d < transform.size(); ++d)
 	    r += transform.get(d).size();
 	return r;
-    }
-
-    protected int energyRules() {
-	return energy.size();
     }
 
     // helper to count number of compiled transformation rule outcomes

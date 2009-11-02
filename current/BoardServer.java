@@ -1,7 +1,6 @@
 import java.net.*;
 import java.util.regex.*;
 import java.io.*;
-import java.awt.*;
 
 public class BoardServer extends Thread {
     protected Board board = null;
@@ -58,14 +57,12 @@ public class BoardServer extends Thread {
 		    double energyInput = toDouble(args[4]);
 		    int oldWriteCount = toInt(args[5]);
 
-		    if (oldWriteCount == board.getCellWriteCount(localSource))
-			// TODO: replace this call to energyDeltaAcceptable with a bond-based test
-			if (board.energyDeltaAcceptable(localSource,newSourceState,-energyInput)) {
-			    board.removeBonds (localSource);
-			    board.writeCell (localSource, newSourceState);
-			    // note that incoming particles are never bonded to anything...
-			    renderer.drawCell (localSource);
-			}
+		    if (oldWriteCount == board.getCellWriteCount(localSource)) {
+			board.removeBonds (localSource);
+			board.writeCell (localSource, newSourceState);
+			// note that incoming particles are never bonded to anything...
+			renderer.drawCell (localSource);
+		    }
 		}
 
 	    } else if (match(args,"CONNECT",7)) {

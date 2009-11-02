@@ -1,11 +1,11 @@
 import java.lang.*;
 import java.util.*;
 import java.text.*;
+import java.net.*;
+import java.io.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
-import java.net.*;
-import java.io.*;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.imageio.ImageIO;
@@ -72,7 +72,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     // Uncomment to use "helicopter.png" as a mouse cursor over the board:
     //    String boardCursorFilename = "helicopter.png";
     String boardCursorFilename = null;
-    Point boardCursorHotSpot = new Point(50,50);  // ignored unless boardCursorFilename != null
+    java.awt.Point boardCursorHotSpot = new java.awt.Point(50,50);  // ignored unless boardCursorFilename != null
 
     // helper objects
     Point cursorPos = null;  // co-ordinates of cell beneath current mouse position
@@ -184,7 +184,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
   
 	    //Load an image for the cursor  
 	    Image image = toolkit.getImage(boardCursorFilename);
-	    boardCursor = toolkit.createCustomCursor(image, boardCursorHotSpot, "ZooGasHelicopter");  
+	    boardCursor = toolkit.createCustomCursor(image, boardCursorHotSpot, "ZooGasHelicopter");
 	}
 
 	// register for mouse & keyboard events
@@ -243,7 +243,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 
     // getCursorPos() returns true if cursor is over board, and places cell coords in cursorPos
     private boolean getCursorPos() {
-	Point mousePos = getContentPane().getMousePosition();
+	Point mousePos = new Point(getContentPane().getMousePosition());
 	if (mousePos != null) {
 	    board.getCellCoords(mousePos,cursorPos,pixelsPerCell);
 	    return board.onBoard(cursorPos);
@@ -262,7 +262,6 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	} else
 	    toolBox.refill(1);
     }
-
 
     // BoardRenderer methods
     public void drawCell (Point p) {
@@ -341,7 +340,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	printOrHide (cursorParticle == null
 		     ? "Mouseover board to identify pixels"
 		     : "Under cursor:", nounRow, true, Color.white);
-	printOrHide (cursorOnBoard ? (cheatPressed ? cursorParticle.name : cursorParticle.visibleName()) : "", nounRow+1, cursorOnBoard, cursorOnBoard ? cursorParticle.color : Color.white);
+	printOrHide (cursorOnBoard ? (cheatPressed ? cursorParticle.name + " " + board.singleNeighborhoodDescription(cursorPos,false) : cursorParticle.visibleName()) : "", nounRow+1, cursorOnBoard, cursorOnBoard ? cursorParticle.color : Color.white);
 
 	// update rate and other stats
 	StringBuilder sb = new StringBuilder();
@@ -414,7 +413,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     public void mousePressed(MouseEvent e) {
 	mouseDown = true;
 
-	Point mousePos = getContentPane().getMousePosition();
+	Point mousePos = new Point(getContentPane().getMousePosition());
 	if (mousePos.x >= boardSize && mousePos.x < boardSize + toolBarWidth + toolLabelWidth)
 	    toolBox.clickSelect(mousePos.y);
     }

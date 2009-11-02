@@ -16,7 +16,7 @@ public class TransformRulePattern extends RulePattern {
     // data
     String C = null, D = null, V = null;
     double P = 0;
-    Vector<BondPattern> lhsBond = null, rhsBond = null;
+    Vector<BondPattern> lhsBond = null, excludedLhsBond = null, rhsBond = null;
 
     // constructors
     public TransformRulePattern (String a, String b, String c, String d, double p, String v) {
@@ -28,16 +28,15 @@ public class TransformRulePattern extends RulePattern {
     }
 
     // wrappers to add bonds
-    public void addLhsBonds(String[] b) { addBonds(lhsBond,b); }
-    public void addRhsBonds(String[] b) { addBonds(rhsBond,b); }
+    public void addLhsBonds(String[] b) { lhsBond = addBonds(lhsBond,b); }
+    public void addRhsBonds(String[] b) { rhsBond = addBonds(rhsBond,b); }
+    public void addExcludedLhsBonds(String[] b) { excludedLhsBond = addBonds(excludedLhsBond,b); }
 
-    private void addBonds(Vector<BondPattern> bondVec, String[] b) {
+    private Vector<BondPattern> addBonds(Vector<BondPattern> bondVec, String[] b) {
 	if (bondVec == null)
 	    bondVec = new Vector<BondPattern>(1);
 	for (int n = 0; n < b.length; ++n)
 	    bondVec.add(BondPattern.fromString(b[n]));
+	return bondVec;
     }
-
-    // toString method
-    public String toString() { return A + " " + B + " " + C + " " + D + " " + P + " " + V; }
 }

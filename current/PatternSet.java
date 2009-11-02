@@ -1,15 +1,11 @@
 import java.lang.*;
 import java.util.*;
 import java.util.regex.*;
+import java.awt.Color;
 import java.text.*;
-import java.awt.*;
 import java.net.*;
 import java.io.*;
 
-
-// Patterns are to be transmitted in a "Particle definition" packet with the following structure:
-// ParticlePatterns (one per line, format "NOUN NameRegex R G B", describing appearances of Particles to which this definition packet applies)
-// RulePatterns (one per line, format "VERB A B C D P V" - see RuleMatch.java for semantics)
 
 public class PatternSet {
     // data
@@ -22,19 +18,16 @@ public class PatternSet {
     // outer vector is indexed by neighbor direction, inner vector is the set of partially-bound rules for that direction
     private ArrayList<Vector<TransformRuleMatch>> transformRuleMatch = null;  // generators for production rules
 
-    // direction-bound energy rules
-    private ArrayList<Vector<EnergyRuleMatch>> energyRuleMatch = null;  // generators for interaction energies
+    // energy rules
+    private HashMap<String,Vector<EnergyRuleMatch>> energyRuleMatch = new HashMap<String,Vector<EnergyRuleMatch>>();
 
     // constructor
     PatternSet (Board board) {
 	this.board = board;
 	int ns = board.neighborhoodSize();
 	transformRuleMatch = new ArrayList<Vector<TransformRuleMatch>>(ns);
-	energyRuleMatch = new ArrayList<Vector<EnergyRuleMatch>>(ns);
-	for (int d = 0; d < ns; ++d) {
+	for (int d = 0; d < ns; ++d)
 	    transformRuleMatch.add (new Vector<TransformRuleMatch>());
-	    energyRuleMatch.add (new Vector<EnergyRuleMatch>());
-	}
     }
 
     // method to lay down a template for a Particle
@@ -52,6 +45,15 @@ public class PatternSet {
 	if (s.hasValue("B"))
 	    p.addRhsBonds(s.getValue("B").split(" "));
 
+	if (s.hasValue("k")) {
+	    String[] k = s.getValue("k").split(" ");
+	    p.addLhsBonds(k);
+	    p.addRhsBonds(k);
+	}
+
+	if (s.hasValue("x"))
+	    p.addExcludedLhsBonds(s.getValue("x").split(" "));
+
 	transformRulePattern.add (p);
 	for (int d = 0; d < board.neighborhoodSize(); ++d)
 	    transformRuleMatch.get(d).add (new TransformRuleMatch(p,board,d));
@@ -59,10 +61,12 @@ public class PatternSet {
 
     // method to lay down a template for an energy rule
     void addEnergyRule (RuleSyntax s) {
-	EnergyRulePattern p = new EnergyRulePattern(s.getValue("s"),s.getValue("t"),Double.parseDouble(s.getValue("e")));
-	energyRulePattern.add (p);
-	for (int d = 0; d < board.neighborhoodSize(); ++d)
-	    energyRuleMatch.get(d).add (new EnergyRuleMatch(p,board,d));
+	EnergyRulePattern p = new EnergyRulePattern(s.getValue("s"),s.getValue("t"),s.getValue("n"),Double.parseDouble(s.getValue("e")),
+						    Integer.parseInt(s.getValue("k")),Integer.parseInt(s.getValue("l")));
+	energyRulePattern.add(p);
+	if (!energyRuleMatch.containsKey(p.bondName))
+	    energyRuleMatch.put(p.bondName,new Vector<EnergyRuleMatch>());
+	energyRuleMatch.get(p.bondName).add(new EnergyRuleMatch(p,board));
     }
 
     // method to get a Particle from the Board object or create and add one
@@ -83,11 +87,9 @@ public class PatternSet {
 
     // helper to get a set of transformation rules for a given Particle/direction
     protected TransformRuleMatch[] getSourceTransformRules (String particleName, int dir) {
-	//	System.err.println ("Trying to match particle " + particleName + " to transformation rule generators");
 	Vector<TransformRuleMatch> v = new Vector<TransformRuleMatch>();
 	Vector<TransformRuleMatch> w = transformRuleMatch.get(dir);
 	for (int n = 0; n < w.size(); ++n) {
-	    //	    System.err.println ("Trying to match particle " + particleName + " to transformation rule " + (RulePattern) transformRulePattern.get(n));
 	    TransformRuleMatch rm = w.get(n);
 	    if (rm.matches(particleName))
 		v.add (rm);
@@ -98,20 +100,17 @@ public class PatternSet {
 	return rm;
     }
 
-    // helper to get a set of energy rules for a given Particle/direction
-    protected EnergyRuleMatch[] getSourceEnergyRules (String particleName, int dir) {
-	//	System.err.println ("Trying to match particle " + particleName + " to energy rule generators");
-	Vector<EnergyRuleMatch> v = new Vector<EnergyRuleMatch>();
-	for (int n = 0; n < energyRuleMatch.get(dir).size(); ++n) {
-	    //	    System.err.println ("Trying to match particle " + particleName + " to energy rule " + (RulePattern) energyRulePattern.get(n));
-	    EnergyRuleMatch rm = energyRuleMatch.get(dir).get(n);
-	    if (rm.matches(particleName))
-		v.add (rm);
+    // helper to get bond energy for a given particle pair
+    public double getEnergy(String sourceName,String targetName,String bondName,Point sourceToTarget) {
+	double E = 0;
+	long taxi = board.taxicab(sourceToTarget);
+	Vector<EnergyRuleMatch> rmVec = energyRuleMatch.get(bondName);
+	if (rmVec != null) {
+	    for (int n = 0; n < rmVec.size(); ++n)
+		if (rmVec.get(n).matches(sourceName,targetName,taxi))
+		    E += rmVec.get(n).E();
 	}
-	EnergyRuleMatch[] rm = new EnergyRuleMatch[v.size()];
-	for (int n = 0; n < v.size(); ++n)
-	    rm[n] = v.get(n);
-	return rm;
+	return E;
     }
 
     // i/o patterns and syntax parsers
@@ -119,8 +118,8 @@ public class PatternSet {
     static Pattern commentRegex = Pattern.compile(" *#.*");
     static Pattern nonWhitespaceRegex = Pattern.compile("\\S");
     static RuleSyntax nounSyntax = new RuleSyntax("NOUN n! c!");
-    static RuleSyntax verbSyntax = new RuleSyntax("VERB s= t=.* S=$S T=$T p=1 v=_ b* B*");
-    static RuleSyntax bondSyntax = new RuleSyntax("BOND s= t= e=");
+    static RuleSyntax verbSyntax = new RuleSyntax("VERB s= t=.* S=$S T=$T p=1 v=_ b* B* k* x*");
+    static RuleSyntax bondSyntax = new RuleSyntax("BOND n= e= s=.* t=.* k=1 l=1");
 
     // i/o methods
     static PatternSet fromStream (InputStream in, Board board) {

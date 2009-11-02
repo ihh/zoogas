@@ -3,17 +3,23 @@ import java.util.*;
 public class UpdateEvent {
     // data
     Particle source = null, target = null;
-    HashMap<String,Integer> sIncoming = null, sOutgoing = null, tIncoming = null, tOutgoing = null;
+    HashMap<String,Point> sIncoming = null, sOutgoing = null, tIncoming = null, tOutgoing = null;
     // everything below here ignored by equals() and hashCode() methods
     String verb = null;
-
+    double energyDelta = 0;
+    
     // methods
+    // constructor
     public UpdateEvent (Particle s, Particle t, String v) {
 	source = s;
 	target = t;
 	verb = v;
     }
 
+    // helpers
+    public boolean makesBonds() { return sIncoming != null || sOutgoing != null || tIncoming != null || tOutgoing != null; }
+
+    // equals, hashCode
     public boolean equals (Object obj) {
 	if (obj.getClass().equals (getClass())) {
 	    UpdateEvent pp = (UpdateEvent) obj;
