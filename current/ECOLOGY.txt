@@ -187,7 +187,7 @@ VERB s=lava/$B t=_ S=$T T=lava/$F p=0 v=flow
 VERB s=lava t=.* S=_ T=$T p=.00001 v=drain
 
 # zoo guests do bugger all except stroll around the place and get mauled
-VERB s=zoo_guest.* t=_ S=$T T=$S p=0.01 v=perambulate
+VERB s=zoo_guest.* t=_ S=$T T=$S p=0.01 v=perambulate d=.
 
 
 # conga line

@@ -2,13 +2,15 @@ import java.util.*;
 
 public class TransformRulePattern extends RulePattern {
     // data
-    String C = null, D = null, V = null;
+    String dir = null, C = null, D = null, V = null;
     double P = 0;
     Vector<BondPattern> optionalLhsBond = null, requiredLhsBond = null, excludedLhsBond = null, rhsBond = null;
 
     // constructors
-    public TransformRulePattern (String a, String b, String c, String d, double p, String v) {
+    public TransformRulePattern (String dir, String a, String b, String c, String d, double p, String v) {
 	super(a,b);
+	if (dir != null && dir.length() > 0)
+	    this.dir = dir;
 	C = c;
 	D = d;
 	P = p;

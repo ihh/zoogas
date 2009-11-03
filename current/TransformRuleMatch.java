@@ -1,7 +1,7 @@
 import java.util.*;
 import java.util.regex.*;
 
-// Syntax for regexp-based production rule generators:
+// Syntax for regex-based production rule generators:
 //  A B C D P V
 // where
 //  A is a regexp that must globally match the old source state
@@ -25,12 +25,44 @@ import java.util.regex.*;
 
 
 public class TransformRuleMatch extends RuleMatch {
+    // data
+    private Pattern dirPattern = null;
+    private boolean dirMatches = false;
+
     // constructors
-    public TransformRuleMatch(TransformRulePattern p) { super(p); }
-    public TransformRuleMatch(TransformRulePattern p,Board board,int dir) { super(p,board,dir); }
+    public TransformRuleMatch(TransformRulePattern p) {
+	super(p);
+	if (p.dir != null)
+	    dirPattern = Pattern.compile(p.dir);
+    }
+
+    public TransformRuleMatch(TransformRulePattern p,Board board,int dir) {
+	this(p);
+	bindDir(board,dir);
+    }
 
     // rule accessor
     public final TransformRulePattern transformPattern() { return (TransformRulePattern) pattern; }
+
+    // override bindDir()
+    public boolean bindDir(Board b,int d) {
+	boolean boundOk = super.bindDir(b,d);
+	if (dirPattern == null)
+	    dirMatches = true;
+	else {
+	    String dirString = board.dirString(d);
+	    dirMatches = dirPattern.matcher(dirString).matches();
+	    boundOk = boundOk && dirMatches;
+	}
+	return boundOk;
+    }
+
+    // override matches()
+    public boolean matches() {
+	if (dirBound() && !dirMatches)
+	    return false;
+	return super.matches();
+    }
 
     // other public methods
     public final String C() { return expand(transformPattern().C); }

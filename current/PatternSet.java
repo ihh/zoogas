@@ -37,7 +37,7 @@ public class PatternSet {
 
     // method to lay down a template for a transformation rule
     void addTransformRule (RuleSyntax s) {
-	TransformRulePattern p = new TransformRulePattern(s.getValue("s"),s.getValue("t"),s.getValue("S"),s.getValue("T"),
+	TransformRulePattern p = new TransformRulePattern(s.getValue("d"),s.getValue("s"),s.getValue("t"),s.getValue("S"),s.getValue("T"),
 							  Double.parseDouble(s.getValue("p")),s.getValue("v"));
 	if (s.hasValue("b"))
 	    p.addOptionalLhsBonds(s.getValue("b").split(" "));
@@ -121,7 +121,7 @@ public class PatternSet {
     static Pattern commentRegex = Pattern.compile(" *#.*");
     static Pattern nonWhitespaceRegex = Pattern.compile("\\S");
     static RuleSyntax nounSyntax = new RuleSyntax("NOUN n! c=ffffff e=0");
-    static RuleSyntax verbSyntax = new RuleSyntax("VERB s= t=.* S=$S T=$T p=1 v=_ b* c* x* B* k*");
+    static RuleSyntax verbSyntax = new RuleSyntax("VERB s= t=.* S=$S T=$T d= p=1 v=_ b* c* x* B* k*");
     static RuleSyntax bondSyntax = new RuleSyntax("BOND n= e= s=.* t=.* k=1 l=1");
 
     // i/o methods

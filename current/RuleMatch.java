@@ -28,7 +28,7 @@ public class RuleMatch {
     public RuleMatch(RulePattern p,Board board,int dir) { this(p); bindDir(board,dir); }
 
     // lhs methods
-    public final boolean bindDir(Board b,int d) {
+    public boolean bindDir(Board b,int d) {
 	if (!dirBound()) {
 	    board = b;
 	    dir = d;
@@ -44,7 +44,7 @@ public class RuleMatch {
 	    A = a;
 	    am = aPattern.matcher(A);
 	    aMatched = am.matches();
-	    return aMatched;
+	    return matches();
 	}
 	throw new AlreadyBoundException();
     }
@@ -54,7 +54,7 @@ public class RuleMatch {
 	    B = b;
 	    abm = abPattern.matcher(A+' '+B);
 	    abMatched = abm.matches();
-	    return abMatched;
+	    return matches();
 	}
 	throw new AlreadyBoundException();
     }
@@ -80,7 +80,7 @@ public class RuleMatch {
     }
 
     // matches() returns true if the rule has matched *so far*
-    public final boolean matches() {
+    public boolean matches() {
 	return
 	    am == null
 	    ? true
