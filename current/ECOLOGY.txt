@@ -28,7 +28,7 @@ NOUN n=wall/3 c=808080
 NOUN n=wall/4 c=aaaaaa
 NOUN n=wall/5 c=d5d5d5
 NOUN n=cement c=ffffff
-NOUN n=acid c=404040
+NOUN n=acid c=404040 e=-10
 NOUN n=perfume c=804054
 NOUN n=mutator c=ff80a8
 NOUN n=lava c=ff6060
@@ -227,16 +227,18 @@ NOUN n=(base|RNA_sequence)_g.* c=008080
 NOUN n=(base|RNA_sequence)_u.* c=400080
 
 # canonical basepairs: RGB components are the the sums of the RGB components of individual bases.
-NOUN n=basepair_(au|ua).* c=c00080
-NOUN n=basepair_(cg|gc).* c=40ff80
-NOUN n=basepair_(ac|ca).* c=c08000
-NOUN n=basepair_(ag|ga|cu|uc).* c=808080
-NOUN n=basepair_(gu|ug).* c=4080ff
+# these lines also define the stabilizing energy of a Watson-Crick or wobble basepair
+NOUN n=basepair_(au|ua).* c=c00080 e=.5
+NOUN n=basepair_(cg|gc).* c=40ff80 e=.5
+NOUN n=basepair_(gu|ug).* c=4080ff e=.2
 # non-canonical basepairs are a bit dimmer (3/4 as bright as a straight sum).
-NOUN n=basepair_aa.* c=c00000
-NOUN n=basepair_cc.* c=60c000
-NOUN n=basepair_gg.* c=00c0c0
-NOUN n=basepair_uu.* c=6000c0
+# these lines also define the unfavorable energy of such basepairs
+NOUN n=basepair_(ac|ca).* c=906000 e=-1
+NOUN n=basepair_(ag|ga|cu|uc).* c=606060 e=-1
+NOUN n=basepair_aa.* c=c00000 e=-1
+NOUN n=basepair_cc.* c=60c000 e=-1
+NOUN n=basepair_gg.* c=00c0c0 e=-1
+NOUN n=basepair_uu.* c=6000c0 e=-1
 
 # define the covalent bond between consecutive bases on the same chain
 # bond endpoint identifiers are /5p and /3p
@@ -244,11 +246,6 @@ NOUN n=basepair_uu.* c=6000c0
 BOND n=5to3 s=(RNA_sequence|base|basepair)_.* t=(RNA_sequence|base|basepair)_.* e=+10
 BOND n=f5to3 s=(RNA_sequence|base|basepair)_.* t=(RNA_sequence|base|basepair)_.* e=+10
 BOND n=r5to3 s=(RNA_sequence|base|basepair)_.* t=(RNA_sequence|base|basepair)_.* e=+10
-
-# define the stabilizing energy of a Watson-Crick basepair, and the destabilizing energy of other basepairs
-# obviously some kind of self-energy would be a cleaner & more efficient way to formulate this
-BOND n=f5to3 s=basepair_(au|cg|gc|ua) e=+.1
-BOND n=f5to3 s=basepair_(aa|ac|ag|ca|cc|cu|ga|gg|uc|uu) e=-5
 
 # to make a basepair, merge two bases and their upstream(x) and downstream(y) bonds
 VERB s=base_(.) t=base_(.) S=basepair_$1$2 T=_ p=1 v=pair_$1_to_$2 x=(s,5to3,t) x=(t,5to3,s) b=(s,5to3,xf) B=(s,f5to3,xf) b=(yf,5to3,s) B=(yf,f5to3,s) b=(t,5to3,xr) B=(s,r5to3,xr) b=(yr,5to3,t) B=(yr,r5to3,s)

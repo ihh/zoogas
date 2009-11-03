@@ -12,6 +12,7 @@ public class Particle {
     public static int maxNameLength = 256;  // maximum length of a Particle name. Introduced to stop runaway regex rules from crashing the engine
     public String name = null;  // noun uniquely identifying this Particle (no whitespace)
     public Color color = null;
+    public double energy = 0;
 
     // the PatternSet, i.e. the authority for all transformation and color rules about this Particle
     PatternSet patternSet = null;
@@ -32,13 +33,14 @@ public class Particle {
 	visibleSpaceChar = "_";
 
     // constructor
-    public Particle (String name, Color color, Board board, PatternSet ps) {
+    public Particle (String name, Color color, double energy, Board board, PatternSet ps) {
 	if (name.length() > maxNameLength) {
 	    System.err.println("Warning: truncating name " + name);
 	    this.name = name.substring(0,maxNameLength);
 	} else
 	    this.name = name;
 	this.color = color;
+	this.energy = energy;
 	this.board = board;
 	this.patternSet = ps;
 	// init transformation rule patterns in each direction

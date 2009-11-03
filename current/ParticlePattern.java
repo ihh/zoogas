@@ -10,10 +10,11 @@ public class ParticlePattern {
     // data
     Pattern namePattern = null;
     Color color = null;
+    double energy = 0;
     
     // constructors
     static Pattern catchAllPattern = Pattern.compile(".*");
-    public ParticlePattern (String n, Color c) {
+    public ParticlePattern (String n, Color c, double en) {
 	try {
 	    namePattern = Pattern.compile(n);
 	} catch (Exception e) {
@@ -21,10 +22,11 @@ public class ParticlePattern {
 	    namePattern = catchAllPattern;
 	}
 	color = c;
+	energy = en;
     }
 
-    public ParticlePattern (String n, String colorString) {
-	this(n,new Color(Integer.parseInt(colorString,16)));
+    public ParticlePattern (String n, String colorString, String energyString) {
+	this(n,new Color(Integer.parseInt(colorString,16)),Double.parseDouble(energyString));
     }
 
     // method to match a name and return a Particle, or null if match fails
@@ -33,7 +35,7 @@ public class ParticlePattern {
 	Particle p = null;
 	Matcher m = namePattern.matcher(name);
 	if (m.matches())
-	    p = new Particle (name, color, board, ps);
+	    p = new Particle (name, color, energy, board, ps);
 	return p;
     }
 

@@ -350,10 +350,10 @@ public class Board extends MooreTopology {
 	return accept;
     }
 
-    // method to calculate the interaction energy of a cell (p) with its bond partners.
+    // method to calculate the interaction energy of a cell (p) with its bond partners, as well as the self-energy of the particle.
     // if q != null, then q will be excluded from the set of partners.
     public final double bondEnergy (Point p, Point q, Particle pState, Map<String,Point> incoming, Map<String,Point> outgoing) {
-	double E = 0;
+	double E = pState.energy;
 	Point n = new Point();
 	if (incoming != null)
 	    for (Iterator<Map.Entry<String,Point>> iter = incoming.entrySet().iterator(); iter.hasNext(); ) {
@@ -379,7 +379,7 @@ public class Board extends MooreTopology {
 	return bondEnergy(p,null,pState,incoming,outgoing);
     }
 
-    // method to calculate the bond energy of two cells with given states and bonds.
+    // method to calculate the bond energy of two cells with given states and bonds, as well as the self-energies of the two particles.
     public final double bondEnergy (Point p, Point q, Particle pState, Particle qState, Map<String,Point> pIn, Map<String,Point> pOut, Map<String,Point> qIn, Map<String,Point> qOut) {
 	double E = 0;
 	Point n = new Point();

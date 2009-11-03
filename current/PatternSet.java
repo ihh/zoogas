@@ -32,7 +32,7 @@ public class PatternSet {
 
     // method to lay down a template for a Particle
     void addParticlePattern (RuleSyntax s) {
-	particlePattern.add (new ParticlePattern(s.getValue("n"),s.getValue("c")));
+	particlePattern.add (new ParticlePattern(s.getValue("n"),s.getValue("c"),s.getValue("e")));
     }
 
     // method to lay down a template for a transformation rule
@@ -80,7 +80,7 @@ public class PatternSet {
 	}
 	// if still no such particle, create a bright white default with this PatternSet 
 	if (p == null)
-	    p = new Particle (particleName, Color.white, board, this);
+	    p = new Particle (particleName, Color.white, 0, board, this);
 	// return
 	return p;
     }
@@ -117,7 +117,7 @@ public class PatternSet {
     static Pattern endRegex = Pattern.compile("END.*");
     static Pattern commentRegex = Pattern.compile(" *#.*");
     static Pattern nonWhitespaceRegex = Pattern.compile("\\S");
-    static RuleSyntax nounSyntax = new RuleSyntax("NOUN n! c!");
+    static RuleSyntax nounSyntax = new RuleSyntax("NOUN n! c=ffffff e=0");
     static RuleSyntax verbSyntax = new RuleSyntax("VERB s= t=.* S=$S T=$T p=1 v=_ b* B* k* x*");
     static RuleSyntax bondSyntax = new RuleSyntax("BOND n= e= s=.* t=.* k=1 l=1");
 
