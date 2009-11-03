@@ -25,7 +25,7 @@ public class Particle {
 
     // reference counting
     private Board board = null;
-    private int count = 0;  // how many of this type on the board
+    protected int count = 0;  // how many of this type on the board
 
     // static variables
     public static String
