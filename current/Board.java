@@ -407,21 +407,21 @@ public class Board extends MooreTopology {
     protected final String singleNeighborhoodDescription(Point p,boolean includeSelf) {
 	StringBuffer sb = new StringBuffer();
 	if (includeSelf)
-	    sb.append(readCell(p).name+" ");
+	    sb.append(readCell(p).name);
 	for (Iterator<Map.Entry<String,Point>> iter = incoming(p).entrySet().iterator(); iter.hasNext(); ) {
 	    Map.Entry<String,Point> kv = iter.next();
-	    sb.append("<"+vectorString(kv.getValue())+":"+kv.getKey());
+	    sb.append(" <"+vectorString(kv.getValue())+":"+kv.getKey());
 	}
 	for (Iterator<Map.Entry<String,Point>> iter = outgoing(p).entrySet().iterator(); iter.hasNext(); ) {
 	    Map.Entry<String,Point> kv = iter.next();
-	    sb.append(">"+vectorString(kv.getValue())+":"+kv.getKey());
+	    sb.append(" >"+vectorString(kv.getValue())+":"+kv.getKey());
 	}
 	return sb.toString();
     }
 
     // method returning a description of a two-cell neighborhood (including incoming & outgoing bonds) as a String
     public final String pairNeighborhoodDescription(Point p,Point q) {
-	return singleNeighborhoodDescription(p,false) + "+" + singleNeighborhoodDescription(q,true);
+	return singleNeighborhoodDescription(p,false) + " + " + singleNeighborhoodDescription(q,true);
     }
 
     // method to send requests to establish two-way network connections between cells

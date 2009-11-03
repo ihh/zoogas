@@ -340,7 +340,12 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	printOrHide (cursorParticle == null
 		     ? "Mouseover board to identify pixels"
 		     : "Under cursor:", nounRow, true, Color.white);
-	printOrHide (cursorOnBoard ? (cheatPressed ? cursorParticle.name + " " + board.singleNeighborhoodDescription(cursorPos,false) : cursorParticle.visibleName()) : "", nounRow+1, cursorOnBoard, cursorOnBoard ? cursorParticle.color : Color.white);
+	String nameToShow = "";
+	if (cursorOnBoard)
+	    nameToShow = cheatPressed
+		? cursorParticle.name + " (" + cursorParticle.count + ")" + board.singleNeighborhoodDescription(cursorPos,false)
+		: cursorParticle.visibleName();
+	printOrHide (nameToShow, nounRow+1, cursorOnBoard, cursorOnBoard ? cursorParticle.color : Color.white);
 
 	// update rate and other stats
 	StringBuilder sb = new StringBuilder();
