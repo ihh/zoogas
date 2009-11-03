@@ -65,7 +65,7 @@ public class PatternSet {
     // method to lay down a template for an energy rule
     void addEnergyRule (RuleSyntax s) {
 	EnergyRulePattern p = new EnergyRulePattern(s.getValue("s"),s.getValue("t"),s.getValue("n"),Double.parseDouble(s.getValue("e")),
-						    Integer.parseInt(s.getValue("k")),Integer.parseInt(s.getValue("l")));
+						    s.getValue("d"),Integer.parseInt(s.getValue("k")),Integer.parseInt(s.getValue("l")));
 	energyRulePattern.add(p);
 	if (!energyRuleMatch.containsKey(p.bondName))
 	    energyRuleMatch.put(p.bondName,new Vector<EnergyRuleMatch>());
@@ -106,11 +106,10 @@ public class PatternSet {
     // helper to get bond energy for a given particle pair
     public double getEnergy(String sourceName,String targetName,String bondName,Point sourceToTarget) {
 	double E = 0;
-	long taxi = board.taxicab(sourceToTarget);
 	Vector<EnergyRuleMatch> rmVec = energyRuleMatch.get(bondName);
 	if (rmVec != null) {
 	    for (int n = 0; n < rmVec.size(); ++n)
-		if (rmVec.get(n).matches(sourceName,targetName,taxi))
+		if (rmVec.get(n).matches(sourceName,targetName,sourceToTarget))
 		    E += rmVec.get(n).E();
 	}
 	return E;
@@ -122,7 +121,7 @@ public class PatternSet {
     static Pattern nonWhitespaceRegex = Pattern.compile("\\S");
     static RuleSyntax nounSyntax = new RuleSyntax("NOUN n! c=ffffff e=0");
     static RuleSyntax verbSyntax = new RuleSyntax("VERB s= t=.* S=$S T=$T d= p=1 v=_ b* c* x* B* k*");
-    static RuleSyntax bondSyntax = new RuleSyntax("BOND n= e= s=.* t=.* k=1 l=1");
+    static RuleSyntax bondSyntax = new RuleSyntax("BOND n= e= s=.* t=.* d=m k=1 l=1");
 
     // i/o methods
     static PatternSet fromStream (InputStream in, Board board) {

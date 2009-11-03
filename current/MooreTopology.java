@@ -39,11 +39,4 @@ public class MooreTopology {
     static final public int getBoardSize (int size, int pixelsPerCell) {
 	return size*pixelsPerCell;
     }
-
-    // method to return "taxicab" length of a vector
-    static long taxicab(Point p) {
-	long x = Math.abs(p.x);
-	long y = Math.abs(p.y);
-	return Math.max(x,y);
-    }
 }

@@ -229,6 +229,27 @@ public class Board extends MooreTopology {
 	return sb.toString();
     }
 
+    // method to return "taxicab" length of a vector (no diagonals allowed)
+    static long taxicabLength(Point p) {
+	long x = Math.abs(p.x);
+	long y = Math.abs(p.y);
+	return x + y;
+    }
+
+    // method to return "Moore" length of a vector (diagonals allowed)
+    static long mooreLength(Point p) {
+	long x = Math.abs(p.x);
+	long y = Math.abs(p.y);
+	return Math.max(x,y);
+    }
+
+    // method to return direct length of a vector
+    static long directLength(Point p) {
+	long x = Math.abs(p.x);
+	long y = Math.abs(p.y);
+	return Math.round(Math.sqrt(x*x+y*y));
+    }
+
     // update methods
     // getRandomPair places coordinates of a random pair in (p,n) and returns direction from p to n
     public final int getRandomPair(Point p,Point n) {
