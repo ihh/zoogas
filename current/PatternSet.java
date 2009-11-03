@@ -40,19 +40,22 @@ public class PatternSet {
 	TransformRulePattern p = new TransformRulePattern(s.getValue("s"),s.getValue("t"),s.getValue("S"),s.getValue("T"),
 							  Double.parseDouble(s.getValue("p")),s.getValue("v"));
 	if (s.hasValue("b"))
-	    p.addLhsBonds(s.getValue("b").split(" "));
+	    p.addOptionalLhsBonds(s.getValue("b").split(" "));
+
+	if (s.hasValue("c"))
+	    p.addRequiredLhsBonds(s.getValue("c").split(" "));
+
+	if (s.hasValue("x"))
+	    p.addExcludedLhsBonds(s.getValue("x").split(" "));
 
 	if (s.hasValue("B"))
 	    p.addRhsBonds(s.getValue("B").split(" "));
 
 	if (s.hasValue("k")) {
 	    String[] k = s.getValue("k").split(" ");
-	    p.addLhsBonds(k);
+	    p.addOptionalLhsBonds(k);
 	    p.addRhsBonds(k);
 	}
-
-	if (s.hasValue("x"))
-	    p.addExcludedLhsBonds(s.getValue("x").split(" "));
 
 	transformRulePattern.add (p);
 	for (int d = 0; d < board.neighborhoodSize(); ++d)
@@ -118,7 +121,7 @@ public class PatternSet {
     static Pattern commentRegex = Pattern.compile(" *#.*");
     static Pattern nonWhitespaceRegex = Pattern.compile("\\S");
     static RuleSyntax nounSyntax = new RuleSyntax("NOUN n! c=ffffff e=0");
-    static RuleSyntax verbSyntax = new RuleSyntax("VERB s= t=.* S=$S T=$T p=1 v=_ b* B* k* x*");
+    static RuleSyntax verbSyntax = new RuleSyntax("VERB s= t=.* S=$S T=$T p=1 v=_ b* c* x* B* k*");
     static RuleSyntax bondSyntax = new RuleSyntax("BOND n= e= s=.* t=.* k=1 l=1");
 
     // i/o methods
