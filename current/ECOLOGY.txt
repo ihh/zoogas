@@ -48,8 +48,8 @@ VERB s=photon/$F t=[^_].* S=photon/$++R T=$T p=.05 v=reflect
 VERB s=photon/$B t=.* S=_ T=$T p=.001 v=scatter
 
 # Initial conditions
-#VERB s=/INIT.* t=_ S=beacon T=_ v=/start
-VERB s=/INIT.* t=_ S=_ T=_ v=/start
+VERB s=/INIT.* t=_ S=beacon T=_ v=/start
+#VERB s=/INIT.* t=_ S=_ T=_ v=/start
 
 # Animal rules. This is where the ecology actually happens.
 # Successful predation
@@ -187,7 +187,7 @@ VERB s=lava/$B t=_ S=$T T=lava/$F p=0 v=flow
 VERB s=lava t=.* S=_ T=$T p=.00001 v=drain
 
 # zoo guests do bugger all except stroll around the place and get mauled
-VERB s=zoo_guest.* t=_ S=$T T=$S p=0.01 v=perambulate
+VERB s=zoo_guest.* t=_ S=$T T=$S p=0.01 v=perambulate d=.
 
 
 # conga line
@@ -197,9 +197,10 @@ NOUN n=conga.* c=80c0c0 e=-10
 
 # the energy terms that effectively create a covalent bond between consecutive monomers (conga_dude's)
 BOND s=conga.* t=conga.* n=handsToHips e=+10
-#BOND s=conga.* t=conga.* n=handsToHips e=+1 l=3
-#BOND s=conga.* t=conga.* n=handsToHips e=+1 l=5
-#BOND s=conga.* t=conga.* n=handsToHips e=-10 k=6
+# give the line a bit of rigidity
+BOND s=conga.* t=conga.* n=handsToHips e=+1 a=0 A=0
+BOND s=conga.* t=conga.* n=handsToHips e=+1 a=-.25 A=+.25
+BOND s=conga.* t=conga.* n=handsToHips e=+.5 a=-.5 A=+.5
 
 # initial production rule:  conga -> conga_head/pos:$POS   where $POS \in { 10, 20, 30 }
 # this (as you can probably guess) sets the length of the conga line at 10, 20 or 30
@@ -211,17 +212,17 @@ VERB s=conga t=.* S=conga_head/pos:30 T=$T p=.3 v=start_monsta_conga
 # its stateful form is  conga_head/pos:$POS/dir:$DIR  where $POS is an integer and $DIR a compass direction
 # the first rule randomly picks $DIR
 #VERB s=conga_head/pos:(\d+) t=.* S=conga_head/dir:$F/pos:$1 T=$T p=1 v=line_em_up
-VERB s=conga_head/pos:(\d+) t=.* S=conga_head/dir:e/pos:$1 T=$T p=1 v=line_em_up
+VERB s=conga_head/pos:(\d+) t=.* S=conga_head/dir:$F/pos:$1 T=$T p=1 v=line_em_up d=.
 VERB s=conga_head/dir:$F/pos:([2-9]|\d\d+) t=_ S=conga_dude T=conga_head/dir:$F/pos:$-1 p=1 v=partay B=(s,handsToHips,t) k=(x,handsToHips,s)
 VERB s=conga_head/dir:(.*)/pos:1 S=conga_dude p=1 v=lets_go k=(x,handsToHips,s)
 
 # jiggle the conga guests at max speed, since most of their random steps are rejected anyway
-VERB s=conga_dude t=_ S=$T T=$S p=1 v=go_nuts k=(x,handsToHips,sT) k=(sT,handsToHips,y)
+VERB s=conga_dude t=_ S=$T T=$S p=1 v=go_nuts k=(x,handsToHips,sT) k=(sT,handsToHips,y) d=.
 VERB s=conga_.* S=_ p=.0001 v=expire
 
 # birth-death on conga_dudes
-#VERB s=conga_dude t=_ S=$S T=$S p=.001 v=conga_birth k=(x,handsToHips,s) k=(sT,handsToHips,y) B=(s,handsToHips,t)
-#VERB s=conga_dude t=conga_dude S=$S T=_ p=.001 v=conga_death k=(x,handsToHips,s) k=(tS,handsToHips,y)
+#VERB s=conga_dude t=_ S=$S T=$S p=.0001 v=conga_birth k=(x,handsToHips,s) k=(sT,handsToHips,y) B=(s,handsToHips,t)
+#VERB s=conga_dude t=conga_dude S=$S T=_ p=.01 v=conga_death k=(x,handsToHips,s) k=(tS,handsToHips,y)
 
 
 

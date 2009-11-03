@@ -54,6 +54,85 @@ public class Board extends MooreTopology {
 	}
     }
 
+    // board geometry methods
+    // helper to test if a cell is on board
+    public final boolean onBoard (Point p) { return p.x >= 0 && p.x < size && p.y >= 0 && p.y < size; }
+
+    // helper to get direction (quick implementation; reimplement in superclass for performance optimization)
+    public int getNeighborDirection(Point p,Point q) {
+	Point n = new Point();
+	int ns = neighborhoodSize();
+	for (int dir = 0; dir < ns; ++dir) {
+	    getNeighbor(p,n,dir);
+	    if (n.x == q.x && n.y == q.y)
+		return dir;
+	}
+	return -1;
+    }
+
+    // helper to reverse direction
+    public int reverseDir(int dir) {
+	int ns = neighborhoodSize();
+	return (dir + (ns >> 1)) % ns;
+    }
+
+    // helper to turn a vector into a string
+    public String vectorString(Point delta) {
+	StringBuffer sb = new StringBuffer();
+	if (delta.y > 0)
+	    sb.append("s" + (delta.y > 1 ? delta.y : ""));
+	else if (delta.y < 0)
+	    sb.append("n" + (delta.y < -1 ? -delta.y : ""));
+	if (delta.x > 0)
+	    sb.append("e" + (delta.x > 1 ? delta.x : ""));
+	else if (delta.x < 0)
+	    sb.append("w" + (delta.x < -1 ? -delta.x : ""));
+	else if (delta.y == 0)  // delta.x == 0 && delta.y == 0
+	    sb.append("0");
+	return sb.toString();
+    }
+
+    // method to return "taxicab" length of a vector (no diagonals allowed)
+    static long taxicabLength(Point p) {
+	long x = Math.abs(p.x);
+	long y = Math.abs(p.y);
+	return x + y;
+    }
+
+    // method to return "Moore" length of a vector (diagonals allowed)
+    static long mooreLength(Point p) {
+	long x = Math.abs(p.x);
+	long y = Math.abs(p.y);
+	return Math.max(x,y);
+    }
+
+    // method to return direct length of a vector
+    static long directLength(Point p) {
+	long x = Math.abs(p.x);
+	long y = Math.abs(p.y);
+	return Math.round(Math.sqrt(x*x+y*y));
+    }
+
+    // method to return angle between two vectors in units of Pi, as a real number from -1 to +1
+    public final double angle (Point p, Point q) {
+	double a = (Math.atan2(p.y,p.x) - Math.atan2(q.y,q.x)) / Math.PI;
+	if (a <= -1)
+	    a += 2;
+	else if (a > 1)
+	    a -= 2;
+	return a;
+    }
+
+    // update methods
+    // getRandomPair places coordinates of a random pair in (p,n) and returns direction from p to n
+    public final int getRandomPair(Point p,Point n) {
+	quad.sampleQuadLeaf(p,rnd);
+	int dir = readCell(p).sampleDir(rnd);
+	getNeighbor(p,n,dir);
+	return dir;
+    }
+
+    // net init methods
     public final void initClient(int port,ZooGas gas) {
 
 	this.boardServerPort = port;
@@ -111,11 +190,13 @@ public class Board extends MooreTopology {
     }
 
     public Point incoming (Point p, String bond) {
-	if (cell[p.x][p.y].incoming.containsKey(bond)) {
-	    Point delta = cell[p.x][p.y].incoming.get(bond);
-	    Point q = p.add(delta);
-	    return q;
-	}
+	return cell[p.x][p.y].incoming.get(bond);
+    }
+
+    public Point incomingCoord (Point p, String bond) {
+	Point delta = incoming(p,bond);
+	if (delta != null)
+	    return p.add(delta);
 	return null;
     }
 
@@ -190,52 +271,6 @@ public class Board extends MooreTopology {
 	for (p.x = 0; p.x < size; ++p.x)
 	    for (p.y = 0; p.y < size; ++p.y)
 		writeCell(p,particle);
-    }
-
-    // helper to test if a cell is on board
-    public final boolean onBoard (Point p) { return p.x >= 0 && p.x < size && p.y >= 0 && p.y < size; }
-
-    // helper to get direction (quick implementation; reimplement in superclass for performance optimization)
-    public int getNeighborDirection(Point p,Point q) {
-	Point n = new Point();
-	int ns = neighborhoodSize();
-	for (int dir = 0; dir < ns; ++dir) {
-	    getNeighbor(p,n,dir);
-	    if (n.x == q.x && n.y == q.y)
-		return dir;
-	}
-	return -1;
-    }
-
-    // helper to reverse direction
-    public int reverseDir(int dir) {
-	int ns = neighborhoodSize();
-	return (dir + (ns >> 1)) % ns;
-    }
-
-    // helper to turn a vector into a string
-    public String vectorString(Point delta) {
-	StringBuffer sb = new StringBuffer();
-	if (delta.y > 0)
-	    sb.append("s" + (delta.y > 1 ? delta.y : ""));
-	else if (delta.y < 0)
-	    sb.append("n" + (delta.y < -1 ? -delta.y : ""));
-	if (delta.x > 0)
-	    sb.append("e" + (delta.x > 1 ? delta.x : ""));
-	else if (delta.x < 0)
-	    sb.append("w" + (delta.x < -1 ? -delta.x : ""));
-	else if (delta.y == 0)  // delta.x == 0 && delta.y == 0
-	    sb.append("0");
-	return sb.toString();
-    }
-
-    // update methods
-    // getRandomPair places coordinates of a random pair in (p,n) and returns direction from p to n
-    public final int getRandomPair(Point p,Point n) {
-	quad.sampleQuadLeaf(p,rnd);
-	int dir = readCell(p).sampleDir(rnd);
-	getNeighbor(p,n,dir);
-	return dir;
     }
 
     // update()
@@ -355,21 +390,35 @@ public class Board extends MooreTopology {
     public final double bondEnergy (Point p, Point q, Particle pState, Map<String,Point> incoming, Map<String,Point> outgoing) {
 	double E = pState.energy;
 	Point n = new Point();
+	Point m = new Point();
 	if (incoming != null)
 	    for (Iterator<Map.Entry<String,Point>> iter = incoming.entrySet().iterator(); iter.hasNext(); ) {
 		Map.Entry<String,Point> kv = iter.next();
+		String bondName = kv.getKey();
 		Point delta = kv.getValue();
 		p.add(delta,n);
-		if (onBoard(n) && (q == null || !n.equals(q)))
-		    E += patternSet.getEnergy(readCell(n).name,pState.name,kv.getKey(),delta);
+		if (onBoard(n) && (q == null || !n.equals(q))) {
+		    Point prev = incoming(n,bondName);
+		    if (prev != null)
+			prev.multiply(-1,m);
+		    E += patternSet.getEnergy(readCell(n).name,pState.name,bondName,delta,prev==null?null:m);
+		}
 	    }
 	if (outgoing != null)
 	    for (Iterator<Map.Entry<String,Point>> iter = outgoing.entrySet().iterator(); iter.hasNext(); ) {
 		Map.Entry<String,Point> kv = iter.next();
+		String bondName = kv.getKey();
 		Point delta = kv.getValue();
 		p.add(delta,n);
-		if (onBoard(n) && (q == null || !n.equals(q)))
-		    E += patternSet.getEnergy(pState.name,readCell(n).name,kv.getKey(),delta);
+		if (onBoard(n) && (q == null || !n.equals(q))) {
+		    Point prev = null;
+		    if (incoming != null) {
+			prev = incoming.get(bondName);
+			if (prev != null)
+			    prev.multiply(-1,m);
+		    }
+		    E += patternSet.getEnergy(pState.name,readCell(n).name,bondName,delta,prev==null?null:m);
+		}
 	    }
 	return E;
     }
@@ -383,13 +432,22 @@ public class Board extends MooreTopology {
     public final double bondEnergy (Point p, Point q, Particle pState, Particle qState, Map<String,Point> pIn, Map<String,Point> pOut, Map<String,Point> qIn, Map<String,Point> qOut) {
 	double E = 0;
 	Point n = new Point();
+	Point m = new Point();
 	if (pOut != null)
 	    for (Iterator<Map.Entry<String,Point>> iter = pOut.entrySet().iterator(); iter.hasNext(); ) {
 		Map.Entry<String,Point> kv = iter.next();
+		String bondName = kv.getKey();
 		Point delta = kv.getValue();
 		p.add(delta,n);
-		if (n.equals(q))
-		    E += patternSet.getEnergy(pState.name,qState.name,kv.getKey(),delta);
+		if (n.equals(q)) {
+		    Point prev = null;
+		    if (pIn != null) {
+			prev = pIn.get(bondName);
+			if (prev != null)
+			    prev.multiply(-1,m);
+		    }
+		    E += patternSet.getEnergy(pState.name,qState.name,bondName,delta,prev==null?null:m);
+		}
 	    }
 	return E + bondEnergy(p,q,pState,pIn,pOut) + bondEnergy(q,p,qState,qIn,qOut);
     }

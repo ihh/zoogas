@@ -5,8 +5,6 @@ import java.text.*;
 import java.net.*;
 import java.io.*;
 
-// See RuleMatch for details
-
 public class RulePattern {
     // data
     String A = null, B = null;
