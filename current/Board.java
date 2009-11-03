@@ -116,7 +116,7 @@ public class Board extends MooreTopology {
     // method to return angle between two vectors in units of Pi, as a real number from -1 to +1
     public final double angle (Point p, Point q) {
 	double a = (Math.atan2(p.y,p.x) - Math.atan2(q.y,q.x)) / Math.PI;
-	if (a < -1)
+	if (a <= -1)
 	    a += 2;
 	else if (a > 1)
 	    a -= 2;

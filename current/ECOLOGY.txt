@@ -212,17 +212,17 @@ VERB s=conga t=.* S=conga_head/pos:30 T=$T p=.3 v=start_monsta_conga
 # its stateful form is  conga_head/pos:$POS/dir:$DIR  where $POS is an integer and $DIR a compass direction
 # the first rule randomly picks $DIR
 #VERB s=conga_head/pos:(\d+) t=.* S=conga_head/dir:$F/pos:$1 T=$T p=1 v=line_em_up
-VERB s=conga_head/pos:(\d+) t=.* S=conga_head/dir:e/pos:$1 T=$T p=1 v=line_em_up
+VERB s=conga_head/pos:(\d+) t=.* S=conga_head/dir:$F/pos:$1 T=$T p=1 v=line_em_up d=.
 VERB s=conga_head/dir:$F/pos:([2-9]|\d\d+) t=_ S=conga_dude T=conga_head/dir:$F/pos:$-1 p=1 v=partay B=(s,handsToHips,t) k=(x,handsToHips,s)
 VERB s=conga_head/dir:(.*)/pos:1 S=conga_dude p=1 v=lets_go k=(x,handsToHips,s)
 
 # jiggle the conga guests at max speed, since most of their random steps are rejected anyway
-VERB s=conga_dude t=_ S=$T T=$S p=1 v=go_nuts k=(x,handsToHips,sT) k=(sT,handsToHips,y)
+VERB s=conga_dude t=_ S=$T T=$S p=1 v=go_nuts k=(x,handsToHips,sT) k=(sT,handsToHips,y) d=.
 VERB s=conga_.* S=_ p=.0001 v=expire
 
 # birth-death on conga_dudes
-#VERB s=conga_dude t=_ S=$S T=$S p=.001 v=conga_birth k=(x,handsToHips,s) k=(sT,handsToHips,y) B=(s,handsToHips,t)
-#VERB s=conga_dude t=conga_dude S=$S T=_ p=.001 v=conga_death k=(x,handsToHips,s) k=(tS,handsToHips,y)
+#VERB s=conga_dude t=_ S=$S T=$S p=.0001 v=conga_birth k=(x,handsToHips,s) k=(sT,handsToHips,y) B=(s,handsToHips,t)
+#VERB s=conga_dude t=conga_dude S=$S T=_ p=.01 v=conga_death k=(x,handsToHips,s) k=(tS,handsToHips,y)
 
 
 
