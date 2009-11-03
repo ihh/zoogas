@@ -22,6 +22,11 @@ public class Point extends java.awt.Point {
 	return new Point (x-q.x, y-q.y);
     }
 
+    public void multiply(int s, Point result) {
+	result.x = x * s;
+	result.y = y * s;
+    }
+
     public boolean equals(Point p) {
 	return p == null ? false : (x == p.x && y == p.y);
     }

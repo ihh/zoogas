@@ -197,10 +197,10 @@ NOUN n=conga.* c=80c0c0 e=-10
 
 # the energy terms that effectively create a covalent bond between consecutive monomers (conga_dude's)
 BOND s=conga.* t=conga.* n=handsToHips e=+10
-BOND s=conga.* t=conga.* n=handsToHips e=+1 d=t
-#BOND s=conga.* t=conga.* n=handsToHips e=+1 l=3
-#BOND s=conga.* t=conga.* n=handsToHips e=+1 l=5
-#BOND s=conga.* t=conga.* n=handsToHips e=-10 k=6
+# give the line a bit of rigidity
+BOND s=conga.* t=conga.* n=handsToHips e=+1 a=0 A=0
+BOND s=conga.* t=conga.* n=handsToHips e=+1 a=-.25 A=+.25
+BOND s=conga.* t=conga.* n=handsToHips e=+.5 a=-.5 A=+.5
 
 # initial production rule:  conga -> conga_head/pos:$POS   where $POS \in { 10, 20, 30 }
 # this (as you can probably guess) sets the length of the conga line at 10, 20 or 30

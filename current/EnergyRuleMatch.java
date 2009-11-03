@@ -26,8 +26,10 @@ public class EnergyRuleMatch extends RuleMatch {
     protected String expandDir (String s) { return s; }
 
     // overload matches
-    public boolean matches(String sourceName, String targetName, Point sourceToTarget) {
+    public boolean matches(String sourceName, String targetName, Point sourceToTarget, Point prevToSource) {
 	EnergyRulePattern rp = energyPattern();
+	boolean match;
+
 	long len = 0;
 	if (rp.lenType.equals("t"))
 	    len = board.taxicabLength(sourceToTarget);
@@ -35,7 +37,14 @@ public class EnergyRuleMatch extends RuleMatch {
 	    len = board.mooreLength(sourceToTarget);
 	else if (rp.lenType.equals("d"))
 	    len = board.directLength(sourceToTarget);
-	return super.matches(sourceName,targetName) && len >= rp.minLen && len <= rp.maxLen;
+	match = len >= rp.minLen && len <= rp.maxLen;
+
+	if (match && prevToSource != null && rp.hasAngleConstraint()) {
+	    double angle = board.angle(prevToSource,sourceToTarget);
+	    match = angle >= rp.minAngle && angle <= rp.maxAngle;
+	}
+
+	return match && super.matches(sourceName,targetName);
     }
 
     // other public methods

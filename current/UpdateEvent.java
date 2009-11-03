@@ -92,7 +92,7 @@ public class UpdateEvent {
 			if (required)
 			    return false;
 		    } else if (board.onBoard(exprEndPoint)) {
-			Point boardBeginPoint = board.incoming(exprEndPoint,bp.bondName);
+			Point boardBeginPoint = board.incomingCoord(exprEndPoint,bp.bondName);
 			if (excluded && boardBeginPoint != null) {
 			    System.err.println("Excluding "+verb+" due to "+bp.bondName);
 			    return false;
@@ -119,7 +119,7 @@ public class UpdateEvent {
 			} else {
 			    if (board.onBoard(exprEndPoint)) {
 				// check that the bond on the board is consistent with the bound labels in the bond expression
-				Point boardBeginPoint = board.incoming(exprEndPoint,bp.bondName);
+				Point boardBeginPoint = board.incomingCoord(exprEndPoint,bp.bondName);
 				boolean exprMatchesBoard = exprEndPoint.equals(boardEndPoint) && exprBeginPoint.equals(boardBeginPoint);
 				if (required && !exprMatchesBoard)
 				    return false;
