@@ -28,7 +28,7 @@ NOUN n=wall/3 c=808080
 NOUN n=wall/4 c=aaaaaa
 NOUN n=wall/5 c=d5d5d5
 NOUN n=cement c=ffffff
-NOUN n=acid c=404040 e=-10
+NOUN n=acid c=404040 e=-20
 NOUN n=perfume c=804054
 NOUN n=mutator c=ff80a8
 NOUN n=lava c=ff6060
