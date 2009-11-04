@@ -57,6 +57,12 @@ public class PatternSet {
 	    p.addRhsBonds(k);
 	}
 
+	if (s.hasValue("K")) {
+	    String[] k = s.getValue("K").split(" ");
+	    p.addRequiredLhsBonds(k);
+	    p.addRhsBonds(k);
+	}
+
 	transformRulePattern.add (p);
 	for (int d = 0; d < board.neighborhoodSize(); ++d)
 	    transformRuleMatch.get(d).add (new TransformRuleMatch(p,board,d));
@@ -121,7 +127,7 @@ public class PatternSet {
     static Pattern commentRegex = Pattern.compile(" *#.*");
     static Pattern nonWhitespaceRegex = Pattern.compile("\\S");
     static RuleSyntax nounSyntax = new RuleSyntax("NOUN n! c=ffffff e=0");
-    static RuleSyntax verbSyntax = new RuleSyntax("VERB s= t=.* S=$S T=$T d= p=1 v=_ b* c* x* B* k*");
+    static RuleSyntax verbSyntax = new RuleSyntax("VERB s= t=.* S=$S T=$T d= p=1 v=_ b* c* x* B* k* K*");
     static RuleSyntax bondSyntax = new RuleSyntax("BOND n= e= s=.* t=.* l=1 L=1.5 m=1 a=-1 A=1 b=1");
 
     // i/o methods
