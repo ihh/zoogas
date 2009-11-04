@@ -28,13 +28,13 @@ public class HexTopology {
     static final public String dirString(int dir) { return dirStr[dir]; }
 
     // method to convert cell coords to graphics coords
-    static final public void getGraphicsCoords (Point pCell, Point pGraphics, int pixelsPerCell) {
+    static final public void getGraphicsCoords (Point pCell, java.awt.Point pGraphics, int pixelsPerCell) {
 	pGraphics.x = (pCell.x * 2 + (pCell.y & 1)) * pixelsPerCell / 2;
 	pGraphics.y = pCell.y * pixelsPerCell;
     }
 
     // method to convert graphics coords to cell coords
-    static final public void getCellCoords (Point pGraphics, Point pCell, int pixelsPerCell) {
+    static final public void getCellCoords (java.awt.Point pGraphics, Point pCell, int pixelsPerCell) {
 	pCell.y = pGraphics.y / pixelsPerCell;
 	pCell.x = (pGraphics.x - ((pCell.y & 1) * pixelsPerCell/2)) / pixelsPerCell;
     }
