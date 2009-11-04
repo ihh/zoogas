@@ -8,22 +8,24 @@
 public class EnergyRulePattern extends RulePattern {
     // data
     String bondName = null, lenType = null;
-    int minLen, maxLen;
+    double minLen, maxLen;
     double minAngle, maxAngle;
+    double lenTolerance, angleTolerance;
     double E;
     
     // constructors
-    public EnergyRulePattern (String a, String b, String n, double e, String lt, int l, int L, double minAngle, double maxAngle) {
+    public EnergyRulePattern (String a, String b, String n, double e, double l, double L, double lTol, double minAngle, double maxAngle, double aTol) {
 	super(a,b);
 	bondName = n;
-	lenType = lt;
 	minLen = l;
 	maxLen = L;
 	this.minAngle = minAngle;
 	this.maxAngle = maxAngle;
+	lenTolerance = lTol;
+	angleTolerance = aTol;
 	E = e;
     }
 
     // accessors
-    public final boolean hasAngleConstraint() { return maxAngle - minAngle < 2; }
+    public final boolean hasAngleConstraint() { return maxAngle - minAngle < 2 || angleTolerance < 1; }
 }

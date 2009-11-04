@@ -107,10 +107,8 @@ public class Board extends MooreTopology {
     }
 
     // method to return direct length of a vector
-    static long directLength(Point p) {
-	long x = Math.abs(p.x);
-	long y = Math.abs(p.y);
-	return Math.round(Math.sqrt(x*x+y*y));
+    static double directLength(Point p) {
+	return Math.sqrt(p.x*p.x+p.y*p.y);
     }
 
     // method to return angle between two vectors in units of Pi, as a real number from -1 to +1
@@ -394,35 +392,44 @@ public class Board extends MooreTopology {
     // if q != null, then q will be excluded from the set of partners.
     public final double bondEnergy (Point p, Point q, Particle pState, Map<String,Point> incoming, Map<String,Point> outgoing) {
 	double E = pState.energy;
-	Point n = new Point();
-	Point m = new Point();
+	// chain is m->n->p->r->s
+	Point m = new Point(), n = new Point(), r = new Point(), s = new Point();
+	Point m2n = new Point(), n2p = new Point();
 	if (incoming != null)
 	    for (Iterator<Map.Entry<String,Point>> iter = incoming.entrySet().iterator(); iter.hasNext(); ) {
 		Map.Entry<String,Point> kv = iter.next();
 		String bondName = kv.getKey();
-		Point delta = kv.getValue();
-		p.add(delta,n);
+		Point p2n = kv.getValue();
+		p.add(p2n,n);
+		p2n.multiply(-1,n2p);
 		if (onBoard(n) && (q == null || !n.equals(q))) {
-		    Point prev = incoming(n,bondName);
-		    if (prev != null)
-			prev.multiply(-1,m);
-		    E += patternSet.getEnergy(readCell(n).name,pState.name,bondName,delta,prev==null?null:m);
+		    Point n2m = incoming(n,bondName);
+		    if (n2m != null)
+			n2m.multiply(-1,m2n);
+		    E += patternSet.getEnergy(readCell(n).name,pState.name,bondName,n2p,n2m==null?null:m2n);
 		}
 	    }
 	if (outgoing != null)
 	    for (Iterator<Map.Entry<String,Point>> iter = outgoing.entrySet().iterator(); iter.hasNext(); ) {
 		Map.Entry<String,Point> kv = iter.next();
 		String bondName = kv.getKey();
-		Point delta = kv.getValue();
-		p.add(delta,n);
-		if (onBoard(n) && (q == null || !n.equals(q))) {
-		    Point prev = null;
+		Point p2r = kv.getValue();
+		p.add(p2r,r);
+		if (onBoard(r) && (q == null || !r.equals(q))) {
+		    Point p2n = null;
 		    if (incoming != null) {
-			prev = incoming.get(bondName);
-			if (prev != null)
-			    prev.multiply(-1,m);
+			p2n = incoming.get(bondName);
+			if (p2n != null)
+			    p2n.multiply(-1,n2p);
 		    }
-		    E += patternSet.getEnergy(pState.name,readCell(n).name,bondName,delta,prev==null?null:m);
+		    E += patternSet.getEnergy(pState.name,readCell(r).name,bondName,p2r,p2n==null?null:n2p);
+		    Point r2s = outgoing(r,bondName);
+		    if (r2s != null) {
+			r.add(r2s,s);
+			if (onBoard(s) && (q == null || !s.equals(q))) {
+			    E += patternSet.getEnergy(readCell(r).name,readCell(s).name,bondName,r2s,p2r);
+			}
+		    }
 		}
 	    }
 	return E;
@@ -435,23 +442,35 @@ public class Board extends MooreTopology {
 
     // method to calculate the bond energy of two cells with given states and bonds, as well as the self-energies of the two particles.
     public final double bondEnergy (Point p, Point q, Particle pState, Particle qState, Map<String,Point> pIn, Map<String,Point> pOut, Map<String,Point> qIn, Map<String,Point> qOut) {
+	// chain is n->p->q->r
 	double E = 0;
-	Point n = new Point();
-	Point m = new Point();
+	Point n = new Point(), qMaybe = new Point(), r = new Point();
+	Point n2p = new Point(), p2q = new Point();
+	q.subtract(p,p2q);
 	if (pOut != null)
 	    for (Iterator<Map.Entry<String,Point>> iter = pOut.entrySet().iterator(); iter.hasNext(); ) {
 		Map.Entry<String,Point> kv = iter.next();
 		String bondName = kv.getKey();
-		Point delta = kv.getValue();
-		p.add(delta,n);
-		if (n.equals(q)) {
-		    Point prev = null;
+		Point p2qMaybe = kv.getValue();
+		p.add(p2qMaybe,qMaybe);
+		if (qMaybe.equals(q)) {
+		    Point p2n = null;
 		    if (pIn != null) {
-			prev = pIn.get(bondName);
-			if (prev != null)
-			    prev.multiply(-1,m);
+			p2n = pIn.get(bondName);
+			if (p2n != null) {
+			    p.add(p2n,n);
+			    p2n.multiply(-1,n2p);
+			}
 		    }
-		    E += patternSet.getEnergy(pState.name,qState.name,bondName,delta,prev==null?null:m);
+		    E += patternSet.getEnergy(pState.name,qState.name,bondName,p2q,p2n==null?null:n2p);
+		    if (qOut != null) {
+			Point q2r = qOut.get(bondName);
+			if (q2r != null) {
+			    q.add(q2r,r);
+			    if (onBoard(r))
+				E += patternSet.getEnergy(qState.name,readCell(r).name,bondName,q2r,p2q);
+			}
+		    }
 		}
 	    }
 	return E + bondEnergy(p,q,pState,pIn,pOut) + bondEnergy(q,p,qState,qIn,qOut);
