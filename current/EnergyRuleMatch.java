@@ -14,6 +14,8 @@
 //  $%3+2.1 => ($1 + 2) mod 3
 
 public class EnergyRuleMatch extends RuleMatch {
+    // private data, set when bound
+    double len, angle;
 
     // constructors
     public EnergyRuleMatch(EnergyRulePattern p) { super(p); }
@@ -30,23 +32,30 @@ public class EnergyRuleMatch extends RuleMatch {
 	EnergyRulePattern rp = energyPattern();
 	boolean match;
 
-	long len = 0;
-	if (rp.lenType.equals("t"))
-	    len = board.taxicabLength(sourceToTarget);
-	else if (rp.lenType.equals("m"))
-	    len = board.mooreLength(sourceToTarget);
-	else if (rp.lenType.equals("d"))
-	    len = board.directLength(sourceToTarget);
+	len = board.directLength(sourceToTarget);
 	match = len >= rp.minLen && len <= rp.maxLen;
 
 	if (match && prevToSource != null && rp.hasAngleConstraint()) {
-	    double angle = board.angle(prevToSource,sourceToTarget);
+	    angle = board.angle(prevToSource,sourceToTarget);
 	    match = angle >= rp.minAngle && angle <= rp.maxAngle;
+	    //	    System.err.println("Angle between "+prevToSource+" and "+sourceToTarget+" is "+angle+"; match="+(match?"t":"f"));
 	}
 
 	return match && super.matches(sourceName,targetName);
     }
 
     // other public methods
-    public final double E() { return energyPattern().E; }
+    public final double E() {
+	EnergyRulePattern rp = energyPattern();
+	double angleRange = rp.maxAngle - rp.minAngle, lenRange = rp.maxLen - rp.minLen;
+	double angleDev = angleRange > 0 ? 2*Math.abs((angle - rp.minAngle) / angleRange - .5) : 0;
+	double lenDev = lenRange > 0 ? 2*Math.abs((len - rp.minLen) / lenRange - .5) : 0;
+	double angleWeight = angleDev > rp.angleTolerance ? (1 - (angleDev-rp.angleTolerance)/(1-rp.angleTolerance)) : 1;
+	double lenWeight = lenDev > rp.lenTolerance ? (1 - (lenDev-rp.lenTolerance)/(1-rp.lenTolerance)) : 1;
+
+	//	if (rp.angleTolerance < 1 || rp.lenTolerance < 1)
+	//	    System.err.println("angleDev="+angleDev+" angleWeight="+angleWeight+" lenDev="+lenDev+" lenWeight="+lenWeight);
+
+	return rp.E * angleWeight * lenWeight;
+    }
 }
