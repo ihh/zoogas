@@ -48,8 +48,14 @@ VERB s=photon/$F t=[^_].* S=photon/$++R T=$T p=.05 v=reflect
 VERB s=photon/$B t=.* S=_ T=$T p=.001 v=scatter
 
 # Initial conditions
-VERB s=/INIT.* t=_ S=beacon T=_ v=/start
-#VERB s=/INIT.* t=_ S=_ T=_ v=/start
+VERB s=/INIT.* S=beacon v=/start
+#VERB s=/INIT.* S=_ v=/start
+
+# Initial animals
+NOUN n=animal c=0000ff
+VERB s=animal S=rock_imp/s:0
+VERB s=animal S=blade_beetle/s:6
+VERB s=animal S=paper_bird/s:12
 
 # Animal rules. This is where the ecology actually happens.
 # Successful predation
@@ -96,8 +102,8 @@ VERB s=.*/s:17 t=.*/s:([0-8]) S=$S T=$S p=.006 v=kill
 VERB s=.*/s:\d+ t=_ S=$S T=$S p=.0007 v=spawn
 VERB s=.*/s:\d+ t=.*/s:\d+ S=_ T=$T p=0.0015 v=choke
 
-# Movement
-VERB s=.*/s:\d+ t=_ S=$T T=$S p=0.02 v=step
+# Movement is on von Neumann topology (so they can't escape through cracks)
+VERB s=.*/s:\d+ t=_ S=$T T=$S p=0.02 v=step d=.
 
 # Other behaviors of animals
 # Animals eat guests:
@@ -136,6 +142,8 @@ VERB s=cage_builder/len:(\d+)/walls:([^0])/steps:0/dir:$F t=.* S=cage_builder/le
 VERB s=cage_builder/len:(\d+)/walls:0/steps:[01]/dir:.* t=.* S=wall/5 T=$T p=1 v=finish
 # Handle collisions gracefully:
 VERB s=cage_builder/.*dir:$F t=(wall/.*|cage_builder.*) S=wall/5 T=$T p=1 v=join_wall
+# Drop an animal every now and then:
+VERB s=cage_builder/.*/dir:$+L t=_ T=animal v=seed p=.1
 
 
 # uncomment the following to test for runaway particle names... (cage_builder discovered this bug, that's why it's here)
@@ -296,6 +304,29 @@ VERB s=(RNA_sequence_[acgu]*)([acgu])(\d+)(.*) t=.* S=$1$2$2$-3$4 T=$T p=1 v=/ex
 # override run-length of 2:
 VERB s=(RNA_sequence_[acgu]*)([acgu])(2)([^\d].*|) t=.* S=$1$2$2$-3$4 T=$T p=0 v=/expand_run_length_encoding
 VERB s=(RNA_sequence_[acgu]*)([acgu])(2)([^\d].*|) t=.* S=$1$2$2$4 T=$T p=1 v=/expand_run_length_encoding
+
+
+# Cell walls
+NOUN n=(anchored_|)cell_(wall|builder.*) c=204020
+BOND s=(anchored_|)cell_wall t=cell_(wall|builder.*) n=cellWall e=+10 L=1
+VERB s=cell_wall t=_ S=$T T=$S k=(x,cellWall,sT) k=(sT,cellWall,y)
+VERB s=(anchored_|)cell_wall S=_ p=.0001 v=degrade
+
+# Cell builders
+# Choose size and orientation:
+VERB s=cell_builder t=.* S=cell_builder/len:5 T=$T p=.3 v=plan_small_cell
+VERB s=cell_builder t=.* S=cell_builder/len:11 T=$T p=.3 v=plan_medium_cell
+VERB s=cell_builder t=.* S=cell_builder/len:21 T=$T p=.3 v=plan_large_cell
+VERB s=cell_builder/len:(\d+) t=.* S=cell_builder/len:$1/dir:$F T=$T p=1 v=choose_orientation d=.
+# OK, here's the program that actually builds the cell. It's a simple state machine: build, turn, stop.
+VERB s=cell_builder/len:(\d+)/dir:$F t=_ T=cell_builder/len:$1/walls:3/steps:$-1/dir:$F S=anchored_cell_wall v=start B=(s,cellWall,t)
+VERB s=cell_builder/len:(\d+)/walls:(\d)/steps:([^0].*)/dir:$F t=_ S=cell_wall T=cell_builder/len:$1/walls:$2/steps:$-3/dir:$F v=place_next_brick k=(x,cellWall,s) B=(s,cellWall,t)
+VERB s=cell_builder/len:(\d+)/walls:([^0])/steps:0/dir:$F S=cell_builder/len:$1/walls:$-2/steps:$1/dir:$+L v=build_next_wall k=(x,cellWall,s)
+VERB s=cell_builder/len:(\d+)/walls:0/steps:0/dir:.* S=cell_wall v=finish k=(x,cellWall,s)
+# Join up:
+VERB s=cell_builder/.*dir:$F t=anchored_cell_wall S=cell_wall T=cell_wall p=1 v=join_wall k=(x,cellWall,s) k=(t,cellWall,y) B=(s,cellWall,t)
+# Drop an animal every now and then:
+VERB s=cell_builder/.*/dir:$+R t=_ T=animal v=seed p=.04
 
 
 # end of rules
