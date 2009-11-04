@@ -19,6 +19,8 @@ public class QuadTree {
     }
 
     // public methods
+    public int log2size() { return K; }
+
     public void updateQuadTree(Point p,double val) {
 	double oldVal = quadRate[quadNodeIndex(p,K)];
 	double diff = val - oldVal;

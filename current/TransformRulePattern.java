@@ -25,7 +25,7 @@ public class TransformRulePattern extends RulePattern {
 
     private Vector<BondPattern> addBonds(Vector<BondPattern> bondVec, String[] b) {
 	if (bondVec == null)
-	    bondVec = new Vector<BondPattern>(1);
+	    bondVec = new Vector<BondPattern>(b.length);
 	for (int n = 0; n < b.length; ++n)
 	    bondVec.add(BondPattern.fromString(b[n]));
 	return bondVec;

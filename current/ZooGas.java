@@ -43,15 +43,14 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     int verbHistoryLength = 10, verbHistoryPos = 0, verbHistoryRefreshPeriod = 20, verbHistoryRefreshCounter = 0, verbsSinceLastRefresh = 0;
     String[] verbHistory = new String[verbHistoryLength];
     Particle[] nounHistory = new Particle[verbHistoryLength];
-    int updatesRow = 0, titleRow = 4, networkRow = 5, nounRow = 8, verbHistoryRow = 12;
+    int updatesRow = 0, titleRow = 4, networkRow = 5, hintRow = 7, nounRow = 8, verbHistoryRow = 12;
 
     // tools and cheats
     String toolboxFilename = "TOOLS.txt";
     ToolBox toolBox = null;
     final char cheatKey = '/';  // allows player to see the hidden parts of state names, i.e. the part behind the '/'
     final char stopKey = '.';  // stops the action on this board (does not block incoming network events)
-    final char slowKey = ',';  // slows the action on this board (does not block incoming network events)
-    double slowFactor = 40;  // rate at which the board slows down when slowKey is pressed (actually the rate between buffer refreshes)
+    final char slowKey = ',';  // allows player to see bonds
 
     // cellular automata state list
     private Vector<Particle> particleVec = new Vector<Particle>();  // internal to this class
@@ -216,20 +215,23 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 		if (boardUpdateCount % timeCheckPeriod == 0) {
 		    long currentTimeCheck = System.currentTimeMillis();
 		    updatesPerSecond = ((double) 1000 * timeCheckPeriod) / ((double) (currentTimeCheck - lastTimeCheck));
-		    if (slowPressed)
-			updatesPerSecond /= slowFactor;  // this is a bit hacky
 		    lastTimeCheck = currentTimeCheck;
 		}
 
-		plotCounts();
-		refreshBuffer();
+		if (slowPressed)
+		    drawEverything();
+		else {
+		    drawToolbox();
+		    drawBorder();
+		    refreshBuffer();
+		}
 	    }
     }
 
 
     // main evolution loop
     private void evolveStuff() {
-	board.update(patternMatchesPerRefresh / (slowPressed ? slowFactor : 1),this);
+	board.update(patternMatchesPerRefresh,this);
 	++boardUpdateCount;
     }
 
@@ -261,6 +263,18 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 		toolBox.currentTool.spray(cursorPos,board,this,spaceParticle);
 	} else
 	    toolBox.refill(1);
+    }
+
+    // bond-rendering method
+    Random rnd = new Random();
+    public void drawBond (Point p, Point q) {
+	bfGraphics.setColor(new Color (rnd.nextFloat(), rnd.nextFloat(), rnd.nextFloat()));
+	Point pg = new Point();
+	Point qg = new Point();
+	board.getGraphicsCoords(p,pg,pixelsPerCell);
+	board.getGraphicsCoords(q,qg,pixelsPerCell);
+	int k = pixelsPerCell>>1;
+	bfGraphics.drawLine(pg.x+k,pg.y+k,qg.x+k,qg.y+k);
     }
 
     // BoardRenderer methods
@@ -300,28 +314,43 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	    for (p.y = 0; p.y < size; ++p.y)
 		drawCell(p);
 
+	drawBonds();
+
+	drawBorder();
+	drawToolbox();
 	refreshBuffer();
     }
 
-    protected void redrawBoard() {
-	bfGraphics.setColor(Color.black);
-	bfGraphics.fillRect(0,0,boardSize,boardSize);
-
-	drawEverything();
-    }
-
-    protected void refreshBuffer() {
-	// draw border around board
+    // draw border around board
+    protected void drawBorder() {
 	bfGraphics.setColor(Color.white);
 	bfGraphics.drawRect(0,0,boardSize-1,boardSize-1);
+    }
 
+    // draw some random bonds
+    protected void drawBonds() {
+	Point p = new Point();
+	Point q = new Point();
+	for (p.x = 0; p.x < board.size; ++p.x)
+	    for (p.y = 0; p.y < board.size; ++p.y) {
+		for (Iterator<Map.Entry<String,Point>> iter = board.incoming(p).entrySet().iterator(); iter.hasNext(); ) {
+		    Map.Entry<String,Point> kv = iter.next();
+		    p.add(kv.getValue(),q);
+		    if (board.onBoard(q))
+			drawBond(p,q);
+		}
+	    }
+    }
+
+    // do a sync'd refresh
+    protected void refreshBuffer() {
 	// update buffer
 	repaint();
 	Toolkit.getDefaultToolkit().sync();	
     }
 
     // status & tool bars
-    protected void plotCounts() {
+    protected void drawToolbox() {
 
 	// spray levels
 	toolBox.plotReserves(bfGraphics,new Point(boardSize,0));
@@ -332,6 +361,9 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	// networking
 	flashOrHide ("Online", networkRow, board.online(), 0, -1, false, Color.blue);
 	flashOrHide ("Connected", networkRow+1, board.connected(), 0, -1, false, Color.cyan);
+
+	// hint
+	flashOrHide ("Special keys: "+cheatKey+" (reveal state) "+slowKey+" (reveal bonds) "+stopKey+" (freeze)", hintRow, true, 0, 600, true, Color.green);
 
 	// identify particle that cursor is currently over
 	boolean cursorOnBoard = getCursorPos();

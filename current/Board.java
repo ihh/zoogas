@@ -31,7 +31,7 @@ public class Board extends MooreTopology {
     private String localhost = null;
 
     // fast quad tree
-    QuadTree quad = null;
+    public QuadTree quad = null;
 
     // constructor
     public Board (int size) {
@@ -124,9 +124,14 @@ public class Board extends MooreTopology {
     }
 
     // update methods
+    // getRandomPair places coordinates of a random cell in p, weighted by its update rate
+    public final void getRandomCell(Point p) {
+	quad.sampleQuadLeaf(p,rnd);
+    }
+
     // getRandomPair places coordinates of a random pair in (p,n) and returns direction from p to n
     public final int getRandomPair(Point p,Point n) {
-	quad.sampleQuadLeaf(p,rnd);
+	getRandomCell(p);
 	int dir = readCell(p).sampleDir(rnd);
 	getNeighbor(p,n,dir);
 	return dir;
