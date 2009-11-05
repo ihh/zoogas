@@ -162,7 +162,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	// init hints
 	String specialKeys = "Special keys: "+cheatKey+" (reveal state) "+slowKey+" (reveal bonds) "+stopKey+" (freeze)";
 	hints.add ("Hi, welcome to Zoo Gas!");
-	hints.add ("I am the Head Zookeeper, Stan the Man.");
+	hints.add ("I am the Deputy Head Zookeeper, Celia O'Tuamata.");
 	hints.add ("I'll be walking you through your first day.");
 	hints.add ("This job is pretty open-ended. Just make a zoo.");
 	hints.add ("You have a bunch of tools to do this, in your Toolbox.");
@@ -174,18 +174,18 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	hints.add ("Click on the board to use the currently selected tool...");
 	hints.add ("...or hold down the tool hotkey with the mouse over the board.");
 	if (toolBox.tool.size() > 0)
-	    hints.add ("For example, mouseover the board & hold \"" + toolBox.tool.get(0).hotKey + "\" to spray " + toolBox.tool.get(0).particleName + ".");
+	    hints.add ("Like, mouseover the board & hold \"" + toolBox.tool.get(0).hotKey + "\" to spray " + toolBox.tool.get(0).particleName + " pixels.");
 	hints.add ("Next to each tool there is a bar...");
-	hints.add ("...this shows how many particles you have in reserve.");
-	hints.add ("The bars recharge -- gradually! We're not made of money.");
+	hints.add ("...this shows how many pixels you have in reserve.");
+	hints.add ("The bars recharge - gradually! We're not made of money.");
 	hints.add ("The board itself is on the far left, within the white square.");
 	hints.add ("Actually I'm assuming you already figured that out.");
 	hints.add ("This area to the right contains feedback messages...");
 	hints.add ("...such as these helpful hints (click to hurry'em along, btw).");
-	hints.add ("If you move the mouse over a particle, a message appears...");
-	hints.add ("...telling you the name of that particle.");
-	hints.add ("Beneath, you can also see a list of recent events.");
-	hints.add ("Now you can experiment with the particles a bit...");
+	hints.add ("If you mouseover a pixel on the board, a message appears...");
+	hints.add ("...telling you the name of that pixel.");
+	hints.add ("At bottom right, you can also see a list of recent events.");
+	hints.add ("Now you can experiment with the pixels a bit...");
 	hints.add ("...they interact in a lot of different ways.");
 	hints.add ("Meanwhile I'm gonna tell you some stuff I probably shouldn't.");
 	hints.add ("It's not cheating, exactly, but it's sort of bending the rules.");
@@ -193,17 +193,17 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	hints.add ("You might find some cracks in the Matrix.");
 	hints.add ("Anyways... here are the special keys. Don't say I didn't warn ya.");
 	hints.add (specialKeys);
-	hints.add ("The \""+cheatKey+"\" key reveals the hidden state of a particle...");
-	hints.add ("...that is, when you mouseover that particle.");
-	hints.add ("It also reveals the particle's outgoing(>) and incoming(<) bonds,");
-	hints.add ("along with the number of particles of this type in existence.");
+	hints.add ("The \""+cheatKey+"\" key reveals the hidden state of a pixel...");
+	hints.add ("...that is, when you mouseover that pixel.");
+	hints.add ("It also reveals the pixel's outgoing(>) and incoming(<) bonds,");
+	hints.add ("along with the number of pixels of this type in existence.");
 	hints.add (specialKeys);
 	hints.add ("The \""+stopKey+"\" key stops all action on the board.");
-	hints.add ("Try it now. Add particles, press \""+stopKey+"\" and Feel the Power!");
+	hints.add ("Try it now. Add pixels, press \""+stopKey+"\" and Feel the Power!");
 	hints.add (specialKeys);
 	hints.add ("The \""+slowKey+"\" key draws bonds on the board.");
 	hints.add ("This also slows things down a bit.");
-	hints.add ("You won't see anything unless you have some bonded particles.");
+	hints.add ("You won't see anything unless you have some bonded pixels.");
 	hints.add ("I'll leave you to find out what these are.");
 	hints.add (specialKeys);
 	hints.add ("OK, that's pretty much all I got for ya...");
