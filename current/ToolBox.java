@@ -7,7 +7,7 @@ import java.io.*;
 
 public class ToolBox {
     // data
-    Vector<SprayTool> tool = new Vector<SprayTool>();
+    ArrayList<SprayTool> tool = new ArrayList<SprayTool>();
     SprayTool currentTool = null;  // current spray tool
 
     // dimensions
@@ -23,7 +23,8 @@ public class ToolBox {
 		String s = buff.readLine();
 		tb.tool.add (SprayTool.fromString(s,board));
 	    }
-	    tb.currentTool = tb.tool.elementAt(0);
+	    buff.close();
+	    tb.currentTool = tb.tool.get(0);
 	} catch (IOException e) {
 	    e.printStackTrace();
 	}
@@ -42,39 +43,42 @@ public class ToolBox {
 
     // render method
     void plotReserves (Graphics g, Point topLeft) {
+        g.setColor(Color.black);
+        g.fillRect(topLeft.x, topLeft.y, toolReserveBarWidth+toolTextWidth, toolHeight * tool.size());
+        
 	for (int row = 0; row < tool.size(); ++row) {
-	    SprayTool st = tool.elementAt(row);
-	    st.plotReserve(g,new Point(topLeft.x,topLeft.y+row*toolHeight),toolHeight,toolReserveBarWidth,toolTextWidth,st==currentTool);
+	    SprayTool st = tool.get(row);
+	    st.plotReserve(g, topLeft, toolHeight,toolReserveBarWidth,toolTextWidth,st==currentTool);
+	    topLeft.y += toolHeight;
 	}
     }
 
     // refill method
     void refill(double scale) {
-	for (Enumeration<SprayTool> iter = tool.elements(); iter.hasMoreElements(); )
-	    iter.nextElement().refill(scale);
+	for(SprayTool st : tool)
+	    st.refill(scale);
     }
 
     // process keypress
     boolean hotKeyPressed (char c) {
-	boolean foundKey = false;
-	for (int t = 0; t < tool.size(); ++t) {
-	    SprayTool st = tool.elementAt(t);
+	for(SprayTool st : tool)
+	{
 	    if (st.isHotKey(c)) {
-		foundKey = true;
 		currentTool = st;
-		break;
+		return true;
 	    }
 	}
-	return foundKey;
+	return false;
     }
 
     // process click-select
     boolean clickSelect (int ypos) {
 	int row = ypos / toolHeight;
 	if (row >= 0 && row < tool.size()) {
-	    currentTool = tool.elementAt(row);
+	    currentTool = tool.get(row);
 	    return true;
 	}
 	return false;
     }
 }
+

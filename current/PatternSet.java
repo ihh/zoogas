@@ -104,10 +104,7 @@ public class PatternSet {
 	    if (rm.matches(particleName))
 		v.add (rm);
 	}
-	TransformRuleMatch[] rm = new TransformRuleMatch[v.size()];
-	for (int n = 0; n < v.size(); ++n)
-	    rm[n] = v.get(n);
-	return rm;
+	return (TransformRuleMatch[])v.toArray(new TransformRuleMatch[v.size()]);
     }
 
     // helper to get bond energy for a given particle pair
@@ -153,6 +150,8 @@ public class PatternSet {
 		    System.err.println("PatternSet: Ignoring unrecognized line: " + s);
 		}
 	    }
+
+	    buff.close();
 	} catch (IOException e) {
 	    e.printStackTrace();
 	}

@@ -19,13 +19,13 @@ public class ParticleSet {
 	for (Iterator<String> e = particleName.iterator(); e.hasNext() ;)
 	    print.println (e.next());
 	print.println ("END");
+	print.close();
     }
 
     void toFile(String filename) {
 	try {
 	    FileOutputStream fos = new FileOutputStream(filename);
 	    toStream (fos);
-	    fos.close();
 	} catch (Exception e) {
 	    e.printStackTrace();
 	}
