@@ -251,17 +251,17 @@ NOUN n=(base|RNA_sequence)_u.* c=400080
 
 # canonical basepairs: RGB components are the the sums of the RGB components of individual bases.
 # these lines also define the stabilizing energy of a Watson-Crick or wobble basepair
-NOUN n=basepair_(au|ua).* c=c00080 e=.5
-NOUN n=basepair_(cg|gc).* c=40ff80 e=.5
-NOUN n=basepair_(gu|ug).* c=4080ff e=.2
+NOUN n=basepair_(cg|gc).* c=40ff80 e=3
+NOUN n=basepair_(au|ua).* c=c00080 e=2
+NOUN n=basepair_(gu|ug).* c=4080ff e=1
 # non-canonical basepairs are a bit dimmer (3/4 as bright as a straight sum).
 # these lines also define the unfavorable energy of such basepairs
-NOUN n=basepair_(ac|ca).* c=906000 e=-1
-NOUN n=basepair_(ag|ga|cu|uc).* c=606060 e=-1
-NOUN n=basepair_aa.* c=c00000 e=-1
-NOUN n=basepair_cc.* c=60c000 e=-1
-NOUN n=basepair_gg.* c=00c0c0 e=-1
-NOUN n=basepair_uu.* c=6000c0 e=-1
+NOUN n=basepair_(ac|ca).* c=906000 e=-3
+NOUN n=basepair_(ag|ga|cu|uc).* c=606060 e=-3
+NOUN n=basepair_aa.* c=c00000 e=-3
+NOUN n=basepair_cc.* c=60c000 e=-3
+NOUN n=basepair_gg.* c=00c0c0 e=-3
+NOUN n=basepair_uu.* c=6000c0 e=-3
 
 # define the covalent bond between consecutive bases on the same chain
 # bond endpoint identifiers are /5p and /3p
@@ -281,6 +281,18 @@ VERB s=(base|basepair)_.* t=_ S=$T T=$S p=1 v=/drift k=(sT,5to3,x) k=(y,5to3,sT)
 
 # all bases, basepairs and constructors will eventually disappear if they become unbonded
 VERB s=(base|basepair)_.* S=_ p=.01 v=/degrade
+
+
+# Photons mutate bases, preferring transitions to transversions
+VERB s=photon/.* t=base_[ag] S=_ T=base_r p=.8 k=(x,5to3,t) k=(t,5to3,y)
+VERB s=photon/.* t=base_[cu] S=_ T=base_y p=.8 k=(x,5to3,t) k=(t,5to3,y)
+VERB s=photon/.* t=base_[acgu] S=_ T=base_n p=.2 k=(x,5to3,t) k=(t,5to3,y)
+VERB s=base_r S=base_a k=(x,5to3,s) k=(s,5to3,y)
+VERB s=base_r S=base_g k=(x,5to3,s) k=(s,5to3,y)
+VERB s=base_y S=base_c k=(x,5to3,s) k=(s,5to3,y)
+VERB s=base_y S=base_u k=(x,5to3,s) k=(s,5to3,y)
+VERB s=base_n S=base_r k=(x,5to3,s) k=(s,5to3,y)
+VERB s=base_n S=base_y k=(x,5to3,s) k=(s,5to3,y)
 
 
 # now here is the constructor for an RNA sequence
@@ -306,8 +318,10 @@ VERB s=(RNA_sequence_[acgu]*)([acgu])(2)([^\d].*|) t=.* S=$1$2$2$-3$4 T=$T p=0 v
 VERB s=(RNA_sequence_[acgu]*)([acgu])(2)([^\d].*|) t=.* S=$1$2$2$4 T=$T p=1 v=/expand_run_length_encoding
 
 
+
 # Cell walls
-NOUN n=(anchored_|)cell_(wall|builder.*) c=204020
+NOUN n=(anchored_cell_wall|cell_builder.*) c=103010
+NOUN n=cell_wall c=204020
 BOND s=(anchored_|)cell_wall t=cell_(wall|builder.*) n=cellWall e=+10 L=1
 VERB s=cell_wall t=_ S=$T T=$S k=(x,cellWall,sT) k=(sT,cellWall,y)
 VERB s=(anchored_|)cell_wall S=_ p=.0001 v=degrade

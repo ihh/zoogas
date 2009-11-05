@@ -43,6 +43,9 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     int verbHistoryLength = 10, verbHistoryPos = 0, verbHistoryRefreshPeriod = 20, verbHistoryRefreshCounter = 0, verbsSinceLastRefresh = 0;
     String[] verbHistory = new String[verbHistoryLength];
     Particle[] nounHistory = new Particle[verbHistoryLength];
+    Vector<String> hints = new Vector<String>();
+    int currentHint = 0;
+    double hintBrightness = 0;
     int updatesRow = 0, titleRow = 4, networkRow = 5, hintRow = 7, nounRow = 8, verbHistoryRow = 12;
 
     // tools and cheats
@@ -117,7 +120,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	board.initClient(port,this);
     }
 
-    // default constructor
+    // default & primary constructor
     public ZooGas() {
 
 	// create board
@@ -155,6 +158,60 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 
 	// init spray tools
 	initSprayTools();
+
+	// init hints
+	String specialKeys = "Special keys: "+cheatKey+" (reveal state) "+slowKey+" (reveal bonds) "+stopKey+" (freeze)";
+	hints.add ("Hi, welcome to Zoo Gas!");
+	hints.add ("I am the Head Zookeeper, Stan the Man.");
+	hints.add ("I'll be walking you through your first day.");
+	hints.add ("This job is pretty open-ended. Just make a zoo.");
+	hints.add ("You have a bunch of tools to do this, in your Toolbox.");
+	hints.add ("The Toolbox is the list to the right of the board...");
+	hints.add ("... i.e. just to the left of this message.");
+	hints.add ("Select a tool by clicking, or press its hot-key.");
+	if (toolBox.tool.size() > 0)
+	    hints.add ("For example, press \"" + toolBox.tool.get(0).hotKey + "\" to select " + toolBox.tool.get(0).particleName + ".");
+	hints.add ("Click on the board to use the currently selected tool...");
+	hints.add ("...or hold down the tool hotkey with the mouse over the board.");
+	if (toolBox.tool.size() > 0)
+	    hints.add ("For example, mouseover the board & hold \"" + toolBox.tool.get(0).hotKey + "\" to spray " + toolBox.tool.get(0).particleName + ".");
+	hints.add ("Next to each tool there is a bar...");
+	hints.add ("...this shows how many particles you have in reserve.");
+	hints.add ("The bars recharge -- gradually! We're not made of money.");
+	hints.add ("The board itself is on the far left, within the white square.");
+	hints.add ("Actually I'm assuming you already figured that out.");
+	hints.add ("This area to the right contains feedback messages...");
+	hints.add ("...such as these helpful hints (click to hurry'em along, btw).");
+	hints.add ("If you move the mouse over a particle, a message appears...");
+	hints.add ("...telling you the name of that particle.");
+	hints.add ("Beneath, you can also see a list of recent events.");
+	hints.add ("Now you can experiment with the particles a bit...");
+	hints.add ("...they interact in a lot of different ways.");
+	hints.add ("Meanwhile I'm gonna tell you some stuff I probably shouldn't.");
+	hints.add ("It's not cheating, exactly, but it's sort of bending the rules.");
+	hints.add ("Some of these hacks kinda mess reality up a bit, y'know?");
+	hints.add ("You might find some cracks in the Matrix.");
+	hints.add ("Anyways... here are the special keys. Don't say I didn't warn ya.");
+	hints.add (specialKeys);
+	hints.add ("The \""+cheatKey+"\" key reveals the hidden state of a particle...");
+	hints.add ("...that is, when you mouseover that particle.");
+	hints.add ("It also reveals the particle's outgoing(>) and incoming(<) bonds,");
+	hints.add ("along with the number of particles of this type in existence.");
+	hints.add (specialKeys);
+	hints.add ("The \""+stopKey+"\" key stops all action on the board.");
+	hints.add ("Try it now. Add particles, press \""+stopKey+"\" and Feel the Power!");
+	hints.add (specialKeys);
+	hints.add ("The \""+slowKey+"\" key draws bonds on the board.");
+	hints.add ("This also slows things down a bit.");
+	hints.add ("You won't see anything unless you have some bonded particles.");
+	hints.add ("I'll leave you to find out what these are.");
+	hints.add (specialKeys);
+	hints.add ("OK, that's pretty much all I got for ya...");
+	hints.add ("...I'm going to loop now, because I'm an NPC and we do that.");
+	hints.add ("Plus, I'm kinda forgetful: every five minutes is like a new day.");
+	hints.add ("I think it might be a side effect of the mutator gas.");
+	hints.add ("I've kind of lost my train of thought.... what was I saying...");
+	hints.add ("oh yeah...");
 
 	// init JFrame
 	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -363,7 +420,15 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	flashOrHide ("Connected", networkRow+1, board.connected(), 0, -1, false, Color.cyan);
 
 	// hint
-	flashOrHide ("Special keys: "+cheatKey+" (reveal state) "+slowKey+" (reveal bonds) "+stopKey+" (freeze)", hintRow, true, 0, 600, true, Color.green);
+	int fg = (int) (hintBrightness>255 ? (511-hintBrightness) : hintBrightness);
+	int bg = 16;
+	Color hintForeground = new Color(bg,Math.max(fg,bg),0);
+	Color hintBackground = new Color(bg,bg,0);
+	printOrHide (hints.get(currentHint), hintRow, true, hintForeground, hintBackground);
+	if ((hintBrightness += .5) >= 512) {
+	    hintBrightness = 0;
+	    currentHint = (currentHint + 1) % hints.size();
+	}
 
 	// identify particle that cursor is currently over
 	boolean cursorOnBoard = getCursorPos();
@@ -431,10 +496,14 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     }
 
     private void printOrHide (String text, int row, boolean show, Color color) {
+	printOrHide (text, row, show, color, Color.black);
+    }
+
+    private void printOrHide (String text, int row, boolean show, Color color, Color bgColor) {
 	FontMetrics fm = bfGraphics.getFontMetrics();
 	int ch = fm.getHeight(), bleed = 6, yPos = row * (ch + bleed);
 
-	bfGraphics.setColor (Color.black);
+	bfGraphics.setColor (bgColor);
 	bfGraphics.fillRect (boardSize + toolBarWidth + toolLabelWidth, yPos, textBarWidth, ch + bleed);
 
 	if (show && text != null) {
@@ -453,6 +522,10 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	Point mousePos = new Point(getContentPane().getMousePosition());
 	if (mousePos.x >= boardSize && mousePos.x < boardSize + toolBarWidth + toolLabelWidth)
 	    toolBox.clickSelect(mousePos.y);
+	else if (mousePos.x >= boardSize + toolBarWidth + toolLabelWidth) {
+	    hintBrightness = 240;
+	    currentHint = (currentHint + 1) % hints.size();
+	}
     }
 
     public void mouseReleased(MouseEvent e) {

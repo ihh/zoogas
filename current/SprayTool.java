@@ -3,12 +3,12 @@ import java.util.*;
 
 public class SprayTool {
     // data
-    private String particleName = null;
-    private double sprayDiameter = 0, sprayPower = 0, reserve = 0, maxReserve = 0, refillRate = 0, barWidth = 1;
-    private char hotKey = 0;
-    private Particle particle = null;
+    protected String particleName = null;
+    protected double sprayDiameter = 0, sprayPower = 0, reserve = 0, maxReserve = 0, refillRate = 0, barWidth = 1;
+    protected char hotKey = 0;
+    protected Particle particle = null;
 
-    // random number generator
+    // random number generator, for spraying
     private Random rnd = new Random();
 
     // constructor
