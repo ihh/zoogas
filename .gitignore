@@ -2,3 +2,5 @@
 *.class
 # ignore emacs save files
 *~
+# ignore .bak files
+*.bak
