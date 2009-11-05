@@ -68,7 +68,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     double patternMatchesPerRefresh = 1;
 
     // Swing
-    Graphics bfGraphics;
+    Graphics2D bfGraphics;
     BufferedImage bfImage;
     Cursor boardCursor, normalCursor;
     // Uncomment to use "helicopter.png" as a mouse cursor over the board:
@@ -83,6 +83,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     boolean stopPressed = false;  // true if stopKey is pressed (stops updates on this board)
     boolean slowPressed = false;  // true if slowKey is pressed (slows updates on this board)
     double updatesPerSecond = 0;
+    String lastDumpStats = ""; // hacky way to avoid concurrency issues
 
     // main()
     public static void main(String[] args) {
@@ -217,16 +218,22 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	setResizable(false);
 	bfImage = new BufferedImage(totalWidth, totalHeight, BufferedImage.TYPE_3BYTE_BGR);
-	bfGraphics = bfImage.getGraphics();
+	bfGraphics = bfImage.createGraphics();
+	bfGraphics.setColor(Color.black);
+	bfGraphics.clearRect(0,0,totalWidth,totalHeight);
 	setContentPane(new JPanel() {
-				protected void paintComponent(Graphics g)
+				public void paint(Graphics g)
 				{
-					super.paintChildren(g);
-					g.drawImage(bfImage, 0, 0, null);
+                                    super.paintComponent(g);
+                                    g.drawImage(bfImage, 0, 0, null);
+                                    drawBorder(g);
+                                    drawToolbox(g);
 				}});
 
 	// set size
 	getContentPane().setPreferredSize(new Dimension(totalWidth,totalHeight));
+        getContentPane().setIgnoreRepaint(true);
+        setIgnoreRepaint(true);
 	pack();
 	setVisible(true);
 
@@ -252,9 +259,8 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 
     // main game loop
     private void gameLoop() {
-	// Game logic goes here.
-
-	drawEverything();
+	// Game logic goes here
+	drawEverything(false);
 
 	long lastTimeCheck = System.currentTimeMillis();
 	long timeCheckPeriod = 10;
@@ -270,18 +276,13 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 		useTools();
 
 		if (boardUpdateCount % timeCheckPeriod == 0) {
+		    lastDumpStats = board.debugDumpStats();
 		    long currentTimeCheck = System.currentTimeMillis();
 		    updatesPerSecond = ((double) 1000 * timeCheckPeriod) / ((double) (currentTimeCheck - lastTimeCheck));
 		    lastTimeCheck = currentTimeCheck;
 		}
 
-		if (slowPressed)
-		    drawEverything();
-		else {
-		    drawToolbox();
-		    drawBorder();
-		    refreshBuffer();
-		}
+		drawEverything(slowPressed);
 	    }
     }
 
@@ -362,26 +363,16 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     }
 
     // other rendering methods
-    private void drawEverything() {
-	bfGraphics.setColor(Color.black);
-	bfGraphics.fillRect(0,0,totalWidth,totalHeight);
-
-	Point p = new Point();
-	for (p.x = 0; p.x < size; ++p.x)
-	    for (p.y = 0; p.y < size; ++p.y)
-		drawCell(p);
-
-	drawBonds();
-
-	drawBorder();
-	drawToolbox();
+    private void drawEverything(boolean drawBonds) {
+	if(drawBonds)
+            drawBonds();
 	refreshBuffer();
     }
 
     // draw border around board
-    protected void drawBorder() {
-	bfGraphics.setColor(Color.white);
-	bfGraphics.drawRect(0,0,boardSize-1,boardSize-1);
+    protected void drawBorder(Graphics g) {
+	g.setColor(Color.white);
+	g.drawRect(0,0,boardSize-1,boardSize-1);
     }
 
     // draw some random bonds
@@ -402,29 +393,25 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     // do a sync'd refresh
     protected void refreshBuffer() {
 	// update buffer
-	repaint();
-	Toolkit.getDefaultToolkit().sync();	
+	getContentPane().repaint();
+	Toolkit.getDefaultToolkit().sync();
     }
 
     // status & tool bars
-    protected void drawToolbox() {
-
-	// spray levels
-	toolBox.plotReserves(bfGraphics,new Point(boardSize,0));
-
+    protected void drawToolbox(Graphics g) {
 	// name of the game
-	flashOrHide ("Z00 GAS", titleRow, true, 0, 400, true, Color.white);
+	flashOrHide (g, "Z00 GAS", titleRow, true, 0, 400, true, Color.white);
 
 	// networking
-	flashOrHide ("Online", networkRow, board.online(), 0, -1, false, Color.blue);
-	flashOrHide ("Connected", networkRow+1, board.connected(), 0, -1, false, Color.cyan);
+	flashOrHide (g, "Online", networkRow, board.online(), 0, -1, false, Color.blue);
+	flashOrHide (g, "Connected", networkRow+1, board.connected(), 0, -1, false, Color.cyan);
 
 	// hint
 	int fg = (int) (hintBrightness>255 ? (511-hintBrightness) : hintBrightness);
 	int bg = 16;
 	Color hintForeground = new Color(bg,Math.max(fg,bg),0);
 	Color hintBackground = new Color(bg,bg,0);
-	printOrHide (hints.get(currentHint), hintRow, true, hintForeground, hintBackground);
+	printOrHide (g, hints.get(currentHint), hintRow, true, hintForeground, hintBackground);
 	if ((hintBrightness += .5) >= 512) {
 	    hintBrightness = 0;
 	    currentHint = (currentHint + 1) % hints.size();
@@ -434,7 +421,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	boolean cursorOnBoard = getCursorPos();
 	Particle cursorParticle = cursorOnBoard ? board.readCell(cursorPos) : null;
 	boolean isSpace = cursorParticle == spaceParticle;
-	printOrHide (cursorParticle == null
+	printOrHide (g, cursorParticle == null
 		     ? "Mouseover board to identify pixels"
 		     : "Under cursor:", nounRow, true, Color.white);
 	String nameToShow = "";
@@ -442,18 +429,18 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	    nameToShow = cheatPressed
 		? cursorParticle.name + " (" + cursorParticle.count + ")" + board.singleNeighborhoodDescription(cursorPos,false)
 		: cursorParticle.visibleName();
-	printOrHide (nameToShow, nounRow+1, cursorOnBoard, cursorOnBoard ? cursorParticle.color : Color.white);
+	printOrHide (g, nameToShow, nounRow+1, cursorOnBoard, cursorOnBoard ? cursorParticle.color : Color.white);
 
 	// update rate and other stats
 	StringBuilder sb = new StringBuilder();
 	Formatter formatter = new Formatter(sb, Locale.US);
 	Runtime runtime = Runtime.getRuntime();
-	printOrHide (board.debugDumpStats(), updatesRow, true, new Color(48,48,0));
-	printOrHide ("Heap: current " + kmg(runtime.totalMemory()) + ", max " + kmg(runtime.maxMemory()) + ", free " + kmg(runtime.freeMemory()), updatesRow+1, true, new Color(48,48,0));
-	printOrHide (formatter.format("Updates/sec: %.2f",updatesPerSecond).toString(), updatesRow+2, true, new Color(64,64,0));
+	printOrHide (g, lastDumpStats, updatesRow, true, new Color(48,48,0));
+	printOrHide (g, "Heap: current " + kmg(runtime.totalMemory()) + ", max " + kmg(runtime.maxMemory()) + ", free " + kmg(runtime.freeMemory()), updatesRow+1, true, new Color(48,48,0));
+	printOrHide (g, formatter.format("Updates/sec: %.2f",updatesPerSecond).toString(), updatesRow+2, true, new Color(64,64,0));
 
 	// recent verbs
-	printOrHide ("Recent events:", verbHistoryRow, true, Color.white);
+	printOrHide (g, "Recent events:", verbHistoryRow, true, Color.white);
 	for (int vpos = 0; vpos < verbHistoryLength; ++vpos) {
 	    int v = (verbHistoryPos + verbHistoryLength - vpos) % verbHistoryLength;
 	    String verbText = null;
@@ -466,9 +453,12 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 		verbText = cheatPressed ? (verbHistory[v] + nounInBrackets) : Particle.visibleText(verbHistory[v]);
 		verbColor = nounHistory[v].color;
 	    }
-	    printOrHide (verbText, verbHistoryRow + vpos + 1, true, verbColor);
+	    printOrHide (g, verbText, verbHistoryRow + vpos + 1, true, verbColor);
 	    if (++verbHistoryRefreshCounter >= verbHistoryRefreshPeriod)
 		verbsSinceLastRefresh = verbHistoryRefreshCounter = 0;
+          
+	  // spray levels
+	  toolBox.plotReserves(g,new Point(boardSize,0));
 	}
     }
 
@@ -476,7 +466,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	return bytes < 1024 ? (bytes + "B") : (bytes < 1048576 ? (bytes/1024 + "K") : (bytes < 1073741824 ? (bytes/1048576 + "M") : bytes/1073741824 + "G"));
     }
 
-    private void flashOrHide (String text, int row, boolean show, int minTime, int maxTime, boolean onceOnly, Color color) {
+    private void flashOrHide (Graphics g, String text, int row, boolean show, int minTime, int maxTime, boolean onceOnly, Color color) {
 	int flashPeriod = 10, flashes = 10;
 	boolean reallyShow = false;
 	boolean currentlyShown = timeFirstTrue[row] > 0;
@@ -492,24 +482,24 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	    timeFirstTrue[row] = 0;
 
 	if (reallyShow || currentlyShown)
-	    printOrHide (text, row, reallyShow, color);
+	    printOrHide (g, text, row, reallyShow, color);
     }
 
-    private void printOrHide (String text, int row, boolean show, Color color) {
-	printOrHide (text, row, show, color, Color.black);
+    private void printOrHide (Graphics g, String text, int row, boolean show, Color color) {
+	printOrHide (g, text, row, show, color, Color.black);
     }
 
-    private void printOrHide (String text, int row, boolean show, Color color, Color bgColor) {
-	FontMetrics fm = bfGraphics.getFontMetrics();
+    private void printOrHide (Graphics g, String text, int row, boolean show, Color color, Color bgColor) {
+	FontMetrics fm = g.getFontMetrics();
 	int ch = fm.getHeight(), bleed = 6, yPos = row * (ch + bleed);
 
-	bfGraphics.setColor (bgColor);
-	bfGraphics.fillRect (boardSize + toolBarWidth + toolLabelWidth, yPos, textBarWidth, ch + bleed);
+	g.setColor (bgColor);
+	g.fillRect (boardSize + toolBarWidth + toolLabelWidth, yPos, textBarWidth, ch + bleed);
 
 	if (show && text != null) {
 	    int xSize = fm.stringWidth(text), xPos = boardSize + toolBarWidth + toolLabelWidth + textBarWidth - xSize;
-	    bfGraphics.setColor (color);
-	    bfGraphics.drawString (text, xPos, yPos + ch);
+	    g.setColor (color);
+	    g.drawString (text, xPos, yPos + ch);
 	}
     }
 

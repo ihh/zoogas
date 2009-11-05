@@ -178,8 +178,8 @@ public class Particle {
     // helper to count number of compiled transformation rule outcomes
     protected int outcomes() {
 	int o = 0;
-	for(HashMap<Particle, RandomVariable<UpdateEvent>> map : transform)
-		for(RandomVariable rv :  map.values())
+	for (int d = 0; d < transform.size(); ++d)
+		for (RandomVariable<UpdateEvent> rv : transform.get(d).values())
 			o += rv.size();
 	return o;
     }

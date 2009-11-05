@@ -57,8 +57,6 @@ public class SprayTool {
 
     void plotReserve (Graphics g, Point topLeft, int toolHeight, int toolReserveBarWidth, int toolTextWidth, boolean selected) {
 	int toolBarWidth = toolReserveBarWidth + toolTextWidth;
-	g.setColor (Color.black);
-	g.fillRect (topLeft.x, topLeft.y, toolBarWidth, toolHeight);
 
 	int xLeft = topLeft.x;
 	int yMid = topLeft.y + toolHeight / 2;
@@ -78,9 +76,12 @@ public class SprayTool {
 
 	int bh = toolHeight * 3 / 4;
 	g.fillRect (xLeft + toolReserveBarWidth - w, yMid - bh/2, w, bh);
-
-	g.setColor (selected ? Color.white : Color.black);
-	g.drawRect (xLeft + 2, yMid - toolHeight/2 + 2, toolBarWidth - 4, toolHeight - 4);
+        
+	if(selected)
+	{
+	    g.setColor (Color.white);
+	    g.drawRect (xLeft + 2, yMid - toolHeight/2 + 2, toolBarWidth - 4, toolHeight - 4);
+	}
     }
 
     // isHotKey helper
