@@ -1,15 +1,4 @@
-[core]
-	repositoryformatversion = 0
-	filemode = true
-	bare = false
-	logallrefupdates = true
-	ignorecase = true
-[remote "origin"]
-	url = git@github.com:ihh/zoogas.git
-	fetch = +refs/heads/*:refs/remotes/origin/*
-[branch "master"]
-	remote = origin
-	merge = refs/heads/master
-[remote "asw12"]
-	url = git://github.com/asw12/zoogas.git
-	fetch = +refs/heads/*:refs/remotes/asw12/*
+# ignore class files
+*.class
+# ignore emacs save files
+*~
