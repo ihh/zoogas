@@ -68,7 +68,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     double patternMatchesPerRefresh = 1;
 
     // Swing
-    Graphics bfGraphics;
+    Graphics2D bfGraphics;
     BufferedImage bfImage;
     Cursor boardCursor, normalCursor;
     // Uncomment to use "helicopter.png" as a mouse cursor over the board:
@@ -217,16 +217,20 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	setResizable(false);
 	bfImage = new BufferedImage(totalWidth, totalHeight, BufferedImage.TYPE_3BYTE_BGR);
-	bfGraphics = bfImage.getGraphics();
+	bfGraphics = bfImage.createGraphics();
+	bfGraphics.setColor(Color.black);
+	bfGraphics.clearRect(0,0,totalWidth,totalHeight);
 	setContentPane(new JPanel() {
-				protected void paintComponent(Graphics g)
+				public void paint(Graphics g)
 				{
-					super.paintChildren(g);
-					g.drawImage(bfImage, 0, 0, null);
+                                    super.paintChildren(g);
+                                    g.drawImage(bfImage, 0, 0, null);
 				}});
 
 	// set size
 	getContentPane().setPreferredSize(new Dimension(totalWidth,totalHeight));
+        getContentPane().setIgnoreRepaint(true);
+        setIgnoreRepaint(true);
 	pack();
 	setVisible(true);
 
@@ -252,9 +256,8 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 
     // main game loop
     private void gameLoop() {
-	// Game logic goes here.
-
-	drawEverything();
+	// Game logic goes here
+	drawEverything(false);
 
 	long lastTimeCheck = System.currentTimeMillis();
 	long timeCheckPeriod = 10;
@@ -275,13 +278,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 		    lastTimeCheck = currentTimeCheck;
 		}
 
-		if (slowPressed)
-		    drawEverything();
-		else {
-		    drawToolbox();
-		    drawBorder();
-		    refreshBuffer();
-		}
+		drawEverything(slowPressed);
 	    }
     }
 
@@ -362,16 +359,9 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     }
 
     // other rendering methods
-    private void drawEverything() {
-	bfGraphics.setColor(Color.black);
-	bfGraphics.fillRect(0,0,totalWidth,totalHeight);
-
-	Point p = new Point();
-	for (p.x = 0; p.x < size; ++p.x)
-	    for (p.y = 0; p.y < size; ++p.y)
-		drawCell(p);
-
-	drawBonds();
+    private void drawEverything(boolean drawBonds) {
+	if(drawBonds)
+            drawBonds();
 
 	drawBorder();
 	drawToolbox();
@@ -402,16 +392,12 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     // do a sync'd refresh
     protected void refreshBuffer() {
 	// update buffer
-	repaint();
-	Toolkit.getDefaultToolkit().sync();	
+	getContentPane().repaint();
+	Toolkit.getDefaultToolkit().sync();
     }
 
     // status & tool bars
     protected void drawToolbox() {
-
-	// spray levels
-	toolBox.plotReserves(bfGraphics,new Point(boardSize,0));
-
 	// name of the game
 	flashOrHide ("Z00 GAS", titleRow, true, 0, 400, true, Color.white);
 
@@ -469,6 +455,9 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	    printOrHide (verbText, verbHistoryRow + vpos + 1, true, verbColor);
 	    if (++verbHistoryRefreshCounter >= verbHistoryRefreshPeriod)
 		verbsSinceLastRefresh = verbHistoryRefreshCounter = 0;
+          
+	  // spray levels
+	  toolBox.plotReserves(bfGraphics,new Point(boardSize,0));
 	}
     }
 
