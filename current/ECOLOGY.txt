@@ -178,6 +178,50 @@ VERB s=mutator t=_ S=_ T=_ p=0.1 v=disperse
 VERB s=mutator t=_ S=$T T=$S p=0.9 v=drift
 VERB s=mutator t=perfume S=$T T=$T p=1.0 v=react
 
+# Generate random names for mutant animals
+# form of mutant name is (adjective) (locale) (species)
+VERB s=mutant/(.*) S=mutant_imp/$1
+VERB s=mutant/(.*) S=mutant_beetle/$1
+VERB s=mutant/(.*) S=mutant_bird/$1
+VERB s=mutant/(.*) S=mutant_badger/$1
+VERB s=mutant/(.*) S=mutant_kangaroo/$1
+VERB s=mutant/(.*) S=mutant_panda/$1
+VERB s=mutant/(.*) S=mutant_moth/$1
+VERB s=mutant/(.*) S=mutant_cow/$1
+VERB s=mutant/(.*) S=mutant_cat/$1
+VERB s=mutant/(.*) S=mutant_wombat/$1
+VERB s=mutant/(.*) S=mutant_elephant/$1
+VERB s=mutant/(.*) S=mutant_wolf/$1
+VERB s=mutant/(.*) S=mutant_pig/$1
+VERB s=mutant/(.*) S=mutant_monkey/$1
+VERB s=mutant/(.*) S=mutant_gorilla/$1
+VERB s=mutant/(.*) S=mutant_chimp/$1
+VERB s=mutant/(.*) S=mutant_meerkat/$1
+VERB s=mutant/(.*) S=mutant_tick/$1
+# avoid water 
+VERB s=mutant_([^/_]+/.*) S=mutant_space_$1
+VERB s=mutant_([^/_]+/.*) S=mutant_water_$1
+VERB s=mutant_([^/_]+/.*) S=mutant_desert_$1
+VERB s=mutant_([^/_]+/.*) S=mutant_cloud_$1
+VERB s=mutant_([^/_]+/.*) S=mutant_shadow_$1
+VERB s=mutant_([^/_]+/.*) S=mutant_dung_$1
+VERB s=mutant_([^/_]+/.*) S=mutant_marsh_$1
+VERB s=mutant_([^/_]+/.*) S=mutant_bistro_$1
+VERB s=mutant_([^/_]+/.*) S=mutant_coffeeshop_$1
+VERB s=mutant_([^/_]+/.*) S=mutant_schoolie_$1
+VERB s=mutant_([^/_]+/.*) S=mutant_tundra_$1
+# and, adjective
+VERB s=mutant_([^/_]+_.*) S=lesser_spotted_$1
+VERB s=mutant_([^/_]+_.*) S=greater_spotted_$1
+VERB s=mutant_([^/_]+_.*) S=diffident_$1
+VERB s=mutant_([^/_]+_.*) S=ironic_$1
+VERB s=mutant_([^/_]+_.*) S=fierce_$1
+VERB s=mutant_([^/_]+_.*) S=hooting_$1
+VERB s=mutant_([^/_]+_.*) S=chirping_$1
+VERB s=mutant_([^/_]+_.*) S=striped_$1
+VERB s=mutant_([^/_]+_.*) S=luminous_$1
+VERB s=mutant_([^/_]+_.*) S=horned_$1
+
 # Lava. Sticks around longer than cement (long enough to make diffusion-limited aggregation fractals).
 VERB s=lava.* t=wall/. S=wall/basalt T=$T p=0.01 v=set
 VERB s=lava.* t=wall/basalt S=$T T=$T p=1.0 v=set
