@@ -621,8 +621,8 @@ public class Board extends MooreTopology {
     // debug
     String debugDumpStats() {
 	int transRules = 0, outcomes = 0;
-	for (Iterator<Particle> iter = nameToParticle.values().iterator(); iter.hasNext(); ) {
-	    Particle p = iter.next();
+        
+	for (Particle p : nameToParticle.values()) {
 	    transRules += p.transformationRules();
 	    outcomes += p.outcomes();
 	}
