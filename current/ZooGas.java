@@ -87,46 +87,77 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 
     // main()
     public static void main(String[] args) {
-	// create ZooGas
-	ZooGas gas = null;
-	switch (args.length)
-	    {
-	    case 0:
-		gas = new ZooGas();  // standalone
-		break;
-	    case 1:
-		gas = new ZooGas(new Integer(args[0]).intValue());  // server on specified port
-		break;
-	    case 3:
-		gas = new ZooGas(new Integer(args[0]).intValue(), new InetSocketAddress (args[1], new Integer(args[2]).intValue()));  // client, connecting to server at specified address/port
-		break;
-	    default:
-		System.err.println ("Usage: <progname> [<port> [<remote address> <remote port>]]");
-		break;
+	// create ZooGas object
+	ZooGas gas = new ZooGas();
+
+	// Process options and args before initializing ZooGas
+	for(int i = 0; i < args.length; ++i) {
+	    if("-s".equals(args[i]) || "--server".equals(args[i])) {
+		if(i+1 >= args.length) {
+		    System.err.println("Error: no port specified");
+		    System.err.println("-s/--server usage: [-s|--server] <port>");
+		    System.exit(0);
+		    return;
+		}
+		gas.board.initClient(new Integer(args[++i]), gas);
 	    }
+	    else if("-c".equals(args[i]) || "--client".equals(args[i])) {
+		if(i+2 >= args.length) {
+		    System.err.println("Error: not enough options given");
+		    System.err.println("-c/--client usage: [-c|--client] <port> <address> <remote port>");
+		    System.exit(0);
+		    return;
+		}
+		gas.board.initClient(new Integer(args[++i]), gas);
+		gas.board.initServer(new InetSocketAddress (args[++i], new Integer(args[++i]).intValue()));
+	    }
+	    else if("-t".equals(args[i]) || "--tools".equals(args[i])) {
+		if(i+1 >= args.length) {
+		    System.err.println("Error: no tools file specified");
+		    System.err.println("-t/--tools usage: [-t|--tools] <tools file>");
+		    System.exit(0);
+		    return;
+		}
+		gas.toolboxFilename = args[++i];
+	    }
+	    else if("-r".equals(args[i]) || "--rules".equals(args[i])) {
+		if(i+1 >= args.length) {
+		    System.err.println("Error: no rules file specified");
+		    System.err.println("-r/--rules usage: [-r|--rules] <rules file>");
+		    System.exit(0);
+		    return;
+		}
+		gas.patternSetFilename = args[++i];
+	    }
+	    else if("-?".equals(args[i]) || "--help".equals(args[i])) {
+		System.err.println("Usage: <progname> [<option> [<args>]]");
+		System.err.println("Valid options:");
+		System.err.println("\t[-c|--client <port> <address> <remote port>]  - Start ZooGas in client mode");
+		System.err.println("\t[-s|--server <port>]  - Start ZooGas in server mode");
+		System.err.println("\t[-t|--tools <file>]  - Load tools from specified file (default \"TOOLS.txt\")");
+		System.err.println("\t[-r|--rules <file>]  - Load rules from specified file (default \"ECOLOGY.txt\")");
+		System.exit(0);
+		return;
+	    }
+	    else {
+		// Unknown option
+		System.err.println("Error: Unknown option: " +  args[i]);
+		System.exit(0);
+		return;
+	    }
+	}
 
-	// run it
-	gas.gameLoop();
+	// initialize after options have been considered
+	gas.start();
     }
 
-    // networked constructor (client)
-    public ZooGas (int port, InetSocketAddress remote) {
-	this(port);
-	board.initServer(remote);
-    }
-
-    // networked constructor (server)
-    public ZooGas (int port) {
-	this();
-	board.initClient(port,this);
-    }
-
-    // default & primary constructor
     public ZooGas() {
-
-	// create board
+	// create board (needed from some options), then wait for start to be called
 	board = new Board(size);
+    }
 
+    public void start()
+    {
 	// set helpers, etc.
 	boardSize = board.getBoardSize(size,pixelsPerCell);
 	totalWidth = boardSize + toolBarWidth + toolLabelWidth + textBarWidth;
@@ -255,6 +286,8 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 
         addMouseListener(this);
         addKeyListener(this);
+
+        gameLoop();
     }
 
     // main game loop
