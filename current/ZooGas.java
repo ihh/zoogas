@@ -91,25 +91,31 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	ZooGas gas = new ZooGas();
 
 	// Process options and args before initializing ZooGas
+	int port = 0;
+	String socketAddress = null;
+
 	for(int i = 0; i < args.length; ++i) {
 	    if("-s".equals(args[i]) || "--server".equals(args[i])) {
-		if(i+1 >= args.length) {
-		    System.err.println("Error: no port specified");
-		    System.err.println("-s/--server usage: [-s|--server] <port>");
-		    System.exit(0);
-		    return;
-		}
-		gas.board.initClient(new Integer(args[++i]), gas);
+		if(port == 0)
+		    port = 4444;
 	    }
 	    else if("-c".equals(args[i]) || "--client".equals(args[i])) {
-		if(i+2 >= args.length) {
-		    System.err.println("Error: not enough options given");
-		    System.err.println("-c/--client usage: [-c|--client] <port> <address> <remote port>");
+		if(i+1 >= args.length) {
+		    System.err.println("Error: not enough parameters given");
+		    System.err.println("-c/--client usage: [-c|--client] <remote address>[:<remote port>]");
 		    System.exit(0);
 		    return;
 		}
-		gas.board.initClient(new Integer(args[++i]), gas);
-		gas.board.initServer(new InetSocketAddress (args[++i], new Integer(args[++i]).intValue()));
+		socketAddress = args[++i];
+	    }
+	    else if("-p".equals(args[i]) || "--port".equals(args[i])) {
+		if(i+1 >= args.length) {
+		    System.err.println("Error: not enough parameters given");
+		    System.err.println("-p/--port usage: [-p|--port] <port>");
+		    System.exit(0);
+		    return;
+		}
+		port = (new Integer(args[++i]));
 	    }
 	    else if("-t".equals(args[i]) || "--tools".equals(args[i])) {
 		if(i+1 >= args.length) {
@@ -129,13 +135,15 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 		}
 		gas.patternSetFilename = args[++i];
 	    }
-	    else if("-?".equals(args[i]) || "--help".equals(args[i])) {
+	    else if("-?".equals(args[i]) || "-h".equals(args[i]) || "--help".equals(args[i])) {
 		System.err.println("Usage: <progname> [<option> [<args>]]");
 		System.err.println("Valid options:");
-		System.err.println("\t[-c|--client <port> <address> <remote port>]  - Start ZooGas in client mode");
-		System.err.println("\t[-s|--server <port>]  - Start ZooGas in server mode");
+		System.err.println("\t[-c|--client] <port> <address>[:<remote port>]  - Start ZooGas in client mode");
+		System.err.println("\t[-s|--server]  - Start ZooGas in server mode");
+	        System.err.println("\t[-p|--p <port>]  - Use <port> as the server port");
 		System.err.println("\t[-t|--tools <file>]  - Load tools from specified file (default \"TOOLS.txt\")");
 		System.err.println("\t[-r|--rules <file>]  - Load rules from specified file (default \"ECOLOGY.txt\")");
+		System.err.println("\t[-?|-h|--help]  - Displays this very useful help message");
 		System.exit(0);
 		return;
 	    }
@@ -148,6 +156,26 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	}
 
 	// initialize after options have been considered
+	if (socketAddress != null) // start as client (and server)
+	{
+	    if(port == 0)
+	        port = 4444;
+
+	    gas.board.initClient(port, gas); // init the server stuff first, then connect
+	    
+	    String[] address = socketAddress.split(":");
+	    if(address.length > 1) {
+	        gas.board.initServer(new InetSocketAddress(address[0], new Integer(address[1])));
+	    }
+	    else {
+	        gas.board.initServer(new InetSocketAddress(address[0], 4444));
+	    }
+	}
+	else if(port != 0) // start as server
+	{
+	    gas.board.initClient(port, gas);
+	}
+
 	gas.start();
     }
 
