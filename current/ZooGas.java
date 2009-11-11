@@ -286,6 +286,8 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 	    {
 	        //super.paintComponent(g);
 	        g.drawImage(bfImage, 0, 0, null);
+		if(slowPressed)
+		    drawBonds(g);
 		drawBorder(g);
 	    }
 	};
@@ -303,6 +305,10 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 		drawStatus(g);
 	    }
 	};
+	
+	boardPanel.setDoubleBuffered(false);
+	toolBoxPanel.setDoubleBuffered(false);
+	statusPanel.setDoubleBuffered(false);
 
 	boardPanel.setBackground(Color.BLACK);
 	toolBoxPanel.setBackground(Color.BLACK);
@@ -367,7 +373,7 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
     // main game loop
     private void gameLoop() {
 	// Game logic goes here
-	drawEverything(false);
+	repaint();
 
 	long lastTimeCheck = System.currentTimeMillis();
 	long timeCheckPeriod = 10;
@@ -389,7 +395,7 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 		lastTimeCheck = currentTimeCheck;
 	    }
 
-	    drawEverything(slowPressed);
+	    repaint();
 	}
     }
 
@@ -426,14 +432,14 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
     }
 
     // bond-rendering method
-    public void drawBond (Point p, Point q) {
-	bfGraphics.setColor(new Color ((float)Math.random(), (float)Math.random(), (float)Math.random()));
+    public void drawBond (Graphics g, Point p, Point q) {
+	g.setColor(new Color ((float)Math.random(), (float)Math.random(), (float)Math.random()));
 	Point pg = new Point();
 	Point qg = new Point();
 	board.getGraphicsCoords(p,pg,pixelsPerCell);
 	board.getGraphicsCoords(q,qg,pixelsPerCell);
 	int k = pixelsPerCell>>1;
-	bfGraphics.drawLine(pg.x+k,pg.y+k,qg.x+k,qg.y+k);
+	g.drawLine(pg.x+k,pg.y+k,qg.x+k,qg.y+k);
     }
 
     // BoardRenderer methods
@@ -463,13 +469,6 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 	    }
     }
 
-    // other rendering methods
-    private void drawEverything(boolean drawBonds) {
-	if(drawBonds)
-            drawBonds();
-	refreshBuffer();
-    }
-
     // draw border around board
     protected void drawBorder(Graphics g) {
 	g.setColor(Color.white);
@@ -477,7 +476,7 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
     }
 
     // draw some random bonds
-    protected void drawBonds() {
+    protected void drawBonds(Graphics g) {
 	Point p = new Point();
 	Point q = new Point();
 	for (p.x = 0; p.x < board.size; ++p.x)
@@ -485,7 +484,7 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 		for (Map.Entry<String,Point> kv : board.incoming(p).entrySet()) {
 		    p.add(kv.getValue(),q);
 		    if (board.onBoard(q))
-			drawBond(p,q);
+			drawBond(g,p,q);
 		}
 	    }
     }
