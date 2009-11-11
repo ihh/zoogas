@@ -42,14 +42,10 @@ public class ToolBox {
     }
 
     // render method
-    void plotReserves (Graphics g, Point topLeft) {
-        g.setColor(Color.black);
-        g.fillRect(topLeft.x, topLeft.y, toolReserveBarWidth+toolTextWidth, toolHeight * tool.size());
-        
+    void plotReserves (Graphics g) {
 	for (int row = 0; row < tool.size(); ++row) {
 	    SprayTool st = tool.get(row);
-	    st.plotReserve(g, topLeft, toolHeight,toolReserveBarWidth,toolTextWidth,st==currentTool);
-	    topLeft.y += toolHeight;
+	    st.plotReserve(g, toolHeight*row, toolHeight, toolReserveBarWidth,toolTextWidth,st==currentTool);
 	}
     }
 

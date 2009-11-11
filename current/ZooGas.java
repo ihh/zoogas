@@ -1,4 +1,4 @@
- import java.lang.*;
+import java.lang.*;
 import java.util.*;
 import java.text.*;
 import java.net.*;
@@ -33,21 +33,6 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     String initParticleFilename = "TheZooParticles.txt";
     String initParticlePrefix = "/INIT.";
 
-    // view
-    int pixelsPerCell = 4;  // width & height of each cell in pixels
-    int boardSize;  // width & height of board in pixels
-    int belowBoardHeight = 0;  // size in pixels of whatever appears below the board -- currently unused but left as a placeholder
-    int toolBarWidth = 100, toolLabelWidth = 200, toolHeight = 30;  // size in pixels of various parts of the tool bar (right of the board)
-    int textBarWidth = 400, textHeight = 30;
-    int totalWidth, totalHeight;
-    int verbHistoryLength = 10, verbHistoryPos = 0, verbHistoryRefreshPeriod = 20, verbHistoryRefreshCounter = 0, verbsSinceLastRefresh = 0;
-    String[] verbHistory = new String[verbHistoryLength];
-    Particle[] nounHistory = new Particle[verbHistoryLength];
-    Vector<String> hints = new Vector<String>();
-    int currentHint = 0;
-    double hintBrightness = 0;
-    int updatesRow = 0, titleRow = 4, networkRow = 5, hintRow = 7, nounRow = 8, verbHistoryRow = 12;
-
     // tools and cheats
     String toolboxFilename = "TOOLS.txt";
     ToolBox toolBox = null;
@@ -75,6 +60,23 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     //    String boardCursorFilename = "helicopter.png";
     String boardCursorFilename = null;
     java.awt.Point boardCursorHotSpot = new java.awt.Point(50,50);  // ignored unless boardCursorFilename != null
+
+    // view
+    final int pixelsPerCell = 4;  // width & height of each cell in pixels
+    JPanel boardPanel;
+    int boardSize;  // width & height of board in pixels
+    int belowBoardHeight = 0;  // size in pixels of whatever appears below the board -- currently unused but left as a placeholder
+    JPanel toolBoxPanel;
+    JPanel statusPanel;
+    int toolBarWidth = 100, toolLabelWidth = 200, toolHeight = 30;  // size in pixels of various parts of the tool bar (right of the board)
+    int textBarWidth = 400, textHeight = 30;
+    int verbHistoryLength = 10, verbHistoryPos = 0, verbHistoryRefreshPeriod = 20, verbHistoryRefreshCounter = 0, verbsSinceLastRefresh = 0;
+    String[] verbHistory = new String[verbHistoryLength];
+    Particle[] nounHistory = new Particle[verbHistoryLength];
+    Vector<String> hints = new Vector<String>();
+    int currentHint = 0;
+    double hintBrightness = 0;
+    int updatesRow = 0, titleRow = 4, networkRow = 5, hintRow = 7, nounRow = 8, verbHistoryRow = 12;
 
     // helper objects
     Point cursorPos = null;  // co-ordinates of cell beneath current mouse position
@@ -188,8 +190,6 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     {
 	// set helpers, etc.
 	boardSize = board.getBoardSize(size,pixelsPerCell);
-	totalWidth = boardSize + toolBarWidth + toolLabelWidth + textBarWidth;
-	totalHeight = boardSize + belowBoardHeight;
 
 	// load patternSet
 	board.loadPatternSetFromFile(patternSetFilename);
@@ -276,23 +276,52 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	// init JFrame
 	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	setResizable(false);
-	bfImage = new BufferedImage(totalWidth, totalHeight, BufferedImage.TYPE_3BYTE_BGR);
+	bfImage = new BufferedImage(boardSize, boardSize, BufferedImage.TYPE_3BYTE_BGR);
 	bfGraphics = bfImage.createGraphics();
-	bfGraphics.setColor(Color.black);
-	bfGraphics.clearRect(0,0,totalWidth,totalHeight);
-	setContentPane(new JPanel() {
-				public void paint(Graphics g)
-				{
-                                    super.paintComponent(g);
-                                    g.drawImage(bfImage, 0, 0, null);
-                                    drawBorder(g);
-                                    drawToolbox(g);
-				}});
+	drawBorder(bfGraphics);
+
+	boardPanel = new JPanel() {
+	    public void paintComponent(Graphics g)
+	    {
+	        //super.paintComponent(g);
+	        g.drawImage(bfImage, 0, 0, null);
+		drawBorder(g);
+	    }
+	};
+	toolBoxPanel = new JPanel(){
+	    public void paintComponent(Graphics g)
+	    {
+	        super.paintComponent(g);
+	        drawToolbox(g);
+	    }
+	};
+	statusPanel = new JPanel(){
+	    public void paintComponent(Graphics g)
+	    {
+		super.paintComponent(g);
+		drawStatus(g);
+	    }
+	};
+
+	boardPanel.setBackground(Color.BLACK);
+	toolBoxPanel.setBackground(Color.BLACK);
+	statusPanel.setBackground(Color.BLACK);
 
 	// set size
-	getContentPane().setPreferredSize(new Dimension(totalWidth,totalHeight));
-        getContentPane().setIgnoreRepaint(true);
-        setIgnoreRepaint(true);
+	boardPanel.setPreferredSize(new Dimension(boardSize, boardSize));
+	toolBoxPanel.setPreferredSize(new Dimension(toolBarWidth + toolLabelWidth, boardSize));
+	statusPanel.setPreferredSize(new Dimension(textBarWidth, boardSize));
+
+	// add to content pane using layout
+	getContentPane().setLayout(new GridBagLayout());
+	GridBagConstraints c = new GridBagConstraints();
+	c.gridx = 0;
+	getContentPane().add(boardPanel, c);
+	++c.gridx;
+	getContentPane().add(toolBoxPanel, c);
+	++c.gridx;
+	getContentPane().add(statusPanel, c);
+
 	pack();
 	setVisible(true);
 
@@ -312,7 +341,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	// register for mouse & keyboard events
 	cursorPos = new Point();
 
-        addMouseListener(this);
+        boardPanel.addMouseListener(this);
         addKeyListener(this);
 
         gameLoop();
@@ -326,25 +355,25 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	long lastTimeCheck = System.currentTimeMillis();
 	long timeCheckPeriod = 10;
 	while (true)
-	    {
-		Runtime runtime = Runtime.getRuntime();
-		double heapFraction = ((double) (runtime.totalMemory() - runtime.freeMemory())) / (double) runtime.maxMemory();
-		if (heapFraction > .5)
-		    board.flushCaches();
+	{
+	    Runtime runtime = Runtime.getRuntime();
+	    double heapFraction = ((double) (runtime.totalMemory() - runtime.freeMemory())) / (double) runtime.maxMemory();
+	    if (heapFraction > .5)
+		board.flushCaches();
 
-		if (!stopPressed)
-		    evolveStuff();
-		useTools();
+	    if (!stopPressed)
+		evolveStuff();
+	    useTools();
 
-		if (boardUpdateCount % timeCheckPeriod == 0) {
-		    lastDumpStats = board.debugDumpStats();
-		    long currentTimeCheck = System.currentTimeMillis();
-		    updatesPerSecond = ((double) 1000 * timeCheckPeriod) / ((double) (currentTimeCheck - lastTimeCheck));
-		    lastTimeCheck = currentTimeCheck;
-		}
-
-		drawEverything(slowPressed);
+	    if (boardUpdateCount % timeCheckPeriod == 0) {
+		lastDumpStats = board.debugDumpStats();
+		long currentTimeCheck = System.currentTimeMillis();
+		updatesPerSecond = ((double) 1000 * timeCheckPeriod) / ((double) (currentTimeCheck - lastTimeCheck));
+		lastTimeCheck = currentTimeCheck;
 	    }
+
+	    drawEverything(slowPressed);
+	}
     }
 
 
@@ -451,15 +480,14 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	    }
     }
 
-    // do a sync'd refresh
+    // do a refresh
     protected void refreshBuffer() {
 	// update buffer
 	getContentPane().repaint();
-	Toolkit.getDefaultToolkit().sync();
     }
 
-    // status & tool bars
-    protected void drawToolbox(Graphics g) {
+    // status
+    protected void drawStatus(Graphics g) {
 	// name of the game
 	flashOrHide (g, "Z00 GAS", titleRow, true, 0, 400, true, Color.white);
 
@@ -510,17 +538,20 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 		String noun = cheatPressed ? nounHistory[v].name : nounHistory[v].visibleName();
 		String nounInBrackets = noun.length() > 0 ? (" (" + noun + ")") : "";
 		// uncomment to always print noun:
-		//		verbText = (cheatPressed ? verbHistory[v] : Particle.visibleText(verbHistory[v])) + nounInBrackets;
+		//              verbText = (cheatPressed ? verbHistory[v] : Particle.visibleText(verbHistory[v])) + nounInBrackets;
 		verbText = cheatPressed ? (verbHistory[v] + nounInBrackets) : Particle.visibleText(verbHistory[v]);
 		verbColor = nounHistory[v].color;
 	    }
 	    printOrHide (g, verbText, verbHistoryRow + vpos + 1, true, verbColor);
 	    if (++verbHistoryRefreshCounter >= verbHistoryRefreshPeriod)
 		verbsSinceLastRefresh = verbHistoryRefreshCounter = 0;
-          
-	  // spray levels
-	  toolBox.plotReserves(g,new Point(boardSize,0));
 	}
+    }
+
+    // tool bars
+    protected void drawToolbox(Graphics g) {
+	// spray levels
+	toolBox.plotReserves(g);
     }
 
     static String kmg(long bytes) {
@@ -547,21 +578,23 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     }
 
     private void printOrHide (Graphics g, String text, int row, boolean show, Color color) {
-	printOrHide (g, text, row, show, color, Color.black);
+	FontMetrics fm = g.getFontMetrics();
+	
+	int ch = fm.getHeight(), bleed = 6, yPos = row * (ch + bleed);
+	if (show && text != null) {
+	    int xSize = fm.stringWidth(text), xPos = textBarWidth - xSize;
+	    g.setColor (color);
+	    g.drawString (text, xPos, yPos + ch);
+	}
     }
 
     private void printOrHide (Graphics g, String text, int row, boolean show, Color color, Color bgColor) {
 	FontMetrics fm = g.getFontMetrics();
 	int ch = fm.getHeight(), bleed = 6, yPos = row * (ch + bleed);
-
 	g.setColor (bgColor);
-	g.fillRect (boardSize + toolBarWidth + toolLabelWidth, yPos, textBarWidth, ch + bleed);
-
-	if (show && text != null) {
-	    int xSize = fm.stringWidth(text), xPos = boardSize + toolBarWidth + toolLabelWidth + textBarWidth - xSize;
-	    g.setColor (color);
-	    g.drawString (text, xPos, yPos + ch);
-	}
+	g.fillRect (0, yPos, textBarWidth, ch + bleed);
+	
+	printOrHide(g, text, row, show, color);
     }
 
 
@@ -570,7 +603,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
     public void mousePressed(MouseEvent e) {
 	mouseDown = true;
 
-	Point mousePos = new Point(getContentPane().getMousePosition());
+	Point mousePos = new Point(e.getPoint());
 	if (mousePos.x >= boardSize && mousePos.x < boardSize + toolBarWidth + toolLabelWidth)
 	    toolBox.clickSelect(mousePos.y);
 	else if (mousePos.x >= boardSize + toolBarWidth + toolLabelWidth) {

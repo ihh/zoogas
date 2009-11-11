@@ -55,18 +55,17 @@ public class SprayTool {
 	}
     }
 
-    void plotReserve (Graphics g, Point topLeft, int toolHeight, int toolReserveBarWidth, int toolTextWidth, boolean selected) {
+    void plotReserve (Graphics g, int yTop, int toolHeight, int toolReserveBarWidth, int toolTextWidth, boolean selected) {
 	int toolBarWidth = toolReserveBarWidth + toolTextWidth;
 
-	int xLeft = topLeft.x;
-	int yMid = topLeft.y + toolHeight / 2;
+	int yMid =  yTop + toolHeight / 2;
 
 	FontMetrics fm = g.getFontMetrics();
 	int cw = fm.charWidth(hotKey);
 	int ch = fm.getHeight();
 
 	g.setColor (particle.color);
-	g.drawString (hotKey + ": " + particle.visibleName(), xLeft + toolReserveBarWidth, yMid + ch/2);
+	g.drawString (hotKey + ": " + particle.visibleName(), toolReserveBarWidth, yMid + ch/2);
 
 	int td = 4;
 	int tw = toolReserveBarWidth - td;
@@ -75,12 +74,12 @@ public class SprayTool {
 	    w = toolReserveBarWidth;
 
 	int bh = toolHeight * 3 / 4;
-	g.fillRect (xLeft + toolReserveBarWidth - w, yMid - bh/2, w, bh);
+	g.fillRect (toolReserveBarWidth - w, yMid - bh/2, w, bh);
         
 	if(selected)
 	{
 	    g.setColor (Color.white);
-	    g.drawRect (xLeft + 2, yMid - toolHeight/2 + 2, toolBarWidth - 4, toolHeight - 4);
+	    g.drawRect (2, yMid - toolHeight/2 + 2, toolBarWidth - 4, toolHeight - 4);
 	}
     }
 
