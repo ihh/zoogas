@@ -313,15 +313,19 @@ NOUN n=basepair_uu.* c=6000c0 e=-3
 BOND n=5to3 s=(RNA_sequence|base|basepair)_.* t=(RNA_sequence|base|basepair)_.* e=+10
 BOND n=f5to3 s=(RNA_sequence|base|basepair)_.* t=(RNA_sequence|base|basepair)_.* e=+10
 BOND n=r5to3 s=(RNA_sequence|base|basepair)_.* t=(RNA_sequence|base|basepair)_.* e=+10
+BOND n=5to3f s=(RNA_sequence|base|basepair)_.* t=(RNA_sequence|base|basepair)_.* e=+10
+BOND n=5to3r s=(RNA_sequence|base|basepair)_.* t=(RNA_sequence|base|basepair)_.* e=+10
+BOND n=f5to3f s=(RNA_sequence|base|basepair)_.* t=(RNA_sequence|base|basepair)_.* e=+10
+BOND n=r5to3r s=(RNA_sequence|base|basepair)_.* t=(RNA_sequence|base|basepair)_.* e=+10
 
 # to make a basepair, merge two bases and their upstream(x) and downstream(y) bonds
-VERB s=base_(.) t=base_(.) S=basepair_$1$2 T=_ p=1 v=pair_$1_to_$2 x=(s,5to3,t) x=(t,5to3,s) b=(s,5to3,xf) B=(s,f5to3,xf) b=(yf,5to3,s) B=(yf,f5to3,s) b=(t,5to3,xr) B=(s,r5to3,xr) b=(yr,5to3,t) B=(yr,r5to3,s)
+VERB s=base_(.) t=base_(.) S=basepair_$1$2 T=_ p=1 v=pair_$1_to_$2 x=(s,5to3,t) x=(t,5to3,s) b=(s,5to3,xf) B=(s,f5to3,xf) b=(s,5to3f,xff) B=(s,f5to3f,xff) b=(yf,5to3,s) B=(yf,5to3f,s) b=(yff,f5to3,s) B=(yff,f5to3f,s) b=(t,5to3,xr) B=(s,r5to3,xr) b=(t,5to3r,xrr) B=(s,r5to3r,xrr) b=(yr,5to3,t) B=(yr,5to3r,s) b=(yrr,r5to3,t) B=(yrr,r5to3r,s)
 
-# unpairing is the opposite move: we have to pick apart the x and y bonds
-VERB s=basepair_(.)(.) t=_ S=base_$1 T=base_$2 p=1 v=unpair_$1_from_$2 b=(s,f5to3,xf) B=(s,5to3,xf) b=(yf,f5to3,s) B=(yf,5to3,s) b=(s,r5to3,xr) B=(t,5to3,xr) b=(yr,r5to3,s) B=(yr,5to3,t)
+# unpairing is the opposite move: we have to pick apart the -->x and y--> bonds
+VERB s=basepair_(.)(.) t=_ S=base_$1 T=base_$2 p=1 v=unpair_$1_from_$2 b=(s,f5to3,xf) B=(s,5to3,xf) b=(s,f5to3f,xff) B=(s,5to3f,xff) b=(yf,5to3f,s) B=(yf,5to3,s) b=(yff,f5to3f,s) B=(yff,f5to3,s) b=(s,r5to3,xr) B=(t,5to3,xr) b=(s,r5to3r,xrr) B=(t,5to3r,xrr) b=(yr,5to3r,s) B=(yr,5to3,t) b=(yrr,r5to3r,s) B=(yrr,r5to3,t)
 
 # all bases and basepairs do Brownian drift
-VERB s=(base|basepair)_.* t=_ S=$T T=$S p=1 v=/drift k=(sT,5to3,x) k=(y,5to3,sT) k=(sT,f5to3,xf) k=(yf,f5to3,sT) k=(sT,r5to3,xr) k=(yr,r5to3,sT)
+VERB s=(base|basepair)_.* t=_ S=$T T=$S p=1 v=/drift k=(sT,5to3,x) k=(y,5to3,sT) k=(sT,5to3f,xf) k=(yf,5to3f,sT) k=(sT,f5to3,fx) k=(fy,f5to3,sT) k=(sT,f5to3f,xff) k=(yff,f5to3f,sT) k=(sT,r5to3,xr) k=(yr,r5to3,sT) k=(sT,5to3r,xr) k=(yr,5to3r,sT) k=(sT,r5to3r,xrr) k=(yrr,r5to3r,sT)
 
 # all bases, basepairs and constructors will eventually disappear if they become unbonded
 VERB s=(base|basepair)_.* S=_ p=.01 v=/degrade
