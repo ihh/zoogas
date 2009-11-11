@@ -8,9 +8,6 @@ public class SprayTool {
     protected char hotKey = 0;
     protected Particle particle = null;
 
-    // random number generator, for spraying
-    private Random rnd = new Random();
-
     // constructor
     static RuleSyntax toolSyntax = new RuleSyntax("TOOL n= k= d=1 p=1 r=1 f=1 w=.1");
     static SprayTool fromString (String toolString, Board board) {
@@ -44,8 +41,8 @@ public class SprayTool {
 	Point sprayCell = new Point();
 	for (int n = 0; reserve >= 1 && n < sprayPower; ++n) {
 
-	    sprayCell.x = cursorPos.x + rnd.nextInt((int) sprayDiameter) - (int) (sprayDiameter / 2);
-	    sprayCell.y = cursorPos.y + rnd.nextInt((int) sprayDiameter) - (int) (sprayDiameter / 2);
+	    sprayCell.x = cursorPos.x + (int)(Math.random()*(int)(sprayDiameter - (sprayDiameter / 2)));
+	    sprayCell.y = cursorPos.y + (int)(Math.random()*(int)(sprayDiameter - (sprayDiameter / 2)));
 
 	    if (board.onBoard(sprayCell)) {
 		Particle oldCell = board.readCell (sprayCell);

@@ -43,9 +43,9 @@ public class RandomVariable<V> {
 	closedWeight = totalWeight < 1 ? 1 : totalWeight;
     }
 
-    public final V sample (Random rnd) {
+    public final V sample () {
 	if (size() > 0) {
-	    double p = rnd.nextDouble() * closedWeight;
+	    double p = Math.random() * closedWeight;
 	    if (p <= totalWeight)
 		return cumprob2obj.get (cumprob2obj.headMap(new Double(p)).lastKey());
 	}

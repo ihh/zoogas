@@ -15,9 +15,6 @@ public class Board extends MooreTopology {
     // cellular automata rule/particle generator
     private PatternSet patternSet = new PatternSet(this);
 
-    // random number generator
-    private Random rnd = null;
-
     // particle name registry
     protected Map<String,Particle> nameToParticle = new HashMap<String,Particle>();  // updated by Particle constructor
 
@@ -36,7 +33,6 @@ public class Board extends MooreTopology {
     // constructor
     public Board (int size) {
 	this.size = size;
-	rnd = new Random();
 	cell = new Cell[size][size];
 	for (int x = 0; x < size; ++x)
 	    for (int y = 0; y < size; ++y)
@@ -124,13 +120,13 @@ public class Board extends MooreTopology {
     // update methods
     // getRandomPair places coordinates of a random cell in p, weighted by its update rate
     public final void getRandomCell(Point p) {
-	quad.sampleQuadLeaf(p,rnd);
+	quad.sampleQuadLeaf(p);
     }
 
     // getRandomPair places coordinates of a random pair in (p,n) and returns direction from p to n
     public final int getRandomPair(Point p,Point n) {
 	getRandomCell(p);
-	int dir = readCell(p).sampleDir(rnd);
+	int dir = readCell(p).sampleDir();
 	getNeighbor(p,n,dir);
 	return dir;
     }
@@ -362,7 +358,7 @@ public class Board extends MooreTopology {
 	Particle oldTargetState = readCell (targetCoords);
 
 	// sample new state-pair
-	UpdateEvent proposedUpdate = oldSourceState.samplePair (dir, oldTargetState, rnd);
+	UpdateEvent proposedUpdate = oldSourceState.samplePair (dir, oldTargetState);
 	UpdateEvent acceptedUpdate = null;
 
 	// if move is non-null, bonds match and energy difference is acceptable, then write the update
@@ -380,7 +376,7 @@ public class Board extends MooreTopology {
     // method to accept or reject a move based on the "Hastings ratio" for a given energy delta
     public final boolean acceptUpdate (UpdateEvent e, double energyBarrier) {
 	double energyDelta = energyBarrier + e.energyDelta(this);
-	boolean accept = energyDelta > 0 ? true : (rnd.nextDouble() < Math.pow(10,energyDelta));
+	boolean accept = energyDelta > 0 ? true : (Math.random() < Math.pow(10,energyDelta));
 	return accept;
     }
 

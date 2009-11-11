@@ -63,12 +63,12 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
     java.awt.Point boardCursorHotSpot = new java.awt.Point(50,50);  // ignored unless boardCursorFilename != null
 
     // view
-    final int pixelsPerCell = 4;  // width & height of each cell in pixels
     JPanel boardPanel;
-    int boardSize;  // width & height of board in pixels
-    int belowBoardHeight = 0;  // size in pixels of whatever appears below the board -- currently unused but left as a placeholder
     JPanel toolBoxPanel;
     JPanel statusPanel;
+    final int pixelsPerCell = 4;  // width & height of each cell in pixels
+    int boardSize;  // width & height of board in pixels
+    int belowBoardHeight = 0;  // size in pixels of whatever appears below the board -- currently unused but left as a placeholder
     int toolBarWidth = 100, toolLabelWidth = 200, toolHeight = 30;  // size in pixels of various parts of the tool bar (right of the board)
     int textBarWidth = 400, textHeight = 30;
     int verbHistoryLength = 10, verbHistoryPos = 0, verbHistoryRefreshPeriod = 20, verbHistoryRefreshCounter = 0, verbsSinceLastRefresh = 0;
@@ -80,7 +80,7 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
     int updatesRow = 0, titleRow = 4, networkRow = 5, hintRow = 7, nounRow = 8, verbHistoryRow = 12;
 
     // helper objects
-    Point cursorPos = null;  // co-ordinates of cell beneath current mouse position
+    Point cursorPos = new Point();  // co-ordinates of cell beneath current mouse position
     boolean mouseDown = false;  // true if mouse is currently down
     boolean cheatPressed = false;  // true if cheatKey is pressed (allows player to see hidden parts of state names)
     boolean stopPressed = false;  // true if stopKey is pressed (stops updates on this board)
@@ -409,7 +409,7 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
     }
 
     private void useTools() {
-	if(cursorPos != null)
+	if(board.onBoard(cursorPos))
 	{
 	    setCursor(boardCursor);
 	    
@@ -426,9 +426,8 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
     }
 
     // bond-rendering method
-    Random rnd = new Random();
     public void drawBond (Point p, Point q) {
-	bfGraphics.setColor(new Color (rnd.nextFloat(), rnd.nextFloat(), rnd.nextFloat()));
+	bfGraphics.setColor(new Color ((float)Math.random(), (float)Math.random(), (float)Math.random()));
 	Point pg = new Point();
 	Point qg = new Point();
 	board.getGraphicsCoords(p,pg,pixelsPerCell);
@@ -518,7 +517,7 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 	}
 
 	// identify particle that cursor is currently over
-	if(cursorPos != null)
+	if(board.onBoard(cursorPos))
 	{
 	    Particle cursorParticle = board.readCell(cursorPos);
 	    boolean isSpace = cursorParticle == spaceParticle;
@@ -625,12 +624,12 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 	}
     
 	public void mouseEntered(MouseEvent e) {
-	    cursorPos = new Point();
 	    mouseDown = false;
 	}
     
 	public void mouseExited(MouseEvent e) {
-	    cursorPos = null;
+	    cursorPos.x = -1;
+	    cursorPos.y = -1;
 	    mouseDown = false;
 	}
     
@@ -643,8 +642,7 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 	}
 	
 	public void mouseDragged(MouseEvent e) {
-	    if(cursorPos != null)
-		board.getCellCoords(e.getPoint(), cursorPos, pixelsPerCell);
+	    board.getCellCoords(e.getPoint(), cursorPos, pixelsPerCell);
 	}
     }
     

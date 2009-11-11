@@ -93,8 +93,8 @@ public class Particle {
     public final boolean isActive(int dir) { return transformRuleMatch[dir].length > 0; }
 
     // helper to sample a new direction
-    public final int sampleDir(Random rnd) {
-	double p = rnd.nextDouble() * totalTransformRate;
+    public final int sampleDir() {
+	double p = Math.random() * totalTransformRate;
 	int d = transformRate.length - 1;
 	for (; d >= 0 && p > transformRate[d]; --d)
 	    p -= transformRate[d];
@@ -103,7 +103,7 @@ public class Particle {
 
     // helper to sample a new (source,target) pair
     // returns null if no rule found
-    public final UpdateEvent samplePair (int dir, Particle oldTarget, Random rnd) {
+    public final UpdateEvent samplePair (int dir, Particle oldTarget) {
 	RandomVariable<UpdateEvent> rv = null;
 	if (transform.get(dir).containsKey(oldTarget)) {
 	    rv = transform.get(dir).get(oldTarget);
@@ -116,7 +116,7 @@ public class Particle {
 	}
 	// have we got an RV?
 	if (rv != null)
-	    return rv.sample(rnd);
+	    return rv.sample();
 	// no RV; return null
 	return null;
     }

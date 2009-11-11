@@ -30,11 +30,11 @@ public class QuadTree {
 	}
     }
 
-    public void sampleQuadLeaf(Point p,Random rnd) {
+    public void sampleQuadLeaf(Point p) {
 	int node = 0;
 	p.x = p.y = 0;
 	for (int lev = 0; lev < K; ++lev) {
-	    double prob = rnd.nextDouble() * quadRate[node];
+	    double prob = Math.random() * quadRate[node];
 	    int whichChild = 0, childNode = -1;
 	    while (true) {
 		childNode = quadChildIndex(node,lev,whichChild);
