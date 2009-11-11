@@ -216,16 +216,14 @@ public class Board extends MooreTopology {
 	Map<String,Point> in = incoming(p), out = outgoing(p);
 	if (in.size() > 0 || out.size() > 0) {
 	    Point q = new Point();
-	    for (Iterator<Map.Entry<String,Point>> iter = in.entrySet().iterator(); iter.hasNext(); ) {
-		Map.Entry<String,Point> kv = iter.next();
-		p.add(kv.getValue(),q);
+	    for (Map.Entry<String,Point> kv : in.entrySet()) {
+		p.add(kv.getValue(), q);
 		if (onBoard(q))
 		    outgoing(q).remove(kv.getKey());
 		//		System.err.println("Removing bond "+kv.getKey()+" from "+q+" to "+p);
 	    }
 	    in.clear();
-	    for (Iterator<Map.Entry<String,Point>> iter = out.entrySet().iterator(); iter.hasNext(); ) {
-		Map.Entry<String,Point> kv = iter.next();
+	    for (Map.Entry<String,Point> kv : out.entrySet()) {
 		p.add(kv.getValue(),q);
 		if (onBoard(q))
 		    incoming(q).remove(kv.getKey());
@@ -247,8 +245,7 @@ public class Board extends MooreTopology {
     public void addIncoming (Point p, Map<String,Point> bondDir) {
 	if (bondDir != null && bondDir.size() > 0) {
 	    Point q = new Point();
-	    for (Iterator<Map.Entry<String,Point>> iter = bondDir.entrySet().iterator(); iter.hasNext(); ) {
-		Map.Entry<String,Point> kv = iter.next();
+	    for (Map.Entry<String,Point> kv : bondDir.entrySet()) {
 		p.add(kv.getValue(),q);
 		if (onBoard(q))
 		    addBond(q,p,kv.getKey());
@@ -259,8 +256,7 @@ public class Board extends MooreTopology {
     public void addOutgoing (Point p, Map<String,Point> bondDir) {
 	if (bondDir != null && bondDir.size() > 0) {
 	    Point q = new Point();
-	    for (Iterator<Map.Entry<String,Point>> iter = bondDir.entrySet().iterator(); iter.hasNext(); ) {
-		Map.Entry<String,Point> kv = iter.next();
+	    for (Map.Entry<String,Point> kv : bondDir.entrySet()) {
 		p.add(kv.getValue(),q);
 		if (onBoard(q))
 		    addBond(p,q,kv.getKey());
@@ -330,8 +326,8 @@ public class Board extends MooreTopology {
 	    if (oldSourceState.name.equals("_")) {
 		System.err.println("Oops, this can't be good: empty space (_) is active. Rules:");
 		Set<Particle> actives = oldSourceState.transform.get(dir).keySet();
-		for (Iterator<Particle> a = actives.iterator(); a.hasNext(); )
-		    System.err.println("_ " + a.next().name);
+		for (Particle a : actives)
+		    System.err.println("_ " + a.name);
 	    }
 
 	    double energyBarrier = -bondEnergy(sourceCoords);  // activation energy for a cross-border move involves breaking all local bonds
@@ -396,8 +392,7 @@ public class Board extends MooreTopology {
 	Point m = new Point(), n = new Point(), r = new Point(), s = new Point();
 	Point m2n = new Point(), n2p = new Point();
 	if (incoming != null)
-	    for (Iterator<Map.Entry<String,Point>> iter = incoming.entrySet().iterator(); iter.hasNext(); ) {
-		Map.Entry<String,Point> kv = iter.next();
+	    for (Map.Entry<String,Point> kv : incoming.entrySet()) {
 		String bondName = kv.getKey();
 		Point p2n = kv.getValue();
 		p.add(p2n,n);
@@ -410,8 +405,7 @@ public class Board extends MooreTopology {
 		}
 	    }
 	if (outgoing != null)
-	    for (Iterator<Map.Entry<String,Point>> iter = outgoing.entrySet().iterator(); iter.hasNext(); ) {
-		Map.Entry<String,Point> kv = iter.next();
+	    for (Map.Entry<String,Point> kv : outgoing.entrySet()) {
 		String bondName = kv.getKey();
 		Point p2r = kv.getValue();
 		p.add(p2r,r);
@@ -448,8 +442,7 @@ public class Board extends MooreTopology {
 	Point n2p = new Point(), p2q = new Point();
 	q.subtract(p,p2q);
 	if (pOut != null)
-	    for (Iterator<Map.Entry<String,Point>> iter = pOut.entrySet().iterator(); iter.hasNext(); ) {
-		Map.Entry<String,Point> kv = iter.next();
+	    for (Map.Entry<String,Point> kv : pOut.entrySet()) {
 		String bondName = kv.getKey();
 		Point p2qMaybe = kv.getValue();
 		p.add(p2qMaybe,qMaybe);
@@ -490,12 +483,10 @@ public class Board extends MooreTopology {
 	StringBuffer sb = new StringBuffer();
 	if (includeSelf)
 	    sb.append(readCell(p).name);
-	for (Iterator<Map.Entry<String,Point>> iter = incoming(p).entrySet().iterator(); iter.hasNext(); ) {
-	    Map.Entry<String,Point> kv = iter.next();
+	for (Map.Entry<String,Point> kv : incoming(p).entrySet()) {
 	    sb.append(" <"+vectorString(kv.getValue())+":"+kv.getKey());
 	}
-	for (Iterator<Map.Entry<String,Point>> iter = outgoing(p).entrySet().iterator(); iter.hasNext(); ) {
-	    Map.Entry<String,Point> kv = iter.next();
+	for (Map.Entry<String,Point> kv : outgoing(p).entrySet()) {
 	    sb.append(" >"+vectorString(kv.getValue())+":"+kv.getKey());
 	}
 	return sb.toString();
@@ -569,14 +560,14 @@ public class Board extends MooreTopology {
     public void flushCaches() {
 	Collection<Particle> particles = knownParticles();
 	LinkedList<Particle> particlesToForget = new LinkedList<Particle>();
-	for (Iterator<Particle> iter = particles.iterator(); iter.hasNext(); ) {
-	    Particle p = iter.next();
+	for (Particle p : particles) {
 	    p.flushCaches();
 	    if (p.getReferenceCount() <= 0)
 		particlesToForget.add(p);
 	}
-	for (Iterator<Particle> iter = particlesToForget.iterator(); iter.hasNext(); )
-	    deregisterParticle(iter.next());
+	for (Particle p : particlesToForget) {
+	    deregisterParticle(p);
+	}
     }
 
     // method to init PatternSet from file
@@ -602,8 +593,7 @@ public class Board extends MooreTopology {
 		// find state with closest color
 		int dmin = 0;
 		Particle s = null;
-		for (Iterator<Particle> e = ps.iterator(); e.hasNext() ;) {
-		    Particle pt = e.next();
+		for (Particle pt : ps) {
 		    Color ct = pt.color;
 		    int rdist = red - ct.getRed(), gdist = green - ct.getGreen(), bdist = blue - ct.getBlue();
 		    int dist = rdist*rdist + gdist*gdist + bdist*bdist;

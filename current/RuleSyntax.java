@@ -58,8 +58,7 @@ public class RuleSyntax {
 			parsedArg.put(arg,val);
 		}
 	    }
-	    for (Iterator<Map.Entry<String,String>> iter = defaultArg.entrySet().iterator(); iter.hasNext(); ) {
-		Map.Entry<String,String> argVal = iter.next();
+	    for (Map.Entry<String,String> argVal : defaultArg.entrySet()) {
 		String arg = argVal.getKey();
 		String type = argType.get(arg);
 		String val = parsedArg.get(arg);

@@ -471,8 +471,7 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	Point q = new Point();
 	for (p.x = 0; p.x < board.size; ++p.x)
 	    for (p.y = 0; p.y < board.size; ++p.y) {
-		for (Iterator<Map.Entry<String,Point>> iter = board.incoming(p).entrySet().iterator(); iter.hasNext(); ) {
-		    Map.Entry<String,Point> kv = iter.next();
+		for (Map.Entry<String,Point> kv : board.incoming(p).entrySet()) {
 		    p.add(kv.getValue(),q);
 		    if (board.onBoard(q))
 			drawBond(p,q);

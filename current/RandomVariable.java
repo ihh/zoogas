@@ -13,10 +13,8 @@ public class RandomVariable<V> {
     private final void rebuild() {
 	cumprob2obj.clear();
 	totalWeight = 0;
-	Iterator<Map.Entry<V,Double>> iter = obj2prob.entrySet().iterator();
-	while (iter.hasNext()) {
-	    Map.Entry<V,Double> keyval = (Map.Entry<V,Double>) iter.next();
-	    accumulate ((V) keyval.getKey(), ((Double) keyval.getValue()).doubleValue());
+	for(Map.Entry<V,Double> keyval : obj2prob.entrySet()) {
+	    accumulate(keyval.getKey(), keyval.getValue());
 	}
     }
 

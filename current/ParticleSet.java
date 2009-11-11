@@ -8,16 +8,16 @@ public class ParticleSet {
     // method to convert names to particles
     Set<Particle> getParticles(Board board) {
 	Set<Particle> ps = new HashSet<Particle>();
-	for (Iterator<String> e = particleName.iterator(); e.hasNext() ;)
-	    ps.add(board.getOrCreateParticle(e.next()));
+	for (String e : particleName)
+	    ps.add(board.getOrCreateParticle(e));
 	return ps;
     }
 
     // i/o
     void toStream (OutputStream out) {
 	PrintStream print = new PrintStream(out);
-	for (Iterator<String> e = particleName.iterator(); e.hasNext() ;)
-	    print.println (e.next());
+	for (String e : particleName)
+	    print.println (e);
 	print.println ("END");
 	print.close();
     }
