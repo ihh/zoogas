@@ -85,6 +85,7 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
     boolean cheatPressed = false;  // true if cheatKey is pressed (allows player to see hidden parts of state names)
     boolean stopPressed = false;  // true if stopKey is pressed (stops updates on this board)
     boolean slowPressed = false;  // true if slowKey is pressed (slows updates on this board)
+    int targetTimePerUpdate = 10;
     double updatesPerSecond = 0;
     String lastDumpStats = ""; // hacky way to avoid concurrency issues
 
@@ -375,27 +376,38 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 	// Game logic goes here
 	repaint();
 
+	Runtime runtime = Runtime.getRuntime();
 	long lastTimeCheck = System.currentTimeMillis();
-	long timeCheckPeriod = 10;
-	while (true)
+	long updateStartTime = System.currentTimeMillis();
+	long timeCheckPeriod = 20;
+	long timeDiff;
+	try
 	{
-	    Runtime runtime = Runtime.getRuntime();
-	    double heapFraction = ((double) (runtime.totalMemory() - runtime.freeMemory())) / (double) runtime.maxMemory();
-	    if (heapFraction > .5)
-		board.flushCaches();
-
-	    if (!stopPressed)
-		evolveStuff();
-	    useTools();
-
-	    if (boardUpdateCount % timeCheckPeriod == 0) {
-		lastDumpStats = board.debugDumpStats();
-		long currentTimeCheck = System.currentTimeMillis();
-		updatesPerSecond = ((double) 1000 * timeCheckPeriod) / ((double) (currentTimeCheck - lastTimeCheck));
-		lastTimeCheck = currentTimeCheck;
+	    while (true)
+	    {
+		updateStartTime = System.currentTimeMillis();
+		double heapFraction = ((double) (runtime.totalMemory() - runtime.freeMemory())) / (double) runtime.maxMemory();
+		if (heapFraction > .5)
+		    board.flushCaches();
+    
+		if (!stopPressed)
+		    evolveStuff();
+		useTools();
+    
+		if (boardUpdateCount % timeCheckPeriod == 0) {
+		    lastDumpStats = board.debugDumpStats();
+		    long currentTimeCheck = System.currentTimeMillis();
+		    updatesPerSecond = ((double) 1000 * timeCheckPeriod) / ((double) (currentTimeCheck - lastTimeCheck));
+		    lastTimeCheck = currentTimeCheck;
+		}
+		repaint();
+		
+		timeDiff = System.currentTimeMillis() - updateStartTime;
+		if(timeDiff < targetTimePerUpdate) {
+		    Thread.currentThread().sleep(targetTimePerUpdate - timeDiff );
+		}
 	    }
-
-	    repaint();
+	} catch (InterruptedException e) {
 	}
     }
 
