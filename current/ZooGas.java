@@ -8,9 +8,10 @@ import java.awt.event.*;
 import java.awt.image.*;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.event.MouseInputAdapter;
 import javax.imageio.ImageIO;
 
-public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyListener {
+public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 
     // size of board in cells
     int size = 128;
@@ -339,12 +340,28 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	}
 
 	// register for mouse & keyboard events
-	cursorPos = new Point();
+	BoardMouseAdapter boardMouse = new BoardMouseAdapter();
+	boardPanel.addMouseListener(boardMouse);
+	boardPanel.addMouseMotionListener(boardMouse);
+	
+	MouseListener toolsMouse = new MouseAdapter() {
+	    public void mouseClicked(MouseEvent e) {
+		toolBox.clickSelect(e.getPoint().y);
+	    }
+	};
+	toolBoxPanel.addMouseListener(toolsMouse);
+	
+	MouseListener statusMouse = new MouseAdapter() {
+	    public void mouseClicked(MouseEvent e) {
+		hintBrightness = 240;
+		currentHint = (currentHint + 1) % hints.size();
+	    }
+	};
+	statusPanel.addMouseListener(statusMouse);
+	
+	addKeyListener(this);
 
-        boardPanel.addMouseListener(this);
-        addKeyListener(this);
-
-        gameLoop();
+	gameLoop();
     }
 
     // main game loop
@@ -391,26 +408,21 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	toolBox.toolTextWidth = toolLabelWidth;
     }
 
-    // getCursorPos() returns true if cursor is over board, and places cell coords in cursorPos
-    private boolean getCursorPos() {
-	Point mousePos = new Point(getContentPane().getMousePosition());
-	if (mousePos != null) {
-	    board.getCellCoords(mousePos,cursorPos,pixelsPerCell);
-	    return board.onBoard(cursorPos);
-	}
-	return false;
-    }
-
     private void useTools() {
-	boolean cursorOnBoard = getCursorPos();
-	setCursor(cursorOnBoard ? boardCursor : normalCursor);
-
-	// do spray
-	if (mouseDown) {
-	    if (cursorOnBoard)
+	if(cursorPos != null)
+	{
+	    setCursor(boardCursor);
+	    
+	    // do spray
+	    if (mouseDown) {
 		toolBox.currentTool.spray(cursorPos,board,this,spaceParticle);
-	} else
-	    toolBox.refill(1);
+		return;
+	    }
+	}
+	else
+	    setCursor(normalCursor);
+	
+	toolBox.refill(1);
     }
 
     // bond-rendering method
@@ -506,18 +518,21 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	}
 
 	// identify particle that cursor is currently over
-	boolean cursorOnBoard = getCursorPos();
-	Particle cursorParticle = cursorOnBoard ? board.readCell(cursorPos) : null;
-	boolean isSpace = cursorParticle == spaceParticle;
-	printOrHide (g, cursorParticle == null
-		     ? "Mouseover board to identify pixels"
-		     : "Under cursor:", nounRow, true, Color.white);
-	String nameToShow = "";
-	if (cursorOnBoard)
-	    nameToShow = cheatPressed
+	if(cursorPos != null)
+	{
+	    Particle cursorParticle = board.readCell(cursorPos);
+	    boolean isSpace = cursorParticle == spaceParticle;
+	    printOrHide (g, cursorParticle == null
+			? "Mouseover board to identify pixels"
+			: "Under cursor:", nounRow, true, Color.white);
+	    String nameToShow = cheatPressed
 		? cursorParticle.name + " (" + cursorParticle.count + ")" + board.singleNeighborhoodDescription(cursorPos,false)
 		: cursorParticle.visibleName();
-	printOrHide (g, nameToShow, nounRow+1, cursorOnBoard, cursorOnBoard ? cursorParticle.color : Color.white);
+	    printOrHide (g, nameToShow, nounRow+1, true, cursorParticle.color);
+	}
+	else {
+	    printOrHide (g, "", nounRow+1, false, Color.white);
+	}
 
 	// update rate and other stats
 	StringBuilder sb = new StringBuilder();
@@ -599,34 +614,40 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 
     // UI methods
     // mouse events
-    public void mousePressed(MouseEvent e) {
-	mouseDown = true;
-
-	Point mousePos = new Point(e.getPoint());
-	if (mousePos.x >= boardSize && mousePos.x < boardSize + toolBarWidth + toolLabelWidth)
-	    toolBox.clickSelect(mousePos.y);
-	else if (mousePos.x >= boardSize + toolBarWidth + toolLabelWidth) {
-	    hintBrightness = 240;
-	    currentHint = (currentHint + 1) % hints.size();
+    private class BoardMouseAdapter extends MouseInputAdapter
+    {
+	public void mousePressed(MouseEvent e) {
+	    mouseDown = true;
+	}
+    
+	public void mouseReleased(MouseEvent e) {
+	    mouseDown = false;
+	}
+    
+	public void mouseEntered(MouseEvent e) {
+	    cursorPos = new Point();
+	    mouseDown = false;
+	}
+    
+	public void mouseExited(MouseEvent e) {
+	    cursorPos = null;
+	    mouseDown = false;
+	}
+    
+	public void mouseClicked(MouseEvent e) {
+	    mouseDown = false;
+	}
+	
+	public void mouseMoved(MouseEvent e) {
+	    board.getCellCoords(e.getPoint(), cursorPos, pixelsPerCell);
+	}
+	
+	public void mouseDragged(MouseEvent e) {
+	    if(cursorPos != null)
+		board.getCellCoords(e.getPoint(), cursorPos, pixelsPerCell);
 	}
     }
-
-    public void mouseReleased(MouseEvent e) {
-	mouseDown = false;
-    }
-
-    public void mouseEntered(MouseEvent e) {
-	mouseDown = false;
-    }
-
-    public void mouseExited(MouseEvent e) {
-	mouseDown = false;
-    }
-
-    public void mouseClicked(MouseEvent e) {
-	mouseDown = false;
-    }
-
+    
     // key events
     public void keyTyped(KeyEvent e) {
     }
@@ -638,15 +659,15 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	else
 	{
 	    switch(c){
-	        case cheatKey: 
-	            cheatPressed = true;
+		case cheatKey: 
+		    cheatPressed = true;
 		    break;
-	        case stopKey:
-	            stopPressed = true;
+		case stopKey:
+		    stopPressed = true;
 		    break;
-	        case slowKey:
-	            slowPressed = true;
-	            break;
+		case slowKey:
+		    slowPressed = true;
+		    break;
 	    }
 	}
     }
@@ -655,14 +676,14 @@ public class ZooGas extends JFrame implements BoardRenderer, MouseListener, KeyL
 	mouseDown = false;
 	switch(e.getKeyChar()){
 	    case cheatKey: 
-	        cheatPressed = false;
-	        break;
+		cheatPressed = false;
+		break;
 	    case stopKey:
-	        stopPressed = false;
+		stopPressed = false;
 		break;
 	    case slowKey:
-	        slowPressed = false;
-	        break;
-        }
+		slowPressed = false;
+		break;
+	}
     }
 }

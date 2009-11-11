@@ -32,9 +32,12 @@ public class SprayTool {
 
     // methods
     void refill(double scale) {
-	double refillAmount = refillRate * scale;
-	if (refillAmount > 0. && reserve < maxReserve)
-	    reserve = Math.min (reserve + refillAmount, maxReserve);
+	if(reserve < maxReserve)
+	{
+	    double refillAmount = refillRate * scale;
+	    if (refillAmount > 0.)
+		reserve = Math.min(reserve + refillAmount, maxReserve);
+	}
     }
 
     void spray(Point cursorPos,Board board,BoardRenderer renderer,Particle spaceParticle) {
