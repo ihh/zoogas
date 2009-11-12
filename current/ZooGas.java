@@ -13,14 +13,20 @@ import javax.imageio.ImageIO;
 
 public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 
+    // command-line argument defaults
+    static int defaultPort = 4444;
+    static String defaultPatternSetFilename = "ECOLOGY.txt", defaultToolboxFilename = "TOOLS.txt";
+    static int defaultBoardSize = 128;
+    static int defaultTargetUpdateRate = 100;
+
     // size of board in cells
-    int size = 128;
+    int size = defaultBoardSize;
 
     // board
     Board board = null;
 
     // pattern set
-    String patternSetFilename = "ECOLOGY.txt";
+    String patternSetFilename = defaultPatternSetFilename;
 
     // Initial conditions; or, How To Build a Zoo.
     // if initImageFilename is not null, then the image will be read from a file,
@@ -35,14 +41,11 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
     String initParticlePrefix = "/INIT.";
 
     // tools and cheats
-    String toolboxFilename = "TOOLS.txt";
+    String toolboxFilename = defaultToolboxFilename;
     ToolBox toolBox = null;
     final char cheatKey = '/';  // allows player to see the hidden parts of state names, i.e. the part behind the '/'
     final char stopKey = '.';  // stops the action on this board (does not block incoming network events)
     final char slowKey = ',';  // allows player to see bonds
-
-    // cellular automata state list
-    private Vector<Particle> particleVec = new Vector<Particle>();  // internal to this class
 
     // commentator code ("well done"-type messages)
     long boardUpdateCount = 0;
@@ -85,8 +88,9 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
     boolean cheatPressed = false;  // true if cheatKey is pressed (allows player to see hidden parts of state names)
     boolean stopPressed = false;  // true if stopKey is pressed (stops updates on this board)
     boolean slowPressed = false;  // true if slowKey is pressed (slows updates on this board)
-    int targetTimePerUpdate = 10;
+    int targetUpdateRate = 100;
     double updatesPerSecond = 0;
+    long timeCheckPeriod = 20;  // board refreshes between recalculations of updatesPerSecond
     String lastDumpStats = ""; // hacky way to avoid concurrency issues
 
     // main()
@@ -95,13 +99,13 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 	ZooGas gas = new ZooGas();
 
 	// Process options and args before initializing ZooGas
-	int port = 0;
+	boolean isServer = false, isClient = false;
+	int port = defaultPort;
 	String socketAddress = null;
 
 	for(int i = 0; i < args.length; ++i) {
 	    if("-s".equals(args[i]) || "--server".equals(args[i])) {
-		if(port == 0)
-		    port = 4444;
+		isServer = true;
 	    }
 	    else if("-c".equals(args[i]) || "--client".equals(args[i])) {
 		if(i+1 >= args.length) {
@@ -111,6 +115,7 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 		    return;
 		}
 		socketAddress = args[++i];
+		isServer = isClient = true;
 	    }
 	    else if("-p".equals(args[i]) || "--port".equals(args[i])) {
 		if(i+1 >= args.length) {
@@ -120,6 +125,7 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 		    return;
 		}
 		port = (new Integer(args[++i]));
+		isServer = true;
 	    }
 	    else if("-t".equals(args[i]) || "--tools".equals(args[i])) {
 		if(i+1 >= args.length) {
@@ -139,15 +145,26 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 		}
 		gas.patternSetFilename = args[++i];
 	    }
+	    else if("-u".equals(args[i]) || "--updates".equals(args[i])) {
+		if(i+1 >= args.length) {
+		    System.err.println("Error: no update rate parameter specified");
+		    System.err.println("-u/--updates usage: [-u|--updates] <target update rate>");
+		    System.exit(0);
+		    return;
+		}
+		gas.targetUpdateRate = Integer.parseInt(args[++i]);
+	    }
 	    else if("-?".equals(args[i]) || "-h".equals(args[i]) || "--help".equals(args[i])) {
 		System.err.println("Usage: <progname> [<option> [<args>]]");
 		System.err.println("Valid options:");
-		System.err.println("\t[-c|--client] <port> <address>[:<remote port>]  - Start ZooGas in client mode");
-		System.err.println("\t[-s|--server]  - Start ZooGas in server mode");
-	        System.err.println("\t[-p|--p <port>]  - Use <port> as the server port");
-		System.err.println("\t[-t|--tools <file>]  - Load tools from specified file (default \"TOOLS.txt\")");
-		System.err.println("\t[-r|--rules <file>]  - Load rules from specified file (default \"ECOLOGY.txt\")");
-		System.err.println("\t[-?|-h|--help]  - Displays this very useful help message");
+		System.err.println("\t[-c|--client <remote address>[:<remote port>]]");
+	        System.err.println("\t                     - Start ZooGas in client mode");
+		System.err.println("\t[-s|--server]        - Start ZooGas in server mode");
+	        System.err.println("\t[-p|--p <port>]      - Use <port> as the server port (default "+defaultPort+")");
+		System.err.println("\t[-t|--tools <file>]  - Load tools from specified file (default \"" + defaultToolboxFilename + "\")");
+		System.err.println("\t[-r|--rules <file>]  - Load rules from specified file (default \"" + defaultPatternSetFilename + "\")");
+		System.err.println("\t[-u|--updates <n>]   - Specify desired updates per second (default " + defaultTargetUpdateRate + ")");
+		System.err.println("\t[-?|-h|--help]       - Display this very useful help message");
 		System.exit(0);
 		return;
 	    }
@@ -160,24 +177,18 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 	}
 
 	// initialize after options have been considered
-	if (socketAddress != null) // start as client (and server)
-	{
-	    if(port == 0)
-	        port = 4444;
+	if (isServer) // start as server
+	    gas.board.initServer(port, gas);
 
-	    gas.board.initClient(port, gas); // init the server stuff first, then connect
-	    
+	if (isClient) // start as client (and server)
+	{
 	    String[] address = socketAddress.split(":");
 	    if(address.length > 1) {
-	        gas.board.initServer(new InetSocketAddress(address[0], new Integer(address[1])));
+	        gas.board.initClient(new InetSocketAddress(address[0], new Integer(address[1])));
 	    }
 	    else {
-	        gas.board.initServer(new InetSocketAddress(address[0], 4444));
+	        gas.board.initClient(new InetSocketAddress(address[0], defaultPort));
 	    }
-	}
-	else if(port != 0) // start as server
-	{
-	    gas.board.initClient(port, gas);
 	}
 
 	gas.start();
@@ -379,7 +390,7 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 	Runtime runtime = Runtime.getRuntime();
 	long lastTimeCheck = System.currentTimeMillis();
 	long updateStartTime = System.currentTimeMillis();
-	long timeCheckPeriod = 20;
+	long targetTimePerUpdate = 1000 / targetUpdateRate;
 	long timeDiff;
 	try
 	{
@@ -494,9 +505,12 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 	for (p.x = 0; p.x < board.size; ++p.x)
 	    for (p.y = 0; p.y < board.size; ++p.y) {
 		for (Map.Entry<String,Point> kv : board.incoming(p).entrySet()) {
-		    p.add(kv.getValue(),q);
-		    if (board.onBoard(q))
-			drawBond(g,p,q);
+		    Point delta = kv.getValue();
+		    if (delta != null) {  // values in this map can occasioanlly go null, perhaps due to concurrent modification by update thread?
+			p.add(kv.getValue(),q);
+			if (board.onBoard(q))
+			    drawBond(g,p,q);
+		    }
 		}
 	    }
     }

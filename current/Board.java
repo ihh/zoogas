@@ -132,7 +132,7 @@ public class Board extends MooreTopology {
     }
 
     // net init methods
-    public final void initClient(int port,ZooGas gas) {
+    public final void initServer (int port,ZooGas gas) {
 
 	this.boardServerPort = port;
 
@@ -148,7 +148,7 @@ public class Board extends MooreTopology {
 	}
     }
 
-    public final void initServer (InetSocketAddress remote) {
+    public final void initClient (InetSocketAddress remote) {
 	connectBorder (new Point(0,0), new Point(-1,0), new Point(0,1), 128, new Point(-size,0), remote);  // west
 	connectBorder (new Point(127,0), new Point(128,0), new Point(0,1), 128, new Point(+size,0), remote);  // east
 	connectBorder (new Point(0,0), new Point(0,-1), new Point(1,0), 128, new Point(0,-size), remote);  // north

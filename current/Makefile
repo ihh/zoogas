@@ -20,10 +20,10 @@ clean:
 	rm *.class
 
 testserver: classfiles
-	$(JAVA) $(ZOOGAS) 4444
+	$(JAVA) $(ZOOGAS) -s
 
 testclient: classfiles
-	$(JAVA) $(ZOOGAS) 4445 localhost 4444
+	$(JAVA) $(ZOOGAS) -p 4445 -c localhost
 
 %.class: %.java
 	$(JAVAC) $<
