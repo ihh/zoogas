@@ -391,7 +391,7 @@ VERB s=cell_builder/.*/dir:$+R t=_ T=animal v=seed p=.04
 
 # Bombs throw off shrapnel...
 NOUN n=(bomb|.*shrapnel).* c=00c080
-VERB s=bomb S=bomb/r:2/n:3
+VERB s=bomb S=bomb/r:4/n:6
 VERB s=bomb/r:(\d)/n:([1-9]|\d\d+) S=bomb/r:$1/n:$-2 T=shrapnel/d:$F/v:$1 v=explode
 VERB s=bomb/r:(\d)/n:0 S=shrapnel/d:$F/v:$1 v=explode
 
@@ -444,8 +444,8 @@ VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$1 p=1 v=spread
 VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$-1 p=1 v=spread
 # override: spread more slowly if neighbor is open space
 VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$+1 t=_ p=0 v=spread
-VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$1 t=_ p=.05 v=spread
-VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$-1 t=_ p=.1 v=spread
+VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$1 t=_ p=.01 v=spread
+VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$-1 t=_ p=.02 v=spread
 # override: don't spread into fire ("rage" takes care of this, further down)
 VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$+1 t=fire/.* p=0 v=spread
 VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$1 t=fire/.* p=.05 v=spread
