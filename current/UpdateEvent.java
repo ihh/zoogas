@@ -179,7 +179,6 @@ public class UpdateEvent {
     }
 
     public void write(Board board) {
-
 	if (!keepsTargetBonds())
 	    board.removeBonds(targetCoords);
 	if (sourceCoords != null && board.onBoard(sourceCoords)) {
@@ -194,13 +193,18 @@ public class UpdateEvent {
 	board.addOutgoing(targetCoords,tOutgoing);
     }
 
-    public String description(Board board) {
-	return "Source: "+sourceCoords+" "+board.singleNeighborhoodDescription(sourceCoords,true)
-	    +"  Target: "+targetCoords+" "+board.singleNeighborhoodDescription(targetCoords,true)
-	    +"  Old: "+oldSource.name+" "+oldTarget.name
-	    +"  New: "+source.name+" "+target.name
-	    +"  EnergyDelta: "+energyDelta(board)
-	    +"  Verb: "+verb;
+    public String writeAndLog(Board board) {
+	String oldSourceDesc = board.singleNeighborhoodDescription(sourceCoords,true);
+	String oldTargetDesc = board.singleNeighborhoodDescription(targetCoords,true);
+	double oldEnergy = board.bondEnergy(sourceCoords,targetCoords);
+
+	write(board);
+
+	String newSourceDesc = board.singleNeighborhoodDescription(sourceCoords,true);
+	String newTargetDesc = board.singleNeighborhoodDescription(targetCoords,true);
+	double newEnergy = board.bondEnergy(sourceCoords,targetCoords);
+
+	return oldSourceDesc+" "+oldTargetDesc+" -> "+newSourceDesc+" "+newTargetDesc+"  energyDelta="+(newEnergy-oldEnergy)+"  verb="+verb;
     }
 
     // equals, hashCode
