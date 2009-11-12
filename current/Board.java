@@ -385,6 +385,8 @@ public class Board extends MooreTopology {
     public final boolean acceptUpdate (UpdateEvent e, double energyBarrier) {
 	double energyDelta = energyBarrier + e.energyDelta(this);
 	boolean accept = energyDelta > 0 ? true : (rnd.nextDouble() < Math.pow(10,energyDelta));
+	if (energyDelta < 0 && accept)
+	    System.err.println(e.description(this));
 	return accept;
     }
 

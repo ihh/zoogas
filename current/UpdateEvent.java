@@ -194,6 +194,15 @@ public class UpdateEvent {
 	board.addOutgoing(targetCoords,tOutgoing);
     }
 
+    public String description(Board board) {
+	return "Source: "+sourceCoords+" "+board.singleNeighborhoodDescription(sourceCoords,true)
+	    +"  Target: "+targetCoords+" "+board.singleNeighborhoodDescription(targetCoords,true)
+	    +"  Old: "+oldSource.name+" "+oldTarget.name
+	    +"  New: "+source.name+" "+target.name
+	    +"  EnergyDelta: "+energyDelta(board)
+	    +"  Verb: "+verb;
+    }
+
     // equals, hashCode
     public boolean equals (Object obj) {
 	if (obj.getClass().equals(getClass())) {

@@ -308,8 +308,6 @@ NOUN n=basepair_gg.* c=00c0c0 e=-3
 NOUN n=basepair_uu.* c=6000c0 e=-3
 
 # define the covalent bond between consecutive bases on the same chain
-# bond endpoint identifiers are /5p and /3p
-# start with base->...
 BOND n=5to3 s=(RNA_sequence|base|basepair)_.* t=(RNA_sequence|base|basepair)_.* e=+10
 BOND n=f5to3 s=(RNA_sequence|base|basepair)_.* t=(RNA_sequence|base|basepair)_.* e=+10
 BOND n=r5to3 s=(RNA_sequence|base|basepair)_.* t=(RNA_sequence|base|basepair)_.* e=+10
