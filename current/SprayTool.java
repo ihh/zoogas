@@ -41,8 +41,8 @@ public class SprayTool {
 	Point sprayCell = new Point();
 	for (int n = 0; reserve >= 1 && n < sprayPower; ++n) {
 
-	    sprayCell.x = cursorPos.x + (int)(Math.random()*(int)(sprayDiameter - (sprayDiameter / 2)));
-	    sprayCell.y = cursorPos.y + (int)(Math.random()*(int)(sprayDiameter - (sprayDiameter / 2)));
+	    sprayCell.x = cursorPos.x + (int)(Math.random()*(int)(sprayDiameter)) - (int)(sprayDiameter / 2);
+	    sprayCell.y = cursorPos.y + (int)(Math.random()*(int)(sprayDiameter)) - (int)(sprayDiameter / 2);
 
 	    if (board.onBoard(sprayCell)) {
 		Particle oldCell = board.readCell (sprayCell);
