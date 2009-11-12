@@ -536,7 +536,7 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 	Color hintForeground = new Color(bg,Math.max(fg,bg),0);
 	Color hintBackground = new Color(bg,bg,0);
 	printOrHide (g, hints.get(currentHint), hintRow, true, hintForeground, hintBackground);
-	if ((hintBrightness += .5) >= 512) {
+	if ((hintBrightness += 1) >= 512) {
 	    hintBrightness = 0;
 	    currentHint = (currentHint + 1) % hints.size();
 	}
