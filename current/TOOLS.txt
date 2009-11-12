@@ -14,3 +14,4 @@ TOOL n=RNA_sequence_ccacucc k=w
 TOOL n=RNA_sequence_ggaggugg k=e
 TOOL n=RNA_sequence_ccaaccccuucc k=r
 TOOL n=RNA_sequence_a20u20 k=t
+TOOL n=bomb k=n

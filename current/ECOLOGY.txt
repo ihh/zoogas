@@ -289,24 +289,24 @@ VERB s=.*conga_dude t=.*conga_dude S=$S T=_ v=conga_death K=(x,handsToHips,s) c=
 
 # RNA
 # base colors: HSV values with S=1, V=0.5 & H depending on the first nucleotide: 0(a), .25(c), .5(g), .75(u)
-NOUN n=(base|RNA_sequence)_a.* c=800000
-NOUN n=(base|RNA_sequence)_c.* c=408000
-NOUN n=(base|RNA_sequence)_g.* c=008080
-NOUN n=(base|RNA_sequence)_u.* c=400080
+NOUN n=(base|RNA_sequence)_a.* c=800000 e=-10
+NOUN n=(base|RNA_sequence)_c.* c=408000 e=-10
+NOUN n=(base|RNA_sequence)_g.* c=008080 e=-10
+NOUN n=(base|RNA_sequence)_u.* c=400080 e=-10
 
 # canonical basepairs: RGB components are the the sums of the RGB components of individual bases.
 # these lines also define the stabilizing energy of a Watson-Crick or wobble basepair
-NOUN n=basepair_(cg|gc).* c=40ff80 e=3
-NOUN n=basepair_(au|ua).* c=c00080 e=2
-NOUN n=basepair_(gu|ug).* c=4080ff e=1
+NOUN n=basepair_(cg|gc).* c=40ff80 e=-17
+NOUN n=basepair_(au|ua).* c=c00080 e=-18
+NOUN n=basepair_(gu|ug).* c=4080ff e=-19
 # non-canonical basepairs are a bit dimmer (3/4 as bright as a straight sum).
 # these lines also define the unfavorable energy of such basepairs
-NOUN n=basepair_(ac|ca).* c=906000 e=-3
-NOUN n=basepair_(ag|ga|cu|uc).* c=606060 e=-3
-NOUN n=basepair_aa.* c=c00000 e=-3
-NOUN n=basepair_cc.* c=60c000 e=-3
-NOUN n=basepair_gg.* c=00c0c0 e=-3
-NOUN n=basepair_uu.* c=6000c0 e=-3
+NOUN n=basepair_(ac|ca).* c=906000 e=-23
+NOUN n=basepair_(ag|ga|cu|uc).* c=606060 e=-23
+NOUN n=basepair_aa.* c=c00000 e=-23
+NOUN n=basepair_cc.* c=60c000 e=-23
+NOUN n=basepair_gg.* c=00c0c0 e=-23
+NOUN n=basepair_uu.* c=6000c0 e=-23
 
 # define the covalent bond between consecutive bases on the same chain
 BOND n=5to3 s=(RNA_sequence|base|basepair)_.* t=(RNA_sequence|base|basepair)_.* e=+10
@@ -367,8 +367,8 @@ VERB s=(RNA_sequence_[acgu]*)([acgu])(2)([^\d].*|) t=.* S=$1$2$2$4 T=$T p=1 v=/e
 
 
 # Cell walls
-NOUN n=(anchored_cell_wall|cell_builder.*) c=103010
-NOUN n=cell_wall c=204020
+NOUN n=(anchored_cell_wall|cell_builder.*) c=103010 e=-10
+NOUN n=cell_wall c=204020 e=-10
 BOND s=(anchored_|)cell_wall t=cell_(wall|builder.*) n=cellWall e=+10 L=1
 VERB s=cell_wall t=_ S=$T T=$S k=(x,cellWall,sT) k=(sT,cellWall,y)
 VERB s=(anchored_|)cell_wall S=_ p=.0001 v=degrade
@@ -389,6 +389,71 @@ VERB s=cell_builder/.*dir:$F t=anchored_cell_wall S=cell_wall T=cell_wall p=1 v=
 # Drop an animal every now and then:
 VERB s=cell_builder/.*/dir:$+R t=_ T=animal v=seed p=.04
 
+# Bombs throw off shrapnel...
+NOUN n=(bomb|.*shrapnel).* c=00c080
+VERB s=bomb S=bomb/r:2/n:3
+VERB s=bomb/r:(\d)/n:([1-9]|\d\d+) S=bomb/r:$1/n:$-2 T=shrapnel/d:$F/v:$1 v=explode
+VERB s=bomb/r:(\d)/n:0 S=shrapnel/d:$F/v:$1 v=explode
+
+# shrapnel flies at various speeds (ugh, no way to specify this sort of match-dependent probability... yet)
+VERB s=shrapnel/d:$F/v:9 p=9 t=_ S=$T T=$S v=fly
+VERB s=shrapnel/d:$F/v:8 p=8 t=_ S=$T T=$S v=fly
+VERB s=shrapnel/d:$F/v:7 p=7 t=_ S=$T T=$S v=fly
+VERB s=shrapnel/d:$F/v:6 p=6 t=_ S=$T T=$S v=fly
+VERB s=shrapnel/d:$F/v:5 p=5 t=_ S=$T T=$S v=fly
+VERB s=shrapnel/d:$F/v:4 p=4 t=_ S=$T T=$S v=fly
+VERB s=shrapnel/d:$F/v:3 p=3 t=_ S=$T T=$S v=fly
+VERB s=shrapnel/d:$F/v:2 p=2 t=_ S=$T T=$S v=fly
+VERB s=shrapnel/d:$F/v:1 p=1 t=_ S=$T T=$S v=fly
+
+# shrapnel deceleration, explosion, ricochet
+VERB s=(shrapnel/d:$F/v:)([1-9]) t=_ S=$T T=$1$-2 v=fly/decelerate
+VERB s=shrapnel/d:.*/v:[01] S=exploding_shrapnel p=.9 v=explode
+VERB s=shrapnel/d:.*/.* t=[^_].* S=exploding_shrapnel v=explode
+VERB s=shrapnel/d:$F/v:(\d) t=[^_].* S=shrapnel/d:$++L/v:$1 T=$T p=.1 v=ricochet
+VERB s=shrapnel/d:$F/v:(\d) t=[^_].* S=shrapnel/d:$++R/v:$1 T=$T p=.05 v=ricochet
+# Without this last rule, shrapnel at uncrossable borders will never die
+VERB s=shrapnel/d:$B/v:.* t=.* S=_ T=$T p=.001 v=scatter
+
+# exploding shrapnel either turns into fire, or throws off more shrapnel (using a bomb)
+VERB s=exploding_shrapnel T=shrapnel/d:$F/v:1 p=.1
+VERB s=exploding_shrapnel T=fire/e:5 p=.1
+VERB s=exploding_shrapnel S=fire/e:9 p=.01
+
+# Fire
+NOUN n=fire/e:0 c=100000
+NOUN n=fire/e:1 c=200000
+NOUN n=fire/e:2 c=300000
+NOUN n=fire/e:3 c=400000
+NOUN n=fire/e:4 c=500000
+NOUN n=fire/e:5 c=602000
+NOUN n=fire/e:6 c=703000
+NOUN n=fire/e:7 c=804000
+NOUN n=fire/e:8 c=906000
+NOUN n=fire/e:9 c=a08000
+NOUN n=fire/e:10 c=b0a000
+NOUN n=fire/e:11 c=c0c000
+NOUN n=fire/e:12 c=d0d000
+NOUN n=fire/e:13 c=e0e000
+NOUN n=fire/e:14 c=f0f000
+NOUN n=fire/e:15 c=ffff00
+
+# spread quickly
+VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$+1 p=1 v=spread
+VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$1 p=1 v=spread
+VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$-1 p=1 v=spread
+# override: spread more slowly if neighbor is open space
+VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$+1 t=_ p=0 v=spread
+VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$1 t=_ p=.05 v=spread
+VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$-1 t=_ p=.1 v=spread
+# override: don't spread into fire ("rage" takes care of this, further down)
+VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$+1 t=fire/.* p=0 v=spread
+VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$1 t=fire/.* p=.05 v=spread
+VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$-1 t=fire/.* p=.1 v=spread
+# rage/ebb/extinguish
+VERB s=fire/e:([1-9]) t=fire/.* S=fire/e:$+1 p=.1 v=rage
+VERB s=fire/e:([1-9]|\d\d+) S=fire/e:$-1 p=.15 v=ebb
+VERB s=fire/e:0 S=_ p=.05 v=extinguish
 
 # end of rules
 END
