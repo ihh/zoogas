@@ -15,6 +15,21 @@ public class BoardServer extends Thread {
     }
 
     protected static Pattern commandRegex = Pattern.compile("([^\n]*)\n");
+    
+    enum packetCommand {
+	BYE(1),
+	EVOLVE(11),
+	RETURN(6),
+	CONNECT(7);
+	
+	private packetCommand(int numArgs) {
+	    expectedArgs = numArgs;
+	}
+	private int expectedArgs;
+	public boolean matchArgCount(int numArgs) {
+	    return numArgs == expectedArgs;
+	}
+    }
 
     protected void process (String data, Boolean listening) {
 	try {
@@ -22,72 +37,74 @@ public class BoardServer extends Thread {
 
 	    // uncomment to log all incoming commands
 	    //	    logCommand (args);
-
-	    if (match(args,"BYE",1))
-		listening = false;
-
-	    else if (match(args,"EVOLVE",11)) {
-
-		Point localTarget = new Point(toInt(args[1]), toInt(args[2]));
-		Particle oldSourceState = board.getOrCreateParticle (args[3]);  // this should really be qualified with a PatternSet, but put that off until we can request PatternSets from remote Boards
-		if (oldSourceState == null) {
-		    System.err.println("Don't know particle " + args[3]);
-		    // TODO: request information about oldSourceState from connecting board
-		} else {
-		    int dir = toInt(args[4]);
-		    double energyBarrier = toDouble(args[5]);
-		    Point remoteSource = new Point(toInt(args[6]), toInt(args[7]));
-		    InetAddress returnAddr = InetAddress.getByName (args[8]);
-		    int returnPort = toInt(args[9]);
-		    int remoteSourceWriteCount = toInt(args[10]);
-
-		    Particle newSourceState = board.evolveLocalTargetForRemoteSource(localTarget,oldSourceState,dir,energyBarrier);
-
-		    if (newSourceState != oldSourceState)
-			sendReturnDatagram (returnAddr, returnPort, remoteSource, newSourceState, remoteSourceWriteCount, -energyBarrier);
-		}
-
-	    } else if (match(args,"RETURN",6)) {
-
-		Point localSource = new Point(toInt(args[1]), toInt(args[2]));
-		Particle newSourceState = board.getParticleByName (args[3]);
-		if (newSourceState == null) {
-		    // TODO: request information about newSourceState from connecting board
-		} else {
-		    double energyInput = toDouble(args[4]);
-		    int oldWriteCount = toInt(args[5]);
-
-		    if (oldWriteCount == board.getCellWriteCount(localSource)) {
-			board.removeBonds (localSource);
-			board.writeCell (localSource, newSourceState);
-			// note that incoming particles are never bonded to anything...
-			// ...so we always accept the move regardless of the energy input
-			renderer.drawCell (localSource);
-		    }
-		}
-
-	    } else if (match(args,"CONNECT",7)) {
-
-		// connect a remote cell
-		Point localCell = new Point(toInt(args[1]), toInt(args[2]));
-		Point remoteCell = new Point(toInt(args[3]), toInt(args[4]));
-		InetSocketAddress sockAddr = new InetSocketAddress (args[5], toInt(args[6]));
-
-		board.addRemoteCellCoord (localCell, sockAddr, remoteCell);
-
-		// debug
-		// System.err.println (command + " " + localCell + " " + remoteCell + " " + sockAddr);
-	    } else {
-		System.err.println ("BoardServer: Ignoring unrecognized command string " + data);
+	    
+	    packetCommand command = packetCommand.valueOf(args[0]);
+	    
+	    if(!command.matchArgCount(args.length)) {
+	        System.err.println("BoardServer: " + command.toString() + " packet does not have the correct number of args");
+		return;
 	    }
 
+	    switch(command)
+	    {
+		case BYE:
+		    listening = false;
+		    break;
+		case EVOLVE:    
+		    Point localTarget = new Point(toInt(args[1]), toInt(args[2]));
+		    Particle oldSourceState = board.getOrCreateParticle (args[3]);  // this should really be qualified with a PatternSet, but put that off until we can request PatternSets from remote Boards
+		    if (oldSourceState == null) {
+			System.err.println("Don't know particle " + args[3]);
+			// TODO: request information about oldSourceState from connecting board
+		    } else {
+			int dir = toInt(args[4]);
+			double energyBarrier = toDouble(args[5]);
+			Point remoteSource = new Point(toInt(args[6]), toInt(args[7]));
+			InetAddress returnAddr = InetAddress.getByName (args[8]);
+			int returnPort = toInt(args[9]);
+			int remoteSourceWriteCount = toInt(args[10]);
+    
+			Particle newSourceState = board.evolveLocalTargetForRemoteSource(localTarget,oldSourceState,dir,energyBarrier);
+    
+			if (newSourceState != oldSourceState)
+			    sendReturnDatagram (returnAddr, returnPort, remoteSource, newSourceState, remoteSourceWriteCount, -energyBarrier);
+		    }
+		    break;
+		case RETURN:    
+		    Point localSource = new Point(toInt(args[1]), toInt(args[2]));
+		    Particle newSourceState = board.getParticleByName (args[3]);
+		    if (newSourceState == null) {
+			// TODO: request information about newSourceState from connecting board
+		    } else {
+			double energyInput = toDouble(args[4]);
+			int oldWriteCount = toInt(args[5]);
+    
+			if (oldWriteCount == board.getCellWriteCount(localSource)) {
+			    board.removeBonds (localSource);
+			    board.writeCell (localSource, newSourceState);
+			    // note that incoming particles are never bonded to anything...
+			    // ...so we always accept the move regardless of the energy input
+			    renderer.drawCell (localSource);
+			}
+		    }
+		    break;
+		case CONNECT:    
+		    // connect a remote cell
+		    Point localCell = new Point(toInt(args[1]), toInt(args[2]));
+		    Point remoteCell = new Point(toInt(args[3]), toInt(args[4]));
+		    InetSocketAddress sockAddr = new InetSocketAddress (args[5], toInt(args[6]));
+    
+		    board.addRemoteCellCoord (localCell, sockAddr, remoteCell);
+    
+		    // debug
+		    // System.err.println (command + " " + localCell + " " + remoteCell + " " + sockAddr);
+		    break;
+	    }
+	} catch(IllegalArgumentException e) {
+	    System.err.println ("BoardServer: Ignoring unrecognized command string " + data);
 	} catch (IOException e) {
 	    e.printStackTrace();
 	}
-    }
-
-    private static boolean match(String[] args,String command,int expectedArgs) {
-	return args.length == expectedArgs && args[0].equalsIgnoreCase(command);
     }
 
     private static int toInt(String s) { return Integer.parseInt(s); }
@@ -151,7 +168,7 @@ public class BoardServer extends Thread {
     }
 
     static String connectString (Point remoteCell, Point localCell, String localHost, int localPort) {
-	return new String ("CONNECT " + remoteCell.x + " " + remoteCell.y + " " + localCell.x + " " + localCell.y + " " + localHost + " " + localPort);
+	return "CONNECT " + remoteCell.x + " " + remoteCell.y + " " + localCell.x + " " + localCell.y + " " + localHost + " " + localPort;
     }
 
     static void sendConnectTCPPacket (InetAddress addr, int port, Point remoteCell, Point localCell, String localHost, int localPort) {
@@ -169,5 +186,4 @@ public class BoardServer extends Thread {
     static void sendReturnDatagram (InetAddress addr, int port, Point remoteSource, Particle newSourceState, int writeCount, double energyInput) {
 	sendDatagram (addr, port, "RETURN " + remoteSource.x + " " + remoteSource.y + " " + newSourceState.name + " " + energyInput + " " + writeCount);
     }
-
 }
