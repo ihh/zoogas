@@ -262,10 +262,14 @@ public class Board extends MooreTopology {
 
     // fill/init method
     public final void fill(Particle particle) {
-	Point p = new Point();
-	for (p.x = 0; p.x < size; ++p.x)
-	    for (p.y = 0; p.y < size; ++p.y)
+	for (int x = 0; x < size; ++x)
+	{
+	    for (int y = 0; y < size; ++y)
+	    {
+	        Point p = new Point(x, y);
 		writeCell(p,particle);
+	    }
+	}
     }
 
     // update()
