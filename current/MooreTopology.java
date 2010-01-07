@@ -24,9 +24,8 @@ public class MooreTopology {
     static final public String dirString(int dir) { return dirStr[dir]; }
 
     // method to convert cell coords to graphics coords
-    static final public void getGraphicsCoords (Point pCell, java.awt.Point pGraphics, int pixelsPerCell) {
-	pGraphics.x = pCell.x * pixelsPerCell;
-	pGraphics.y = pCell.y * pixelsPerCell;
+    static final public Point getGraphicsCoords (Point pCell, int pixelsPerCell) {
+	return new Point(pCell.x * pixelsPerCell, pCell.y * pixelsPerCell);
     }
 
     // method to convert graphics coords to cell coords

@@ -173,8 +173,8 @@ public class Board extends MooreTopology {
 	    cell[p.x][p.y].particle = pc;
 	    ++cell[p.x][p.y].writeCount;
 	    if (old_pc != null)
-		old_pc.decReferenceCount();
-	    pc.incReferenceCount();
+		old_pc.removeReference(p);
+	    pc.addReference(p);
 	    quad.updateQuadTree (p, pc.normalizedTotalTransformRate());
 	}
     }
@@ -211,16 +211,16 @@ public class Board extends MooreTopology {
     public void removeBonds (Point p) {
 	Map<String,Point> in = incoming(p), out = outgoing(p);
 	if (in.size() > 0 || out.size() > 0) {
-	    Point q = new Point();
+	    Point q;
 	    for (Map.Entry<String,Point> kv : in.entrySet()) {
-		p.add(kv.getValue(), q);
+		q = p.add(kv.getValue());
 		if (onBoard(q))
 		    outgoing(q).remove(kv.getKey());
 		//		System.err.println("Removing bond "+kv.getKey()+" from "+q+" to "+p);
 	    }
 	    in.clear();
 	    for (Map.Entry<String,Point> kv : out.entrySet()) {
-		p.add(kv.getValue(),q);
+		q = p.add(kv.getValue());
 		if (onBoard(q))
 		    incoming(q).remove(kv.getKey());
 		//		System.err.println("Removing bond "+kv.getKey()+" from "+p+" to "+q);
@@ -240,9 +240,8 @@ public class Board extends MooreTopology {
 
     public void addIncoming (Point p, Map<String,Point> bondDir) {
 	if (bondDir != null && bondDir.size() > 0) {
-	    Point q = new Point();
 	    for (Map.Entry<String,Point> kv : bondDir.entrySet()) {
-		p.add(kv.getValue(),q);
+		Point q = p.add(kv.getValue());
 		if (onBoard(q))
 		    addBond(q,p,kv.getKey());
 	    }
@@ -251,9 +250,8 @@ public class Board extends MooreTopology {
 
     public void addOutgoing (Point p, Map<String,Point> bondDir) {
 	if (bondDir != null && bondDir.size() > 0) {
-	    Point q = new Point();
 	    for (Map.Entry<String,Point> kv : bondDir.entrySet()) {
-		p.add(kv.getValue(),q);
+		Point q = p.add(kv.getValue());
 		if (onBoard(q))
 		    addBond(p,q,kv.getKey());
 	    }
@@ -275,10 +273,9 @@ public class Board extends MooreTopology {
     // update()
     public final void update(double boardUpdates,BoardRenderer renderer) {
 	int updatedCells = 0;
-	Point p = new Point(), n = new Point();
 	double maxUpdates = boardUpdates * quad.topQuadRate();
 	for (; updatedCells < maxUpdates; ++updatedCells) {
-
+	    Point p = new Point(), n = new Point(); // Must stay inside the loop; Points are stored (as Particles)
 	    int dir = getRandomPair(p,n);
 	    Particle oldSource = readCell(p);
 	    Particle oldTarget = onBoard(n) ? readCell(n) : null;
@@ -389,18 +386,19 @@ public class Board extends MooreTopology {
     public final double bondEnergy (Point p, Point q, Particle pState, Map<String,Point> incoming, Map<String,Point> outgoing) {
 	double E = pState.energy;
 	// chain is m->n->p->r->s
-	Point m = new Point(), n = new Point(), r = new Point(), s = new Point();
-	Point m2n = new Point(), n2p = new Point();
+	Point m = new Point();
+	Point n2p = null;
 	if (incoming != null)
 	    for (Map.Entry<String,Point> kv : incoming.entrySet()) {
 		String bondName = kv.getKey();
 		Point p2n = kv.getValue();
-		p.add(p2n,n);
-		p2n.multiply(-1,n2p);
+		Point n = p.add(p2n);
+		n2p = p2n.multiply(-1);
 		if (onBoard(n) && (q == null || !n.equals(q))) {
 		    Point n2m = incoming(n,bondName);
+		    Point m2n = null;
 		    if (n2m != null)
-			n2m.multiply(-1,m2n);
+			m2n = n2m.multiply(-1);
 		    E += patternSet.getEnergy(readCell(n).name,pState.name,bondName,n2p,n2m==null?null:m2n);
 		}
 	    }
@@ -408,18 +406,18 @@ public class Board extends MooreTopology {
 	    for (Map.Entry<String,Point> kv : outgoing.entrySet()) {
 		String bondName = kv.getKey();
 		Point p2r = kv.getValue();
-		p.add(p2r,r);
+		Point r = p.add(p2r);
 		if (onBoard(r) && (q == null || !r.equals(q))) {
 		    Point p2n = null;
 		    if (incoming != null) {
 			p2n = incoming.get(bondName);
 			if (p2n != null)
-			    p2n.multiply(-1,n2p);
+			    n2p = p2n.multiply(-1);
 		    }
 		    E += patternSet.getEnergy(pState.name,readCell(r).name,bondName,p2r,p2n==null?null:n2p);
 		    Point r2s = outgoing(r,bondName);
 		    if (r2s != null) {
-			r.add(r2s,s);
+			Point s = r.add(r2s);
 			if (onBoard(s) && (q == null || !s.equals(q))) {
 			    E += patternSet.getEnergy(readCell(r).name,readCell(s).name,bondName,r2s,p2r);
 			}
@@ -438,28 +436,27 @@ public class Board extends MooreTopology {
     public final double bondEnergy (Point p, Point q, Particle pState, Particle qState, Map<String,Point> pIn, Map<String,Point> pOut, Map<String,Point> qIn, Map<String,Point> qOut) {
 	// chain is n->p->q->r
 	double E = 0;
-	Point n = new Point(), qMaybe = new Point(), r = new Point();
-	Point n2p = new Point(), p2q = new Point();
-	q.subtract(p,p2q);
+	Point p2q = q.subtract(p);
 	if (pOut != null)
 	    for (Map.Entry<String,Point> kv : pOut.entrySet()) {
 		String bondName = kv.getKey();
 		Point p2qMaybe = kv.getValue();
-		p.add(p2qMaybe,qMaybe);
+		Point qMaybe = p.add(p2qMaybe);
 		if (qMaybe.equals(q)) {
 		    Point p2n = null;
+		    Point n2p = null;
 		    if (pIn != null) {
 			p2n = pIn.get(bondName);
 			if (p2n != null) {
-			    p.add(p2n,n);
-			    p2n.multiply(-1,n2p);
+			    Point n = p.add(p2n);
+			    n2p = p2n.multiply(-1);
 			}
 		    }
 		    E += patternSet.getEnergy(pState.name,qState.name,bondName,p2q,p2n==null?null:n2p);
 		    if (qOut != null) {
 			Point q2r = qOut.get(bondName);
 			if (q2r != null) {
-			    q.add(q2r,r);
+			    Point r = q.add(q2r);
 			    if (onBoard(r))
 				E += patternSet.getEnergy(qState.name,readCell(r).name,bondName,q2r,p2q);
 			}
@@ -558,15 +555,9 @@ public class Board extends MooreTopology {
 
     // flush particle cache, and flush all particles' transformation rule & energy caches
     public void flushCaches() {
-	Collection<Particle> particles = knownParticles();
-	LinkedList<Particle> particlesToForget = new LinkedList<Particle>();
-	for (Particle p : particles) {
-	    p.flushCaches();
+	for (Particle p : knownParticles()) {
 	    if (p.getReferenceCount() <= 0)
-		particlesToForget.add(p);
-	}
-	for (Particle p : particlesToForget) {
-	    deregisterParticle(p);
+	        deregisterParticle(p);
 	}
     }
 

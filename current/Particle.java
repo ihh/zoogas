@@ -9,7 +9,7 @@ import java.io.*;
 // Particle class, encapsulating the behavior, appearance & summary statistics of a given CA state
 public class Particle {
     // appearance
-    public static int maxNameLength = 256;  // maximum length of a Particle name. Introduced to stop runaway regex rules from crashing the engine
+    public static final int maxNameLength = 256;  // maximum length of a Particle name. Introduced to stop runaway regex rules from crashing the engine
     public String name = null;  // noun uniquely identifying this Particle (no whitespace)
     public Color color = null;
     public double energy = 0;
@@ -25,7 +25,7 @@ public class Particle {
 
     // reference counting
     private Board board = null;
-    protected int count = 0;  // how many of this type on the board
+    private HashSet<Point> references = null;
 
     // static variables
     public static String
@@ -43,6 +43,8 @@ public class Particle {
 	this.energy = energy;
 	this.board = board;
 	this.patternSet = ps;
+	references = new HashSet<Point>();
+
 	// init transformation rule patterns in each direction
 	int N = board.neighborhoodSize();
 	transform = new ArrayList<HashMap<Particle,RandomVariable<UpdateEvent>>>(N);
@@ -64,14 +66,22 @@ public class Particle {
 
     // methods
     // reference counting
-    public final int getReferenceCount() { return count; }
-
-    public final int incReferenceCount() {
-	return ++count;
+    public int getReferenceCount() {
+	return references.size();
     }
 
-    public final int decReferenceCount() {
-	return --count;
+    public int addReference(Point p) {
+	references.add(p);
+	return getReferenceCount();
+    }
+
+    public int removeReference(Point p) {
+	references.remove(p);
+	return getReferenceCount();
+    }
+
+    public HashSet<Point> getOccupiedPoints() {
+	return references;
     }
 
     // part of name visible to player
@@ -111,7 +121,7 @@ public class Particle {
 	    // if no RV, look for rule generator(s) that match this neighbor, and use them to create a set of rules
 	    if (patternSet != null) {
 		rv = compileTransformRules(oldTarget,dir);
-		transform.get(dir).put (oldTarget, rv);
+		transform.get(dir).put(oldTarget, rv);
 	    }
 	}
 	// have we got an RV?
@@ -123,8 +133,6 @@ public class Particle {
 
     // method to compile transformation rules for a new target Particle
     RandomVariable<UpdateEvent> compileTransformRules (Particle target, int dir) {
-
-	//	System.err.println ("Compiling transformation rules for " + name + " " + target.name);
 	RandomVariable<UpdateEvent> rv = new RandomVariable<UpdateEvent>();
 	for (int n = 0; n < transformRuleMatch[dir].length; ++n) {
 
@@ -161,14 +169,8 @@ public class Particle {
 	return rv;
     }
 
-    // helper to flush caches
-    protected void flushCaches() {
-	for (int d = 0; d < transform.size(); ++d)
-	    transform.get(d).clear();
-    }
-
     // helpers to count number of compiled transformation rules
-    protected int transformationRules() {
+    public int transformationRules() {
 	int r = 0;
 	for (HashMap<Particle, RandomVariable<UpdateEvent>> map : transform)
 	    r += map.size();
@@ -176,7 +178,7 @@ public class Particle {
     }
 
     // helper to count number of compiled transformation rule outcomes
-    protected int outcomes() {
+    public int outcomes() {
 	int o = 0;
 	for (int d = 0; d < transform.size(); ++d)
 		for (RandomVariable<UpdateEvent> rv : transform.get(d).values())

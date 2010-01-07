@@ -299,7 +299,10 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 	        //super.paintComponent(g);
 	        g.drawImage(bfImage, 0, 0, null);
 		if(slowPressed)
+		{
 		    drawBonds(g);
+		    drawEnclosures(g);
+		}
 		drawBorder(g);
 	    }
 	};
@@ -392,24 +395,30 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 	long updateStartTime = System.currentTimeMillis();
 	long targetTimePerUpdate = 1000 / targetUpdateRate;
 	long timeDiff;
+
+	Challenge c = new Challenge(board);
+
 	try
 	{
 	    while (true)
 	    {
 		updateStartTime = System.currentTimeMillis();
-		double heapFraction = ((double) (runtime.totalMemory() - runtime.freeMemory())) / (double) runtime.maxMemory();
-		if (heapFraction > .5)
-		    board.flushCaches();
     
 		if (!stopPressed)
 		    evolveStuff();
 		useTools();
     
 		if (boardUpdateCount % timeCheckPeriod == 0) {
+		    double heapFraction = ((double) (runtime.totalMemory() - runtime.freeMemory())) / (double) runtime.maxMemory();
+		    if (heapFraction > .5)
+		        board.flushCaches();
+
 		    lastDumpStats = board.debugDumpStats();
 		    long currentTimeCheck = System.currentTimeMillis();
 		    updatesPerSecond = ((double) 1000 * timeCheckPeriod) / ((double) (currentTimeCheck - lastTimeCheck));
 		    lastTimeCheck = currentTimeCheck;
+
+		    //c.check();
 		}
 		repaint();
 		
@@ -457,10 +466,8 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
     // bond-rendering method
     public void drawBond (Graphics g, Point p, Point q) {
 	g.setColor(new Color ((float)Math.random(), (float)Math.random(), (float)Math.random()));
-	Point pg = new Point();
-	Point qg = new Point();
-	board.getGraphicsCoords(p,pg,pixelsPerCell);
-	board.getGraphicsCoords(q,qg,pixelsPerCell);
+	Point pg = board.getGraphicsCoords(p,pixelsPerCell);
+	Point qg = board.getGraphicsCoords(q,pixelsPerCell);
 	int k = pixelsPerCell>>1;
 	g.drawLine(pg.x+k,pg.y+k,qg.x+k,qg.y+k);
     }
@@ -468,8 +475,7 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
     // BoardRenderer methods
     public void drawCell (Point p) {
 	bfGraphics.setColor(board.readCell(p).color);
-	Point q = new Point();
-	board.getGraphicsCoords(p,q,pixelsPerCell);
+	Point q = board.getGraphicsCoords(p,pixelsPerCell);
 	bfGraphics.fillRect(q.x,q.y,pixelsPerCell,pixelsPerCell);
     }
 
@@ -501,18 +507,36 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
     // draw some random bonds
     protected void drawBonds(Graphics g) {
 	Point p = new Point();
-	Point q = new Point();
 	for (p.x = 0; p.x < board.size; ++p.x)
 	    for (p.y = 0; p.y < board.size; ++p.y) {
 		for (Map.Entry<String,Point> kv : board.incoming(p).entrySet()) {
 		    Point delta = kv.getValue();
-		    if (delta != null) {  // values in this map can occasioanlly go null, perhaps due to concurrent modification by update thread?
-			p.add(kv.getValue(),q);
+		    if (delta != null) {
+			Point q = p.add(kv.getValue());
 			if (board.onBoard(q))
-			    drawBond(g,p,q);
+			    drawBond(g,p,q); 
+			/* TODO: consider using new Points in this loop
+			 */
 		    }
 		}
 	    }
+    }
+    
+    // highlight enclosures
+    protected void drawEnclosures(Graphics g) {
+	Image image = new BufferedImage(boardSize, boardSize, BufferedImage.TYPE_INT_ARGB);
+	Graphics ig = image.getGraphics();
+	for(Set<Point> enclosure : Challenge.getEnclosures(board)){
+	    //ig.setColor(new Color ((float)Math.random(), (float)Math.random(), (float)Math.random()));
+	    ig.setColor(new Color (100, 0, 0, 150));
+	    for(Point p : enclosure)
+	    {
+		Point q = board.getGraphicsCoords(p,pixelsPerCell);
+		ig.fillRect(q.x,q.y,pixelsPerCell,pixelsPerCell);
+	    }
+	}
+
+	g.drawImage(image, 0, 0, null);
     }
 
     // do a refresh
@@ -550,7 +574,7 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 			? "Mouseover board to identify pixels"
 			: "Under cursor:", nounRow, true, Color.white);
 	    String nameToShow = cheatPressed
-		? cursorParticle.name + " (" + cursorParticle.count + ")" + board.singleNeighborhoodDescription(cursorPos,false)
+		? cursorParticle.name + " (" + cursorParticle.getReferenceCount() + ")" + board.singleNeighborhoodDescription(cursorPos,false)
 		: cursorParticle.visibleName();
 	    Color fgCurs = cursorParticle == null ? Color.white : cursorParticle.color;
 	    Color bgCurs = cheatPressed ? new Color(255-fgCurs.getRed(),255-fgCurs.getGreen(),255-fgCurs.getBlue()) : Color.black;
@@ -692,6 +716,10 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 		    break;
 		case slowKey:
 		    slowPressed = true;
+		    break;
+		case 'm':
+		    for(String ss : board.nameToParticle.keySet())
+			System.err.println(ss);
 		    break;
 	    }
 	}
