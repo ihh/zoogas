@@ -28,7 +28,7 @@ public class Challenge
 
     public static Set<Set<Point>> getEnclosures(Board b) {
 	SortedSet<Point> allWalls = getWallParticles(b);
-	SortedSet<Point> walls = new TreeSet<Point>(allWalls);
+	SortedSet<Point> walls = Collections.synchronizedSortedSet(new TreeSet<Point>(allWalls));
 	HashSet<Set<Point>> enclosures = new HashSet<Set<Point>>();
 
 	// Check if there are walls, then see if those walls make cages
