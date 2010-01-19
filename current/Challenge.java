@@ -6,6 +6,7 @@ import java.lang.reflect.Method;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -22,14 +23,14 @@ public class Challenge
     public Challenge(Board b, String s) {
 	board = b;
     }
-    
+
     Board board;
-    
+
     public static Set<Set<Point>> getEnclosures(Board b) {
 	SortedSet<Point> allWalls = getWallParticles(b);
 	SortedSet<Point> walls = new TreeSet<Point>(allWalls);
 	HashSet<Set<Point>> enclosures = new HashSet<Set<Point>>();
-	
+
 	// Check if there are walls, then see if those walls make cages
 	if(walls.size() > 3)
 	{
@@ -41,10 +42,10 @@ public class Challenge
 		while(!tempSet.isEmpty()){
 		    if(p == null)
 			p = tempSet.first();
-		    
+
 		    neighbors = getNeighbors(walls, p);
 		    tempSet.remove(p);
-		    
+
 		    if(neighbors.size() < 2)
 		    {
 			walls.remove(p);
@@ -54,15 +55,15 @@ public class Challenge
 			    continue;
 			}
 		    }
-    
+
 		    p = null;
 		}
 	    }
-	    
+
 	    // Remove walls that don't touch a non-wall cell
 	    Point[] tempArr = new Point[walls.size()];
 	    walls.toArray(tempArr);
-	    for(Point p : tempArr) {                    
+	    for(Point p : tempArr) {
 		if(getNeighbors(walls, p).size() + getNeighbors(tempSet, p).size() + getDiagNeighbors(walls, p).size() + getDiagNeighbors(tempSet, p).size() == 8)
 		{
 		    walls.remove(p);
@@ -75,14 +76,14 @@ public class Challenge
 		// Make a polygon
 		start = walls.first();
 		tempSet.clear();
-		
+
 		Polygon poly = tracePolygon(walls, tempSet, new HashSet<Point>(), start, start, null);
 		if(poly == null) {
 		    walls.remove(start);
 		}
 		else {
 		    walls.removeAll(tempSet);
-		    
+
 		    TreeSet<Point> tempSet2 = new TreeSet<Point>();
 		    Rectangle bounds = poly.getBounds();
 		    for(int x = (int)bounds.getX(); x < bounds.getX() + bounds.getWidth(); ++x) {
@@ -139,7 +140,6 @@ public class Challenge
 	    return poly;
 	}
     }
-    
     public static TreeSet<Point> getWallParticles(Board b) {
 	TreeSet<Point> walls = new TreeSet<Point>();
 
@@ -150,7 +150,7 @@ public class Challenge
 		walls.addAll(p.getOccupiedPoints());
 	    }
 	}
-	
+
 	return walls;
     }
     // Adds all neighboring walls inside the set to a SortedSet
@@ -178,7 +178,7 @@ public class Challenge
 	    if(walls.contains(q))
 		neighbors.add(q);
 	}
-	
+
 	return neighbors;
     }
     public static Set<Point> getDiagNeighbors(Set<Point> walls, Point p) {
@@ -208,28 +208,48 @@ public class Challenge
 	    if(walls.contains(q))
 		neighbors.add(q);
 	}
-	
+
 	return neighbors;
     }
-    
+
     public boolean check() {
-	//+TEMP
-	getEnclosures(board);
-	//-TEMP
-	
+	int score = 0;
+
+	Set<Point> particlePoints = board.getParticleByName("zoo_guest").getOccupiedPoints();
+	for(Set<Point> enclosure : getEnclosures(board)) {
+	    enclosure.retainAll(particlePoints);
+	    if(enclosure.size() >= 5) {
+		++score;
+	    }
+	}
+	if(score >= 3)
+	    return true;
+
+	//if(getEnclosures(board).size() > 10)
+	//    return true;
+
 	return false;
     }
 
     private abstract class Condition {
 	public Condition(){
-	    
+
 	}
-	
+	public Condition(int s){
+	    this();
+	    score = s;
+	}
+
+	protected int score = 1;
+
 	public boolean check() {
 	    return false;
 	}
     }
-    private abstract class AreaCondition extends Condition {
-	
+
+    private class ForEachArea extends Condition {
+	public boolean check() {
+	    return true;
+	}
     }
 }
