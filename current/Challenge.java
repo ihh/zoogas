@@ -18,13 +18,16 @@ import java.util.TreeSet;
 public class Challenge
 {
     public Challenge(Board b) {
-        this(b, "");
+        this(b, null);
     }
-    public Challenge(Board b, String s) {
+    public Challenge(Board b, Condition c) {
 	board = b;
+        cond = c;
     }
 
     Board board;
+    private String desc = "";
+    Condition cond;
 
     public static Set<Set<Point>> getEnclosures(Board b) {
 	SortedSet<Point> allWalls = getWallParticles(b);
@@ -153,6 +156,7 @@ public class Challenge
 
 	return walls;
     }
+
     // Adds all neighboring walls inside the set to a SortedSet
     // Neighbors MUST be added in order: left, up, right, then down
     public static List<Point> getNeighbors(Set<Point> walls, Point p) {
@@ -213,43 +217,195 @@ public class Challenge
     }
 
     public boolean check() {
-	int score = 0;
+        if(cond == null)
+            return true;
 
-	Set<Point> particlePoints = board.getParticleByName("zoo_guest").getOccupiedPoints();
-	for(Set<Point> enclosure : getEnclosures(board)) {
-	    enclosure.retainAll(particlePoints);
-	    if(enclosure.size() >= 5) {
-		++score;
-	    }
-	}
-	if(score >= 3)
-	    return true;
-
-	//if(getEnclosures(board).size() > 10)
-	//    return true;
-
-	return false;
+        if(cond.check()) {
+            cond = null;
+            desc = "Done!";
+            return true;
+        }
+        return false;
     }
 
-    private abstract class Condition {
-	public Condition(){
+    public String getDescription() {
+        // TODO: remove these two lines?
+        if(desc.length() == 0)
+            return cond.getDescription();
 
-	}
-	public Condition(int s){
-	    this();
-	    score = s;
-	}
-
-	protected int score = 1;
-
-	public boolean check() {
-	    return false;
-	}
+        return desc;
     }
 
-    private class ForEachArea extends Condition {
+    private static abstract class Condition {
+        Condition parent = null; // null establishes that this is the root Condition
+        String desc = "";
+
+	public abstract boolean check();
+
+        public Set<Point> getArea() {
+            if(parent != null)
+                return parent.getArea();
+            return null;
+        }
+        
+        public String getDescription(){
+            return desc;
+        }
+        
+        public void setParentCondition(Condition c) {
+            parent = c;
+        }
+    }
+    
+    public static class AreaCondition extends Condition {
+        public AreaCondition(Condition c){
+            this(null, c, null);
+        }
+        public AreaCondition(Condition p, Condition c){
+            this(p, c, null);
+        }
+        public AreaCondition(Condition c, Set<Point> a){
+            this(null, c, a);
+        }
+        public AreaCondition(Condition p, Condition c, Set<Point> a){
+            parent = p;
+            cond = c;
+            area = a;
+
+            if(cond != null)
+                desc = cond.getDescription();
+        }
+
+        Condition cond;
+        Set<Point> area = null;
+        
+        public void setArea(Set<Point> a) {
+            area = a;
+        }
+        public Set<Point> getArea(Set<Point> a) {
+            return area;
+        }
+
+        public boolean check() {
+            if(cond == null)
+                return true;
+
+            return cond.check();
+        }
+    }
+    
+    // Returns true if there are count enclosures that meet a condition
+    public static class EnclosuresCondition extends Condition {
+        public EnclosuresCondition(Board b, Condition p, Condition condition, int n){
+            board = b;
+            cond = new AreaCondition(this, condition, null);
+            count = n;
+            
+            if(condition != null)
+                desc = "in " + count + " enclosures, " + cond.check();
+            else
+                desc = "make " + count + " enclosures ";
+        }
+
+        Board board;
+        AreaCondition cond;
+        private int count = 1;
+
+        public boolean check() {
+            int n = 0;
+            for(Set<Point> area : getEnclosures(board)) {
+                cond.setArea(area);
+                if(cond.check()) {
+                    ++n;
+                    if(n >= count)
+                        return true;
+                }
+            }
+            
+            return false;
+        }
+    }
+
+    public static class AndCondition extends Condition {
+        public AndCondition(Condition c1, Condition c2){
+            cond1 = c1;
+            cond2 = c2;
+            cond1.setParentCondition(this);
+            cond2.setParentCondition(this);
+            
+            desc = cond1.getDescription() + "and " + cond2.getDescription() + " ";
+        }
+        public AndCondition(Condition p, Condition c1, Condition c2){
+            this(c1, c2);
+            parent = p;
+        }
+
+        Condition cond1, cond2;
+
 	public boolean check() {
-	    return true;
+	    return cond1.check() && cond2.check();
 	}
+    }
+    
+    public static class OrCondition extends Condition {
+        public OrCondition(Condition c1, Condition c2){
+            cond1 = c1;
+            cond2 = c2;
+            cond1.setParentCondition(this);
+            cond2.setParentCondition(this);
+            
+            desc = cond1.getDescription() + "or " + cond2.getDescription() + " ";
+        }
+        public OrCondition(Condition p, Condition c1, Condition c2){
+            this(c1, c2);
+            parent = p;
+        }
+
+        Condition cond1, cond2;
+
+        public boolean check() {
+            return cond1.check() || cond2.check();
+        }
+    }
+    
+    public static class EncloseParticles extends Condition {
+        public EncloseParticles(int count, String particleName, Board b) {
+            c = count;
+            particle = b.getParticleByName(particleName);
+            
+            if(particle == null) {
+                System.err.println("Particle not found: " + particleName);
+                return;
+            }
+            
+            if(getArea() != null)
+                desc = "enclose " + count + " " + particle.visibleName() + " ";
+            else
+                desc = "place " + count + " " + particle.visibleName() + " ";
+        }
+        public EncloseParticles(Condition p, int count, Board b, String particleName) {
+            this(count, particleName, b);
+            parent = p;
+        }
+        
+        private int c = 1;
+        Particle particle;
+        
+        public boolean check() {
+            // TODO: throw an exception?
+            if(particle == null) {
+                System.err.println("Challenge: particle is null");
+                return false;
+            }
+
+            Set<Point> area = getArea();
+
+            if(area == null) {
+                return particle.getReferenceCount() >= c;
+            }
+
+            area.retainAll(particle.getOccupiedPoints());
+            return area.size() >= c;
+        }
     }
 }

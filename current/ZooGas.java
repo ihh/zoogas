@@ -6,6 +6,7 @@ import java.io.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
+
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.event.MouseInputAdapter;
@@ -51,6 +52,8 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
     long boardUpdateCount = 0;
     long[] timeFirstTrue = new long[100];   // indexed by row: tracks the first time when various conditions are true, so that the messages flash at first
 
+    Challenge objective;
+
     // constant helper vars
     static String spaceParticleName = "_";
     Particle spaceParticle;
@@ -80,7 +83,7 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
     Vector<String> hints = new Vector<String>();
     int currentHint = 0;
     double hintBrightness = 0;
-    int updatesRow = 0, titleRow = 4, networkRow = 5, hintRow = 7, nounRow = 8, verbHistoryRow = 12;
+    private final int updatesRow = 0, titleRow = 4, networkRow = 5, objectiveRow = 6, hintRow = 7, nounRow = 8, verbHistoryRow = 12;
 
     // helper objects
     Point cursorPos = new Point();  // co-ordinates of cell beneath current mouse position
@@ -231,6 +234,12 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 
 	// init spray tools
 	initSprayTools();
+
+        // init objective
+            // test cases 
+        objective = new Challenge(board, new Challenge.AndCondition(new Challenge.EncloseParticles(1, "zoo_guest", board), new Challenge.EncloseParticles(1, "zoo_guest", board)));
+            // create separated 4 enclosures
+        objective = new Challenge(board, new Challenge.EnclosuresCondition(board, null, null, 4));
 
 	// init hints
 	String specialKeys = "Special keys: "+cheatKey+" (reveal state) "+slowKey+" (reveal bonds) "+stopKey+" (freeze)";
@@ -396,8 +405,6 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 	long targetTimePerUpdate = 1000 / targetUpdateRate;
 	long timeDiff;
 
-	Challenge c = new Challenge(board);
-
 	try
 	{
 	    while (true)
@@ -418,7 +425,7 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 		    updatesPerSecond = ((double) 1000 * timeCheckPeriod) / ((double) (currentTimeCheck - lastTimeCheck));
 		    lastTimeCheck = currentTimeCheck;
 
-		    //c.check();
+		    objective.check();
 		}
 		repaint();
 		
@@ -553,6 +560,9 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 	// networking
 	flashOrHide (g, "Online", networkRow, board.online(), 0, -1, false, Color.blue);
 	flashOrHide (g, "Connected", networkRow+1, board.connected(), 0, -1, false, Color.cyan);
+
+        // current objective
+        printOrHide (g, objective.getDescription(), objectiveRow, true, Color.white);
 
 	// hint
 	int fg = (int) (hintBrightness>255 ? (511-hintBrightness) : hintBrightness);

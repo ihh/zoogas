@@ -25,7 +25,7 @@ public class Particle {
 
     // reference counting
     private Board board = null;
-    private HashSet<Point> references = null;
+    private Set<Point> references = null;
 
     // static variables
     public static String
@@ -43,7 +43,7 @@ public class Particle {
 	this.energy = energy;
 	this.board = board;
 	this.patternSet = ps;
-	references = new HashSet<Point>();
+	references = Collections.synchronizedSet(new HashSet<Point>());
 
 	// init transformation rule patterns in each direction
 	int N = board.neighborhoodSize();
@@ -80,7 +80,7 @@ public class Particle {
 	return getReferenceCount();
     }
 
-    public HashSet<Point> getOccupiedPoints() {
+    public Set<Point> getOccupiedPoints() {
 	return references;
     }
 
