@@ -245,6 +245,7 @@ public class Challenge
         public Set<Point> getArea() {
             if(parent != null)
                 return parent.getArea();
+
             return null;
         }
         
@@ -282,8 +283,13 @@ public class Challenge
         public void setArea(Set<Point> a) {
             area = a;
         }
-        public Set<Point> getArea(Set<Point> a) {
-            return area;
+
+        public Set<Point> getArea() {
+            if(area != null) {
+                return new TreeSet<Point>(area);
+            }
+            
+            return null;
         }
 
         public boolean check() {
@@ -299,10 +305,13 @@ public class Challenge
         public EnclosuresCondition(Board b, Condition p, Condition condition, int n){
             board = b;
             cond = new AreaCondition(this, condition, null);
+            if(condition != null)
+                condition.setParentCondition(cond);
+            
             count = n;
             
             if(condition != null)
-                desc = "in " + count + " enclosures, " + cond.check();
+                desc = "in " + count + " enclosures, " + cond.getDescription();
             else
                 desc = "make " + count + " enclosures ";
         }
@@ -315,6 +324,7 @@ public class Challenge
             int n = 0;
             for(Set<Point> area : getEnclosures(board)) {
                 cond.setArea(area);
+
                 if(cond.check()) {
                     ++n;
                     if(n >= count)
@@ -379,9 +389,9 @@ public class Challenge
             }
             
             if(getArea() != null)
-                desc = "enclose " + count + " " + particle.visibleName() + " ";
+                desc = "enclose " + count + " " + particle.visibleName() + (count > 1? "s " : " ");
             else
-                desc = "place " + count + " " + particle.visibleName() + " ";
+                desc = "place " + count + " " + particle.visibleName() + (count > 1? "s " : " ");
         }
         public EncloseParticles(Condition p, int count, Board b, String particleName) {
             this(count, particleName, b);
