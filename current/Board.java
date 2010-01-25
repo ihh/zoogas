@@ -137,7 +137,7 @@ public class Board extends MooreTopology {
 	this.boardServerPort = port;
 
 	try {
-	    updateServer = new UpdateServer (this, boardServerPort, gas);
+	    updateServer = new UpdateServer (this, boardServerPort, gas.renderer);
 	    updateServer.start();
 
 	    connectServer = new ConnectionServer (this, boardServerPort);

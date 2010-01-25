@@ -23,18 +23,36 @@ public class MooreTopology {
     static private String[] dirStr = { "nw", "n", "ne", "e", "se", "s", "sw", "w" };
     static final public String dirString(int dir) { return dirStr[dir]; }
 
-    // method to convert cell coords to graphics coords
+    /**
+     * Converts cell coords to graphics coords
+     * @Deprecated This method has been moved to BoardRenderer
+     * @param pCell
+     * @param pixelsPerCell
+     * @return
+     */
     static final public Point getGraphicsCoords (Point pCell, int pixelsPerCell) {
 	return new Point(pCell.x * pixelsPerCell, pCell.y * pixelsPerCell);
     }
 
-    // method to convert graphics coords to cell coords
+    /**
+     * Converts graphics coords to cell coords
+     * @Deprecated This method has been moved to BoardRenderer
+     * @param pCell
+     * @param pixelsPerCell
+     * @return
+     */
     static final public void getCellCoords (java.awt.Point pGraphics, Point pCell, int pixelsPerCell) {
 	pCell.x = pGraphics.x / pixelsPerCell;
 	pCell.y = pGraphics.y / pixelsPerCell;
     }
 
-    // method to return board size for a given number of cells
+    /**
+     * Returns the board size in pixels for a given number of cells
+     * @Deprecated
+     * @param size
+     * @param pixelsPerCell
+     * @return
+     */
     static final public int getBoardSize (int size, int pixelsPerCell) {
 	return size*pixelsPerCell;
     }
