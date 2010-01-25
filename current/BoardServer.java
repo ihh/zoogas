@@ -38,7 +38,8 @@ public class BoardServer extends Thread {
 	    // uncomment to log all incoming commands
 	    //	    logCommand (args);
 	    
-	    packetCommand command = packetCommand.valueOf(args[0]);
+            // convert first arg to int, then find ordinal
+	    packetCommand command = packetCommand.values()[Integer.valueOf(args[0])];
 	    
 	    if(!command.matchArgCount(args.length)) {
 	        System.err.println("BoardServer: " + command.toString() + " packet does not have the correct number of args");
@@ -118,7 +119,7 @@ public class BoardServer extends Thread {
 	System.err.println (join + " <<");
     }
 
-    static void sendDatagram (InetAddress addr, int port, String data) {
+    void sendDatagram (InetAddress addr, int port, String data) {
 	// uncomment to log all outgoing datagrams
 	//	System.err.println ("Send UDP datagram '" + data + "' to " + addr + " port " + port);
 	try {
@@ -138,9 +139,9 @@ public class BoardServer extends Thread {
     }
 
     static void sendTCPPacket (InetAddress addr, int port, String data) {
-	String[] dataArray = new String[1];
-	dataArray[0] = data;
-	sendTCPPacket (addr, port, dataArray);
+        String[] dataArray = new String[1];
+        dataArray[0] = data;
+        sendTCPPacket (addr, port, dataArray);
     }
 
     static void sendTCPPacket (InetAddress addr, int port, String[] data) {
@@ -151,39 +152,35 @@ public class BoardServer extends Thread {
             socket = new Socket(addr, port);
             out = new PrintWriter(socket.getOutputStream(), true);
 
-	    for (int i = 0; i < data.length; ++i) {
-		out.println(data[i]);
-		// uncomment to log all outgoing TCP packets
-		// System.err.println ("Send TCP packet '" + data[i] + "' to " + addr + " port " + port);
-	    }
+            for (int i = 0; i < data.length; ++i) {
+                out.println(data[i]);
+                // uncomment to log all outgoing TCP packets
+                // System.err.println ("Send TCP packet '" + data[i] + "' to " + addr + " port " + port);
+            }
 
-	    out.close();
-	    socket.close();
+            out.close();
+            socket.close();
 
         } catch (UnknownHostException e) {
-	    e.printStackTrace();
+            e.printStackTrace();
         } catch (IOException e) {
-	    e.printStackTrace();
+            e.printStackTrace();
         }
     }
 
     static String connectString (Point remoteCell, Point localCell, String localHost, int localPort) {
-	return "CONNECT " + remoteCell.x + " " + remoteCell.y + " " + localCell.x + " " + localCell.y + " " + localHost + " " + localPort;
+	return packetCommand.CONNECT.ordinal() + " " + remoteCell.x + " " + remoteCell.y + " " + localCell.x + " " + localCell.y + " " + localHost + " " + localPort;
     }
 
-    static void sendConnectTCPPacket (InetAddress addr, int port, Point remoteCell, Point localCell, String localHost, int localPort) {
-	sendTCPPacket (addr, port, connectString (remoteCell, localCell, localHost, localPort));
-    }
-
-    static void sendConnectDatagram (InetAddress addr, int port, Point remoteCell, Point localCell, String localHost, int localPort) {
+    void sendConnectDatagram (InetAddress addr, int port, Point remoteCell, Point localCell, String localHost, int localPort) {
 	sendDatagram (addr, port, connectString (remoteCell, localCell, localHost, localPort));
     }
 
-    static void sendEvolveDatagram (InetAddress addr, int port, Point remoteTarget, Particle oldSourceState, Point localSource, int dir, double energyBarrier, String returnHost, int returnPort, int writeCount) {
-	sendDatagram (addr, port, "EVOLVE " + remoteTarget.x + " " + remoteTarget.y + " " + oldSourceState.name + " " + dir + " " + energyBarrier + " " + localSource.x + " " + localSource.y + " " + returnHost + " " + returnPort + " " + writeCount);
+    void sendEvolveDatagram (InetAddress addr, int port, Point remoteTarget, Particle oldSourceState, Point localSource, int dir, double energyBarrier, String returnHost, int returnPort, int writeCount) {
+	sendDatagram (addr, port, packetCommand.EVOLVE.ordinal() + " " + remoteTarget.x + " " + remoteTarget.y + " " + oldSourceState.name + " " + dir + " " + energyBarrier + " " + localSource.x + " " + localSource.y + " " + returnHost + " " + returnPort + " " + writeCount);
     }
 
-    static void sendReturnDatagram (InetAddress addr, int port, Point remoteSource, Particle newSourceState, int writeCount, double energyInput) {
-	sendDatagram (addr, port, "RETURN " + remoteSource.x + " " + remoteSource.y + " " + newSourceState.name + " " + energyInput + " " + writeCount);
+    void sendReturnDatagram (InetAddress addr, int port, Point remoteSource, Particle newSourceState, int writeCount, double energyInput) {
+	sendDatagram (addr, port, packetCommand.RETURN.ordinal() + " " + + remoteSource.x + " " + remoteSource.y + " " + newSourceState.name + " " + energyInput + " " + writeCount);
     }
 }

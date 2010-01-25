@@ -328,7 +328,7 @@ public class Board extends MooreTopology {
 	    }
 
 	    double energyBarrier = -bondEnergy(sourceCoords);  // activation energy for a cross-border move involves breaking all local bonds
-	    BoardServer.sendEvolveDatagram (remoteCoords.addr, remoteCoords.port, remoteCoords.p, oldSourceState, sourceCoords, dir, energyBarrier, localhost, boardServerPort, getCellWriteCount(sourceCoords));
+	    connectServer.sendEvolveDatagram (remoteCoords.addr, remoteCoords.port, remoteCoords.p, oldSourceState, sourceCoords, dir, energyBarrier, localhost, boardServerPort, getCellWriteCount(sourceCoords));
 	}
     }
 
@@ -518,7 +518,6 @@ public class Board extends MooreTopology {
     }
 
     protected final void addRemoteCellCoord (Point p, InetSocketAddress remoteBoard, Point pRemote) {
-	System.err.println("Connecting " + p + " to " + pRemote + " on " + remoteBoard);
 	Point q = new Point(p);
 	Point r = new Point(p);
 	remoteCell.put (q, new RemoteCellCoord (remoteBoard, pRemote));
