@@ -150,7 +150,10 @@ public class Challenge
 	for(int i = 1; i <= 5; ++i) {
 	    Particle p = b.getParticleByName("wall/" + i);
 	    if(p != null){
-		walls.addAll(p.getOccupiedPoints());
+                Set<Point> wallSet = p.getOccupiedPoints();
+                synchronized(wallSet) {
+                    walls.addAll(wallSet);
+                }
 	    }
 	}
 
@@ -236,7 +239,7 @@ public class Challenge
         return desc;
     }
 
-    private static abstract class Condition {
+    public static abstract class Condition {
         Condition parent = null; // null establishes that this is the root Condition
         String desc = "";
 
@@ -255,6 +258,10 @@ public class Challenge
         
         public void setParentCondition(Condition c) {
             parent = c;
+        }
+        
+        public void resetDescription(){
+            desc = "";
         }
     }
     
@@ -381,31 +388,41 @@ public class Challenge
     public static class EncloseParticles extends Condition {
         public EncloseParticles(int count, String particleName, Board b) {
             c = count;
-            particle = b.getParticleByName(particleName);
+            board = b;
+            this.particleName = particleName;
             
-            if(particle == null) {
-                System.err.println("Particle not found: " + particleName);
-                return;
-            }
-            
-            if(getArea() != null)
-                desc = "enclose " + count + " " + particle.visibleName() + (count > 1? "s " : " ");
-            else
-                desc = "place " + count + " " + particle.visibleName() + (count > 1? "s " : " ");
+            if(!setParticle(particleName))
+                desc = "???"; // TODO: fix this hack for allowing particles that are not initialized in the particle names set
         }
-        public EncloseParticles(Condition p, int count, Board b, String particleName) {
+        public EncloseParticles(Condition p, int count, String particleName, Board b) {
             this(count, particleName, b);
             parent = p;
         }
         
         private int c = 1;
         Particle particle;
+        String particleName;
+        Board board;
+        
+        private boolean setParticle(String particleName) {
+            particle = board.getParticleByName(particleName);
+            if(particle == null)
+                return false;
+            
+            if(getArea() != null)
+                desc = "enclose " + c + " " + particle.visibleName() + (c > 1? "s " : " ");
+            else
+                desc = "place " + c + " " + particle.visibleName() + (c > 1? "s " : " ");
+                //desc = "place " + c + " " + particle.visibleName() + (c > 1? "s " : " ") + "anywhere";
+            
+            return true;
+        }
         
         public boolean check() {
             // TODO: throw an exception?
             if(particle == null) {
-                System.err.println("Challenge: particle is null");
-                return false;
+                if(!setParticle(particleName))
+                    return false;
             }
 
             Set<Point> area = getArea();
@@ -416,6 +433,30 @@ public class Challenge
 
             area.retainAll(particle.getOccupiedPoints());
             return area.size() >= c;
+        }
+    }
+    
+    public static class SucceedNTimes extends Condition {
+        public SucceedNTimes(Condition p, Condition condition, int n){
+            cond = condition;
+            count = n;
+            
+            desc = "for at least " + 20 * count + " updates, " + cond.getDescription();
+        }
+
+        Condition cond;
+        private int count = 1;
+        private int successes = 0;
+
+        public boolean check() {
+            if(cond == null || cond.check()) {
+                if(++successes >= count)
+                    return true;
+                return false;
+            }
+            
+            successes = 0;
+            return false;
         }
     }
 }

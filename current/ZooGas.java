@@ -236,10 +236,18 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 	initSprayTools();
 
         // init objective
-            // test cases 
-        objective = new Challenge(board, new Challenge.AndCondition(new Challenge.EncloseParticles(1, "zoo_guest", board), new Challenge.EncloseParticles(1, "zoo_guest", board)));
-            // create separated 4 enclosures
-        objective = new Challenge(board, new Challenge.EnclosuresCondition(board, null, null, 4));
+        // hackish test cases
+            // place 5 guests anywhere
+        //objective = new Challenge(board, new Challenge.EncloseParticles(5, "zoo_guest", board));
+            // create 4 separated enclosures
+        //objective = new Challenge(board, new Challenge.EnclosuresCondition(board, null, null, 4));
+            // create 3 separated enclosures with 4 zoo_guests in each
+        //objective = new Challenge(board, new Challenge.EnclosuresCondition(board, null, new Challenge.EncloseParticles(4, "zoo_guest", board), 3));
+            // place a zoo_guest, then wait 50 updates
+        //objective = new Challenge(board, new Challenge.SucceedNTimes(null, new Challenge.EncloseParticles(1, "zoo_guest", board), 50));
+            // place 5 rock_imps anywhere
+        //objective = new Challenge(board, new Challenge.EncloseParticles(5, "rock_imp/s:0", board));
+        
 
 	// init hints
 	String specialKeys = "Special keys: "+cheatKey+" (reveal state) "+slowKey+" (reveal bonds) "+stopKey+" (freeze)";
@@ -425,7 +433,8 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 		    updatesPerSecond = ((double) 1000 * timeCheckPeriod) / ((double) (currentTimeCheck - lastTimeCheck));
 		    lastTimeCheck = currentTimeCheck;
 
-		    objective.check();
+		    if(objective != null)
+                        objective.check();
 		}
 		repaint();
 		
@@ -562,7 +571,8 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 	flashOrHide (g, "Connected", networkRow+1, board.connected(), 0, -1, false, Color.cyan);
 
         // current objective
-        printOrHide (g, objective.getDescription(), objectiveRow, true, Color.white);
+        if(objective != null)
+            printOrHide (g, objective.getDescription(), objectiveRow, true, Color.white);
 
 	// hint
 	int fg = (int) (hintBrightness>255 ? (511-hintBrightness) : hintBrightness);

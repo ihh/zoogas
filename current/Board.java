@@ -538,11 +538,11 @@ public class Board extends MooreTopology {
 
     protected final void deregisterParticle (Particle p) {
 	nameToParticle.remove (p.name);
-	//	System.err.println("Deregistering " + p.name);
+	System.err.println("Deregistering " + p.name);
     }
 
     public final Particle getParticleByName (String name) {
-	return (Particle) nameToParticle.get (name);
+	return nameToParticle.get (name);
     }
 
     protected final Particle getOrCreateParticle (String name) {
