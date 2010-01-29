@@ -31,7 +31,7 @@ public class BoardServer extends Thread {
 	}
     }
 
-    protected void process (String data, Boolean listening) {
+    protected void processPacket (String data, Boolean listening) {
 	try {
 	    String[] args = data.split (" ");
 

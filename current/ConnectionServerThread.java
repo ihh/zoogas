@@ -21,7 +21,7 @@ public class ConnectionServerThread extends Thread {
 	    String inputLine;
 	    Boolean listening = true;
 	    while (listening && (inputLine = in.readLine()) != null) {
-		connServer.process (inputLine, listening);
+		connServer.processPacket (inputLine, listening);
 	    }
 	    in.close();
 	    socket.close();

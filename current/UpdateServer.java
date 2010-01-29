@@ -23,7 +23,7 @@ public class UpdateServer extends BoardServer {
 		Matcher m = commandRegex.matcher(packetString);
 		if (m.find()) {
 		    String command = m.group(1);
-		    process (command, listening);
+		    processPacket (command, listening);
 		} else {
 		    System.err.println ("BoardServer: Ignoring empty or unterminated line " + packetString);
 		}
