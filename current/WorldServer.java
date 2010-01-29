@@ -8,12 +8,12 @@ import java.net.Socket;
 import java.net.SocketAddress;
 
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.ServerSocketChannel;
 
 import java.nio.channels.SocketChannel;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -55,27 +55,6 @@ public class WorldServer extends Thread {
     // RSA check
     // rules check (rules for rules?)
 
-    // Commands
-    public static enum packetCommand {
-        PING(0),
-        SEND_SIZE(2, "ii", 4 + 4 + 4),
-        CLAIMGRID(2, "ii", 4 + 4 + 4),
-        OBSERVE(2,   "ii", 4 + 4 + 4);
-
-        private packetCommand(int numArgs) {
-            expectedCount = numArgs;
-        }
-        private packetCommand(int numArgs, String expectedArgs, int expectedBytes) {
-            expectedCount = numArgs;
-        }
-        private int expectedCount = -1;
-        private int expectedBytes = -1;
-        private String expectedArgs = null;
-        public boolean matchArgCount(int numArgs) {
-            return numArgs == expectedCount || expectedCount == -1;
-        }
-    }
-
     public void run() {
         SocketChannel sc;
         while (true) {
@@ -110,9 +89,11 @@ public class WorldServer extends Thread {
 
     public int getFirstUnusedPort() {
         for (int port = minPort; port <= maxPort; ++port) {
-            if (!usedPorts.containsKey(port)) {
-                usedPorts.put(port, null); // TODO: use atomic test and set. for now, add as a null so that this port is marked as reserved
-                return port;
+            synchronized(usedPorts) {
+                if (!usedPorts.containsKey(port)) {
+                    usedPorts.put(port, null);
+                    return port;
+                }
             }
         }
 
@@ -133,8 +114,8 @@ public class WorldServer extends Thread {
      * @return
      */
     public Rectangle getDimensions() {
-        if(getNumPlayers() == 0)
-            return new Rectangle(1, 1);
+        if(getNumPlayers() < 10)
+            return new Rectangle(3, 3);
 
         return new Rectangle(1, 1);
     }
@@ -166,6 +147,7 @@ public class WorldServer extends Thread {
             start();
             
             sendSize();
+            sendCurrentPlayerLocs();
         }
 
         private int port;
@@ -183,11 +165,7 @@ public class WorldServer extends Thread {
                     ByteBuffer bb = ByteBuffer.allocate(allocateBufferSize);
                     int temp;
                     if(socketChannel.read(bb) > 0) {
-                        System.out.println(" Received: "+ bb);
-                        bb.rewind(); // not flip!
-                        System.out.println(" Read string \'" + getStringFromBuffer(bb) + "\'");
-                        System.out.println(" Read string \'" + getStringFromBuffer(bb) + "\'");
-                        System.out.println(" Read int \'" + bb.getInt() + "\'");
+                        processPacket(bb);
                     }
                     else {
                         sleep(100);
@@ -224,11 +202,91 @@ public class WorldServer extends Thread {
             deregisterClient(this); // callback to deregister this thread (unreserve this port, etc.)
             System.out.println("Finalized thread listening on port " + port);
         }
-        
-        // Observing methods
-        private void sendSize() {
+
+        private void processPacket(ByteBuffer bb) {
+            // first int is always the ordinal
+            bb.rewind();
+            packetCommand command = packetCommand.values()[bb.getInt()];
+            ArrayList<Object> parameters = new ArrayList<Object>();
+            for(int i = 0; i < command.getExpectedCount(); ++i) {
+                char c = command.getExpectedArgs().charAt(i);
+                switch(c) {
+                    case 'i':
+                        parameters.add(bb.getInt());
+                        break;
+                    case 's':
+                        parameters.add(getStringFromBuffer(bb));
+                        break;
+                    default: 
+                        System.err.println("Unknown parameter type " + c);
+                        return;
+                }
+            }
             
+            switch(command) {
+                case OBSERVE:
+                    return;
+                case CLAIM_GRID:
+                    handleSetPlayerLoc(parameters.toArray());
+                    return;
+                default:
+                    System.err.println("Unhandled command type " + command);
+                    return;
+            }
         }
+        
+        // Packet senders
+        private void sendLaunch() {
+            //verifyAndSend(prepareBuffer(packetCommand.LAUNCH), packetCommand.SEND_SIZE, socketChannel);
+            ByteBuffer bb = prepareBuffer(packetCommand.LAUNCH);
+            verifyAndSend(bb, packetCommand.LAUNCH, socketChannel);
+        }
+
+        private void sendSize() {
+            ByteBuffer bb = prepareBuffer(packetCommand.SEND_SIZE);
+            Rectangle rect = getDimensions();
+            System.out.println(rect);
+            bb.putInt(rect.width);
+            bb.putInt(rect.height);
+            verifyAndSend(bb, packetCommand.SEND_SIZE, socketChannel);
+        }
+        
+        private void sendCurrentPlayerLocs() {
+            // send an x, y coordinate for every client:
+            ByteBuffer bb = prepareBuffer(packetCommand.CURRENT_CLIENTS, 4 + (4 + 4) * clientLocations.size());
+            bb.putInt(clientLocations.size());
+            for(Point p : clientLocations.keySet()) {
+                bb.putInt(p.x);
+                bb.putInt(p.y);
+            }
+            verifyAndSend(bb, packetCommand.CURRENT_CLIENTS, socketChannel);
+            System.out.println("sending something");
+        }
+
+        // Packet handlers
+        private void handleSetPlayerLoc(Object... args) {
+            final Point requestedPoint = new Point((Integer)args[0], (Integer)args[1]);
+            // atomic test and set block
+            synchronized(clientLocations) {
+                // Another client is already there, do nothing
+                if(clientLocations.containsKey(requestedPoint))
+                    return;
+                
+                clientLocations.put(requestedPoint, this);
+            }
+
+            // Give the position to the client
+            location = requestedPoint;
+            
+            sendLaunch();
+            
+            // tell other observers a new client has connected
+            for(ClientThread ct : usedPorts.values()){
+                if(ct != this)
+                    ct.sendCurrentPlayerLocs();
+            }
+        }
+        
         
         // In-game methods
     }
@@ -248,5 +306,72 @@ public class WorldServer extends Thread {
         byte[] stringBytes = s.getBytes();
         bb.put(stringBytes);
         return bb;
+    }
+    
+    // Commands
+    public static enum packetCommand {
+        PING             (0),
+        SEND_SIZE        (2, "ii", 4 + 4),
+        CLAIM_GRID       (2, "ii", 4 + 4),
+        LAUNCH           (0),
+        OBSERVE          (2, "ii", 4 + 4),
+        DISCONNECT       (0),
+        //CURRENT_CLIENTS  (2, "i(ii)*", 0); // ideally, should be something regex-like
+        CURRENT_CLIENTS  (1, "i", 4 + 4 + 4); // variadic
+
+        private packetCommand(int numArgs) {
+            expectedCount = numArgs;
+        }
+        private packetCommand(int numArgs, String str, int bytes) {
+            expectedCount = numArgs;
+            expectedArgs = str;
+            expectedBytes = bytes;
+        }
+        private int expectedCount = 0;
+        private int expectedBytes = 0; // expected number of bytes, not including the enum itself
+        private String expectedArgs = "";
+        public int getExpectedCount() {
+            return expectedCount;
+        }
+        public int getNumBytes() {
+            return expectedBytes;
+        }
+        public String getExpectedArgs() {
+            return expectedArgs;
+        }
+        public boolean matchArgCount(int numArgs) {
+            return numArgs == expectedCount;
+        }
+    }
+    
+    /**
+     *Prepares a buffer for <i>sending</i> a packet
+     * @param cmd
+     * @return
+     */
+    public static ByteBuffer prepareBuffer(packetCommand cmd){
+        return prepareBuffer(cmd, cmd.expectedBytes);
+    }
+    public static ByteBuffer prepareBuffer(packetCommand cmd, int byteCount){
+        ByteBuffer bb = ByteBuffer.allocate(4 + byteCount);
+        bb.putInt(cmd.ordinal());
+        return bb;
+    }
+    public static boolean verifyAndSend(ByteBuffer bb, packetCommand cmd, SocketChannel sc, boolean requiresBlocking) {
+        bb.flip();
+        try {
+            if(requiresBlocking)
+                sc.configureBlocking(true);
+            sc.write(bb);
+            if(requiresBlocking)
+                sc.configureBlocking(false);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+    public static boolean verifyAndSend(ByteBuffer bb, packetCommand cmd, SocketChannel sc) {
+        return verifyAndSend(bb, cmd, sc, false);
     }
 }
