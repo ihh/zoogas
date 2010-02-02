@@ -36,21 +36,21 @@ public class TransformRuleMatch extends RuleMatch {
 	    dirPattern = Pattern.compile(p.dir);
     }
 
-    public TransformRuleMatch(TransformRulePattern p,Board board,int dir) {
+    public TransformRuleMatch(TransformRulePattern p, Topology topology,int dir) {
 	this(p);
-	bindDir(board,dir);
+	bindDir(topology, dir);
     }
 
     // rule accessor
     public final TransformRulePattern transformPattern() { return (TransformRulePattern) pattern; }
 
     // override bindDir()
-    public boolean bindDir(Board b,int d) {
-	boolean boundOk = super.bindDir(b,d);
+    public boolean bindDir(Topology t, int d) {
+	boolean boundOk = super.bindDir(t, d);
 	if (dirPattern == null)
 	    dirMatches = true;
 	else {
-	    String dirString = board.dirString(d);
+	    String dirString = topology.dirString(d);
 	    dirMatches = dirPattern.matcher(dirString).matches();
 	    boundOk = boundOk && dirMatches;
 	}

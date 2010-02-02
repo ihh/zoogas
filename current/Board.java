@@ -102,21 +102,6 @@ public class Board extends MooreTopology {
 	return Math.max(x,y);
     }
 
-    // method to return direct length of a vector
-    static double directLength(Point p) {
-	return Math.sqrt(p.x*p.x+p.y*p.y);
-    }
-
-    // method to return angle between two vectors in units of Pi, as a real number from -1 to +1
-    public final double angle (Point p, Point q) {
-	double a = (Math.atan2(p.y,p.x) - Math.atan2(q.y,q.x)) / Math.PI;
-	if (a <= -1)
-	    a += 2;
-	else if (a > 1)
-	    a -= 2;
-	return a;
-    }
-
     // update methods
     // getRandomPair places coordinates of a random cell in p, weighted by its update rate
     public final void getRandomCell(Point p) {

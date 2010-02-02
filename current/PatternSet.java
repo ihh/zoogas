@@ -9,7 +9,7 @@ import java.io.*;
 
 public class PatternSet {
     // data
-    private Board board = null;
+    private Topology topology = null;
     private Vector<EnergyRulePattern> energyRulePattern = new Vector<EnergyRulePattern>();
     private Vector<TransformRulePattern> transformRulePattern = new Vector<TransformRulePattern>();
     private Vector<ParticlePattern> particlePattern = new Vector<ParticlePattern>();
@@ -22,9 +22,9 @@ public class PatternSet {
     private HashMap<String,Vector<EnergyRuleMatch>> energyRuleMatch = new HashMap<String,Vector<EnergyRuleMatch>>();
 
     // constructor
-    PatternSet (Board board) {
-	this.board = board;
-	int ns = board.neighborhoodSize();
+    PatternSet (Topology topology) {
+	this.topology = topology;
+	int ns = topology.neighborhoodSize();
 	transformRuleMatch = new ArrayList<Vector<TransformRuleMatch>>(ns);
 	for (int d = 0; d < ns; ++d)
 	    transformRuleMatch.add (new Vector<TransformRuleMatch>());
@@ -64,8 +64,8 @@ public class PatternSet {
 	}
 
 	transformRulePattern.add (p);
-	for (int d = 0; d < board.neighborhoodSize(); ++d)
-	    transformRuleMatch.get(d).add (new TransformRuleMatch(p,board,d));
+	for (int d = 0; d < topology.neighborhoodSize(); ++d)
+	    transformRuleMatch.get(d).add (new TransformRuleMatch(p, topology, d));
     }
 
     // method to lay down a template for an energy rule
@@ -76,7 +76,7 @@ public class PatternSet {
 	energyRulePattern.add(p);
 	if (!energyRuleMatch.containsKey(p.bondName))
 	    energyRuleMatch.put(p.bondName,new Vector<EnergyRuleMatch>());
-	energyRuleMatch.get(p.bondName).add(new EnergyRuleMatch(p,board));
+	energyRuleMatch.get(p.bondName).add(new EnergyRuleMatch(p,topology));
     }
 
     // method to get a Particle from the Board object or create and add one

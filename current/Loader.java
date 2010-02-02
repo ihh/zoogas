@@ -184,6 +184,7 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
         if ("LaunchSP".equals(e.getActionCommand())) {
             launchArgs = new String[] { };
             readyToLaunch = true;
+            launch();
             return;
         } else if ("Connect".equals(e.getActionCommand())) {
             toWorldServer.connectToWorld();
@@ -204,14 +205,17 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
         messages.setText(str);
     }
 
+    public void launch() {
+        dispose();
+        ZooGas.main(new String[]{ });
+    }
     public void launch(int listeningPort) {
         (observerMap.get(currentSelection)).getJPanel().setBorder(new LineBorder(Color.GREEN, 3));
         launchArgs = new String[] {"-s", "-p", String.valueOf(listeningPort)};
         readyToLaunch = true;
         dispose();
 
-        ZooGas.main(new String[] { });
-
+        ZooGas.main(launchArgs, toWorldServer);
     }
 
     public void setGridSize(int width, int height) {

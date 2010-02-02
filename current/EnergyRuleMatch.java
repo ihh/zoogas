@@ -19,7 +19,7 @@ public class EnergyRuleMatch extends RuleMatch {
 
     // constructors
     public EnergyRuleMatch(EnergyRulePattern p) { super(p); }
-    public EnergyRuleMatch(EnergyRulePattern p,Board board) { super(p,board,-1); }
+    public EnergyRuleMatch(EnergyRulePattern p, Topology topology) { super(p,topology,-1); }
 
     // rule accessor
     public final EnergyRulePattern energyPattern() { return (EnergyRulePattern) pattern; }
@@ -32,11 +32,11 @@ public class EnergyRuleMatch extends RuleMatch {
 	EnergyRulePattern rp = energyPattern();
 	boolean match;
 
-	len = board.directLength(sourceToTarget);
+	len = topology.directLength(sourceToTarget);
 	match = len >= rp.minLen && len <= rp.maxLen;
 
 	if (match && prevToSource != null && rp.hasAngleConstraint()) {
-	    angle = board.angle(prevToSource,sourceToTarget);
+	    angle = topology.angle(prevToSource,sourceToTarget);
 	    match = angle >= rp.minAngle && angle <= rp.maxAngle;
 	    //	    System.err.println("Angle between "+prevToSource+" and "+sourceToTarget+" is "+angle+"; match="+(match?"t":"f"));
 	}
