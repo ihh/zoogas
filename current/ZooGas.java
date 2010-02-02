@@ -116,13 +116,20 @@ public class ZooGas implements KeyListener {
     long timeCheckPeriod = 20; // board refreshes between recalculations of updatesPerSecond
     String lastDumpStats = ""; // hacky way to avoid concurrency issues
 
+    // connection
+    ClientToServer toWorldServer = null;
+
     // main()
     public static void main(String[] args) {
+        main(args, null);
+    }
+    public static void main(String[] args, ClientToServer toWorldServer) {
         // create ZooGas object
         ZooGas gas = new ZooGas();
 
         // Process options and args before initializing ZooGas
-        boolean isServer = false, isClient = false;
+        boolean isServer = false;
+        boolean isClient = false;
         int port = defaultPort;
         String socketAddress = null;
 
@@ -206,6 +213,7 @@ public class ZooGas implements KeyListener {
             }
         }
 
+        gas.toWorldServer = toWorldServer;
         gas.start();
     }
 

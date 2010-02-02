@@ -131,33 +131,12 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
 
         setVisible(true);
 
-        try {
-            while (!readyToLaunch) {
-                if(serverSocket != null && serverSocket.isConnected()) {
-                    ByteBuffer bb = ByteBuffer.allocate(allocateBufferSize);
-                    if(serverSocket.read(bb) != 0) {
-                        processPacket(bb);
-                    }
-                }
-
-                Thread.sleep(100);
-            }
-            // Warning: this loop will never exit if the server is in blocking mode
-
-            dispose();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (AsynchronousCloseException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        toWorldServer = new ClientToServer(this);
     }
 
     // Connections
-    SocketChannel serverSocket = null;
-    Map<InetAddress, Socket> peerConnections;
-    public final static int allocateBufferSize = 2048;
+    //Map<InetAddress, Socket> peerConnections;
+    ClientToServer toWorldServer;
 
     // View
     JPanel observerPanel;
@@ -184,13 +163,7 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
 
     public static WorldServer ws;
     public static void main(String[] args) {
-        //WorldServer ws = new WorldServer();
-        Loader load = new Loader();
-        // waid for input
-
-        String[] loadArgs = load.getArgs();
-        load = null;
-        ZooGas.main(new String[] { });
+        new Loader();
     }
 
     public String[] getArgs() {
@@ -213,11 +186,11 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
             readyToLaunch = true;
             return;
         } else if ("Connect".equals(e.getActionCommand())) {
-            connectToWorld();
+            toWorldServer.connectToWorld();
             forceReconnect.setText("Reconnect");
             return;
         } else if ("LaunchMP".equals(e.getActionCommand())) {
-            sendJoinLocation(currentSelection);
+            toWorldServer.sendJoinLocation(currentSelection);
             return;
         } else if ("TestServer".equals(e.getActionCommand())) {
             forceReconnect.setEnabled(false);
@@ -225,141 +198,23 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
             forceReconnect.setEnabled(true);
             return;
         }
-        
     }
 
-    public void connectToWorld() {
-        InetAddress serverAddress;
-        try {
-            // Close current connection if any
-            if(serverSocket != null && serverSocket.isOpen()) {
-                serverSocket.close();
-                serverSocket = null;
-            }
-            
-            // Connect to server
-            serverAddress = InetAddress.getLocalHost(); // TODO: replace with real server
-            messages.setText("Connecting to server at " + serverAddress + "...");
-            SocketChannel ssTemp = SocketChannel.open();
-            InetSocketAddress connectionToWorld = new InetSocketAddress(serverAddress, WorldServer.newConnectionPort); // must use address string version of constructor
-            ssTemp.socket().setSoTimeout(10000);
-            ssTemp.configureBlocking(true);
-            ssTemp.connect(connectionToWorld);
-            ssTemp.configureBlocking(false);
-
-            // read out dedicated port
-            ByteBuffer bb = ByteBuffer.allocate(4);
-            messages.setText("Establishing connection to " + serverAddress);
-            int response = ssTemp.read(bb);
-            while(response == 0) {
-                response = ssTemp.read(bb);
-            }
-            ssTemp.close();
-            if(response == -1) {
-                messages.setText("Server unavailable");
-                return;
-            }
-
-            bb.flip();
-            System.out.println(bb);
-            int newPort = bb.getInt();
-            if (newPort == WorldServer.CONNECTIONS_FULL) {
-                messages.setText("Connections to server are full");
-            }
-            else {
-                // connect on new port
-                connectionToWorld = new InetSocketAddress(serverAddress, newPort);
-                serverSocket = SocketChannel.open();
-                serverSocket.socket().setSoTimeout(1000);
-                serverSocket.configureBlocking(true);
-                serverSocket.connect(connectionToWorld);
-                while(!serverSocket.finishConnect()){
-                    Thread.sleep(100);
-                }
-                serverSocket.configureBlocking(false);
-                
-                // Send a test packet
-                //bb = ByteBuffer.allocate(allocateBufferSize);
-                //WorldServer.writeStringToBuffer(bb, "this is a");
-                //WorldServer.writeStringToBuffer(bb, "test");
-                //bb.putInt(110011);
-                //System.out.println(" Sent: "+ bb);
-                //bb.flip();
-                //serverSocket.write(bb);
-                
-                messages.setText("Connected to " + serverAddress.getHostName() + ":" + newPort);
-            }
-        } catch (SocketTimeoutException ste) {
-            messages.setText("Connection timed out");
-            ste.printStackTrace();
-        } catch (IOException ioe) {
-            messages.setText("Connection failed");
-            ioe.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            System.out.println("Client finished connecting");
-        }
-    }
-    
-    private void processPacket(ByteBuffer bb) {
-        // first int is always the ordinal
-        bb.rewind();
-
-        // one buffer may contain more than one command!
-        while(bb.limit() != bb.position()) {
-            WorldServer.packetCommand command = WorldServer.packetCommand.values()[bb.getInt()];
-            System.out.println("Received " + command + " " + bb);
-            ArrayList<Object> parameters = new ArrayList<Object>();
-            for(int i = 0; i < command.getExpectedCount(); ++i) {
-                char c = command.getExpectedArgs().charAt(i);
-                switch(c) {
-                    case 'i':
-                        parameters.add(bb.getInt());
-                        break;
-                    case 's':   
-                        parameters.add(WorldServer.getStringFromBuffer(bb));
-                        break;
-                    default: 
-                        System.err.println("Unknown parameter type " + c + ". Buffer discarded.");
-                        return;
-                }
-            }
-            
-            switch(command) {
-                case PING: // End of buffer is read as a ping. No harm done
-                    return;
-                case SEND_SIZE:
-                    handleSetSize(parameters.toArray());
-                    break;
-                case LAUNCH:
-                    handleLaunch();
-                    break;
-                case CURRENT_CLIENTS:
-                    handleGetPlayerLocs(bb, parameters.toArray());
-                    break;
-                default:
-                    System.err.println("Unhandled command type " + command);
-                    return;
-            }
-        }
+    public void setMessage(String str) {
+        messages.setText(str);
     }
 
-    // Packet senders
-    public boolean sendJoinLocation(Point p) {
-        WorldServer.packetCommand cmd = WorldServer.packetCommand.CLAIM_GRID;
-        
-        ByteBuffer bb = WorldServer.prepareBuffer(cmd);
-        bb.putInt(p.x);
-        bb.putInt(p.y);
-        return WorldServer.verifyAndSend(bb, cmd, serverSocket);
+    public void launch(int listeningPort) {
+        (observerMap.get(currentSelection)).getJPanel().setBorder(new LineBorder(Color.GREEN, 3));
+        launchArgs = new String[] {"-s", "-p", String.valueOf(listeningPort)};
+        readyToLaunch = true;
+        dispose();
+
+        ZooGas.main(new String[] { });
+
     }
 
-    // Packet handlers
-    private void handleSetSize(Object... args) {
-        int width = (Integer)args[0];
-        int height = (Integer)args[1];
-        
+    public void setGridSize(int width, int height) {
         observerPanel.removeAll();
         for(int x = 0; x < width; ++x) {
             for(int y = 0; y < height; ++y) {
@@ -373,47 +228,38 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
                 pane.addMouseListener(
                     new MouseAdapter() {
                         public void mousePressed(MouseEvent e) {
-                            if(readyToLaunch)
+                            if(readyToLaunch) {
                                 return;
+                            }
 
                             if(p.equals(currentSelection)) {
                                 if(e.getClickCount() == 2) {
                                     (observerMap.get(currentSelection)).getJPanel().setBorder(new LineBorder(Color.YELLOW, 3));
-                                    sendJoinLocation(p);
+                                    toWorldServer.sendJoinLocation(p);
                                 }
                                 return;
                             }
 
                             if(currentSelection != null)
                                 (observerMap.get(currentSelection)).getJPanel().setBorder(null);
-                            
-                            currentSelection = p;
-                            (observerMap.get(currentSelection)).getJPanel().setBorder(new LineBorder(Color.BLUE, 3));
-                            launchMPButton.setEnabled(true);
+
+                            if(!observerMap.get(p).hasPlayer){
+                                currentSelection = p;
+                                (observerMap.get(currentSelection)).getJPanel().setBorder(new LineBorder(Color.BLUE, 3));
+                                launchMPButton.setEnabled(true);
+                            }
                         }
                     }
                 );
                 observerPanel.add(pane, observerConstraints);
             }
         }
-        
-        this.pack();
+
+        pack();
     }
-    
-    private void handleLaunch() {
-        (observerMap.get(currentSelection)).getJPanel().setBorder(new LineBorder(Color.GREEN, 3));
-        launchArgs = new String[] {"-s", "-p", String.valueOf(serverSocket.socket().getPort())};
-        readyToLaunch = true;
-    }
-    
-    private void handleGetPlayerLocs(ByteBuffer bb, Object... args) {
-        int numClients = (Integer)args[0];
-        
-        for(int i = 0; i < numClients; ++i) {
-            int x = bb.getInt();
-            int y = bb.getInt();
-            Point p = new Point(x, y);
-            (observerMap.get(p)).getJPanel().setBackground(Color.BLACK);
+    void initPlayerLocs(Set<Point> clientSet) {
+        for(Point p : clientSet) {
+            observerMap.get(p).hasPlayer(true);
         }
     }
 }

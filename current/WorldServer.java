@@ -25,8 +25,8 @@ import java.util.SortedSet;
  */
 public class WorldServer extends Thread {
     public WorldServer() {
-        usedPorts = new HashMap<Integer, ClientThread>();
-        clientLocations = new HashMap<Point, ClientThread>();
+        usedPorts = new HashMap<Integer, ServerToClient>();
+        clientLocations = new HashMap<Point, ServerToClient>();
         try {
             incomingClientsSSC = ServerSocketChannel.open();
             incomingClientsSSC.socket().bind(new InetSocketAddress(newConnectionPort));
@@ -37,19 +37,15 @@ public class WorldServer extends Thread {
         start();
     }
 
-    // Defines
-    public final static int CONNECTIONS_FULL = -1;
-    public final static int allocateBufferSize = 2048;
-
     // Ports
     private ServerSocketChannel incomingClientsSSC;
     public final static int newConnectionPort = 4440;
     public final int minPort = newConnectionPort + 1;
     public final int maxPort = 4450;
-    private Map<Integer, ClientThread> usedPorts;
-    
+    private Map<Integer, ServerToClient> usedPorts;
+
     // ZooGas connectivity
-    private Map<Point, ClientThread> clientLocations;
+    private Map<Point, ServerToClient> clientLocations;
 
     // Validation
     // RSA check
@@ -72,8 +68,8 @@ public class WorldServer extends Thread {
                     InetAddress newClientAdd = sc.socket().getInetAddress();
                     sc.close();
 
-                    if (newPort != CONNECTIONS_FULL) {
-                        new ClientThread(new InetSocketAddress(newClientAdd.getHostName(), newPort), newPort);
+                    if (newPort != ServerToClient.CONNECTIONS_FULL) {
+                        new ServerToClient(new InetSocketAddress(newClientAdd.getHostName(), newPort), newPort);
                     }
                 } else {
                     sleep(50);
@@ -97,18 +93,18 @@ public class WorldServer extends Thread {
             }
         }
 
-        return CONNECTIONS_FULL;
+        return ServerToClient.CONNECTIONS_FULL;
     }
-    
-    public void deregisterClient(ClientThread ct) {
+
+    public void deregisterClient(ServerToClient ct) {
         usedPorts.remove(ct.port); // allow this key to be reused now
         clientLocations.remove(ct.location);
     }
-   
+
     public int getNumPlayers() {
         return clientLocations.size();
     }
-    
+
     /**
      * Gets the current dimensions of the world board
      * @return
@@ -121,8 +117,8 @@ public class WorldServer extends Thread {
     }
 
 
-    private class ClientThread extends Thread {
-        ClientThread(InetSocketAddress clientAddress, int port) {
+    private class ServerToClient extends NetworkThread {
+        ServerToClient(InetSocketAddress clientAddress, int port) {
             this.port = port;
 
             try {
@@ -131,7 +127,7 @@ public class WorldServer extends Thread {
                 serverSocketChannel.socket().setSoTimeout(1000);
                 serverSocketChannel.configureBlocking(true);
                 serverSocketChannel.socket().bind(clientAddress);
-                
+
                 System.out.println(" waiting for connection..." + port);
                 while(socketChannel == null) {
                     socketChannel = serverSocketChannel.accept();
@@ -145,7 +141,7 @@ public class WorldServer extends Thread {
             }
 
             start();
-            
+
             sendSize();
             sendCurrentPlayerLocs();
         }
@@ -154,7 +150,7 @@ public class WorldServer extends Thread {
         ServerSocketChannel serverSocketChannel;
         SocketChannel socketChannel;
         boolean isConnected = false;
-        
+
         // members for after the client has started playing
         // TODO: maybe use a different class for this, or extend ClientThread?
         Point location;
@@ -203,7 +199,7 @@ public class WorldServer extends Thread {
             System.out.println("Finalized thread listening on port " + port);
         }
 
-        private void processPacket(ByteBuffer bb) {
+        void processPacket(ByteBuffer bb) {
             // first int is always the ordinal
             bb.rewind();
             packetCommand command = packetCommand.values()[bb.getInt()];
@@ -217,12 +213,12 @@ public class WorldServer extends Thread {
                     case 's':
                         parameters.add(getStringFromBuffer(bb));
                         break;
-                    default: 
+                    default:
                         System.err.println("Unknown parameter type " + c);
                         return;
                 }
             }
-            
+
             switch(command) {
                 case OBSERVE:
                     return;
@@ -234,7 +230,7 @@ public class WorldServer extends Thread {
                     return;
             }
         }
-        
+
         // Packet senders
         private void sendLaunch() {
             //verifyAndSend(prepareBuffer(packetCommand.LAUNCH), packetCommand.SEND_SIZE, socketChannel);
@@ -250,7 +246,7 @@ public class WorldServer extends Thread {
             bb.putInt(rect.height);
             verifyAndSend(bb, packetCommand.SEND_SIZE, socketChannel);
         }
-        
+
         private void sendCurrentPlayerLocs() {
             // send an x, y coordinate for every client:
             ByteBuffer bb = prepareBuffer(packetCommand.CURRENT_CLIENTS, 4 + (4 + 4) * clientLocations.size());
@@ -260,7 +256,6 @@ public class WorldServer extends Thread {
                 bb.putInt(p.y);
             }
             verifyAndSend(bb, packetCommand.CURRENT_CLIENTS, socketChannel);
-            System.out.println("sending something");
         }
 
         // Packet handlers
@@ -271,107 +266,25 @@ public class WorldServer extends Thread {
                 // Another client is already there, do nothing
                 if(clientLocations.containsKey(requestedPoint))
                     return;
-                
+
                 clientLocations.put(requestedPoint, this);
             }
 
             // Give the position to the client
             location = requestedPoint;
-            
+
             sendLaunch();
-            
+
             // tell other observers a new client has connected
-            for(ClientThread ct : usedPorts.values()){
+            for(ServerToClient ct : usedPorts.values()){
                 if(ct != this)
                     ct.sendCurrentPlayerLocs();
             }
         }
-        
-        
+
+
         // In-game methods
     }
-    
-    // TODO: Move this to common "network" based abstract class
-    public static String getStringFromBuffer(ByteBuffer bb) {
-        StringBuilder sb = new StringBuilder();
-        byte c = bb.get();
-        while(c != '\0') {
-            sb.append((char)c); // TODO: check non-utf-8
-            c = bb.get();
-        }
-        return sb.toString();
-    }
-    public static ByteBuffer writeStringToBuffer(ByteBuffer bb, String s) {
-        s += '\0';
-        byte[] stringBytes = s.getBytes();
-        bb.put(stringBytes);
-        return bb;
-    }
-    
-    // Commands
-    public static enum packetCommand {
-        PING             (0),
-        SEND_SIZE        (2, "ii", 4 + 4),
-        CLAIM_GRID       (2, "ii", 4 + 4),
-        LAUNCH           (0),
-        OBSERVE          (2, "ii", 4 + 4),
-        DISCONNECT       (0),
-        //CURRENT_CLIENTS  (2, "i(ii)*", 0); // ideally, should be something regex-like
-        CURRENT_CLIENTS  (1, "i", 4 + 4 + 4); // variadic
 
-        private packetCommand(int numArgs) {
-            expectedCount = numArgs;
-        }
-        private packetCommand(int numArgs, String str, int bytes) {
-            expectedCount = numArgs;
-            expectedArgs = str;
-            expectedBytes = bytes;
-        }
-        private int expectedCount = 0;
-        private int expectedBytes = 0; // expected number of bytes, not including the enum itself
-        private String expectedArgs = "";
-        public int getExpectedCount() {
-            return expectedCount;
-        }
-        public int getNumBytes() {
-            return expectedBytes;
-        }
-        public String getExpectedArgs() {
-            return expectedArgs;
-        }
-        public boolean matchArgCount(int numArgs) {
-            return numArgs == expectedCount;
-        }
-    }
-    
-    /**
-     *Prepares a buffer for <i>sending</i> a packet
-     * @param cmd
-     * @return
-     */
-    public static ByteBuffer prepareBuffer(packetCommand cmd){
-        return prepareBuffer(cmd, cmd.expectedBytes);
-    }
-    public static ByteBuffer prepareBuffer(packetCommand cmd, int byteCount){
-        ByteBuffer bb = ByteBuffer.allocate(4 + byteCount);
-        bb.putInt(cmd.ordinal());
-        return bb;
-    }
-    public static boolean verifyAndSend(ByteBuffer bb, packetCommand cmd, SocketChannel sc, boolean requiresBlocking) {
-        bb.flip();
-        try {
-            if(requiresBlocking)
-                sc.configureBlocking(true);
-            sc.write(bb);
-            if(requiresBlocking)
-                sc.configureBlocking(false);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
-        return true;
-    }
-    public static boolean verifyAndSend(ByteBuffer bb, packetCommand cmd, SocketChannel sc) {
-        return verifyAndSend(bb, cmd, sc, false);
-    }
+    // TODO: Move this to common "network" based abstract class
 }
