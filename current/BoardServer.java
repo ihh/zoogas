@@ -108,8 +108,8 @@ public class BoardServer extends Thread {
 	}
     }
 
-    private static int toInt(String s) { return Integer.parseInt(s); }
-    private static double toDouble(String s) { return Double.parseDouble(s); }
+    private static int toInt(String s) { return Integer.valueOf(s); }
+    private static double toDouble(String s) { return Double.valueOf(s); }
 
     private static void logCommand (String[] args) {
 	StringBuffer join = new StringBuffer("BoardServer: >>");

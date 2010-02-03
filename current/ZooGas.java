@@ -76,7 +76,7 @@ public class ZooGas implements KeyListener {
     Challenge objective;
 
     // constant helper vars
-    static String spaceParticleName = "_";
+    final static String spaceParticleName = "_";
     Particle spaceParticle;
     double patternMatchesPerRefresh = 1;
 
@@ -117,7 +117,7 @@ public class ZooGas implements KeyListener {
     String lastDumpStats = ""; // hacky way to avoid concurrency issues
 
     // connection
-    ClientToServer toWorldServer = null;
+    protected ClientToServer toWorldServer = null;
 
     // main()
     public static void main(String[] args) {
@@ -126,6 +126,7 @@ public class ZooGas implements KeyListener {
     public static void main(String[] args, ClientToServer toWorldServer) {
         // create ZooGas object
         ZooGas gas = new ZooGas();
+        gas.toWorldServer = toWorldServer;
 
         // Process options and args before initializing ZooGas
         boolean isServer = false;
@@ -212,8 +213,10 @@ public class ZooGas implements KeyListener {
                 gas.board.initClient(new InetSocketAddress(address[0], defaultPort));
             }
         }
-
-        gas.toWorldServer = toWorldServer;
+        
+        // basic validation (check if peers have same rules, if rules are valid, etc.)
+        // load patternSet
+        gas.board.loadPatternSetFromFile(gas.patternSetFilename);
         gas.start();
     }
 
@@ -227,8 +230,6 @@ public class ZooGas implements KeyListener {
         renderer = new PlayerRenderer(this, board, size);
         boardSize = renderer.getBoardSize(size);
 
-        // load patternSet
-        board.loadPatternSetFromFile(patternSetFilename);
         spaceParticle = board.getOrCreateParticle(spaceParticleName);
 
         // init board
@@ -460,7 +461,6 @@ public class ZooGas implements KeyListener {
         }
     }
 
-
     // main evolution loop
     private void evolveStuff() {
         board.update(patternMatchesPerRefresh, renderer);
@@ -489,20 +489,26 @@ public class ZooGas implements KeyListener {
 
         toolBox.refill(1);
     }
-
-    // bond-rendering method
-    public void drawBond(Graphics g, Point p, Point q) {
-        g.setColor(new Color((float)Math.random(), (float)Math.random(), (float)Math.random()));
-        Point pg = renderer.getGraphicsCoords(p);
-        Point qg = renderer.getGraphicsCoords(q);
-        int k = renderer.pixelsPerCell >> 1;
-        g.drawLine(pg.x + k, pg.y + k, qg.x + k, qg.y + k);
+    
+    public ClientToServer getWorldServerThread() {
+        return toWorldServer;
+    }
+    
+    /**
+     *Refreshes the buffer of the ZooGas frame
+     */
+    protected void refreshBuffer() {
+        // update buffer
+        zooGasFrame.getContentPane().repaint();
     }
 
-    // draw some random bonds
+    /**
+     *Draws all active bonds between particles using random colors
+     * @param g
+     */
     protected void drawBonds(Graphics g) {
         Point p = new Point();
-        for (p.x = 0; p.x < board.size; ++p.x)
+        for (p.x = 0; p.x < board.size; ++p.x) {
             for (p.y = 0; p.y < board.size; ++p.y) {
                 for (Map.Entry<String, Point> kv : board.incoming(p).entrySet()) {
                     Point delta = kv.getValue();
@@ -515,6 +521,14 @@ public class ZooGas implements KeyListener {
                     }
                 }
             }
+        }
+    }
+    private void drawBond(Graphics g, Point p, Point q) {
+        g.setColor(new Color((float)Math.random(), (float)Math.random(), (float)Math.random()));
+        Point pg = renderer.getGraphicsCoords(p);
+        Point qg = renderer.getGraphicsCoords(q);
+        int k = renderer.pixelsPerCell >> 1;
+        g.drawLine(pg.x + k, pg.y + k, qg.x + k, qg.y + k);
     }
 
     // highlight enclosures
@@ -533,13 +547,10 @@ public class ZooGas implements KeyListener {
         g.drawImage(image, 0, 0, null);
     }
 
-    // do a refresh
-    protected void refreshBuffer() {
-        // update buffer
-        zooGasFrame.getContentPane().repaint();
-    }
-
-    // status
+    /**
+     *Draws the status panel
+     * @param g
+     */
     protected void drawStatus(Graphics g) {
         // name of the game
         flashOrHide(g, "Z00 GAS", titleRow, true, 0, 400, true, Color.white);

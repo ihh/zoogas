@@ -13,7 +13,7 @@ public class Board extends MooreTopology {
     private Cell[][] cell = null;
 
     // cellular automata rule/particle generator
-    private PatternSet patternSet = new PatternSet(this);
+    private PatternSet patternSet = null;
 
     // particle name registry
     protected Map<String,Particle> nameToParticle = new HashMap<String,Particle>();  // updated by Particle constructor
@@ -26,6 +26,7 @@ public class Board extends MooreTopology {
     private ConnectionServer connectServer = null;   // ConnectionServer runs over TCP (otherwise requests to establish connections can get lost amongst the flood of UDP traffic)
     private int boardServerPort = 4444;
     private String localhost = null;
+    private ClientToServer toWorldServer;
 
     // fast quad tree
     public QuadTree quad = null;
@@ -117,9 +118,9 @@ public class Board extends MooreTopology {
     }
 
     // net init methods
-    public final void initServer (int port,ZooGas gas) {
-
+    public final void initServer (int port, ZooGas gas) {
 	this.boardServerPort = port;
+        toWorldServer = gas.getWorldServerThread();
 
 	try {
 	    updateServer = new UpdateServer (this, boardServerPort, gas.renderer);
@@ -548,6 +549,8 @@ public class Board extends MooreTopology {
     // method to init PatternSet from file
     public final void loadPatternSetFromFile(String filename) {
 	patternSet = PatternSet.fromFile(filename,this);
+        
+        toWorldServer.sendAllClientRules(patternSet.getAllRawRules(), patternSet.getByteSize());
     }
 
     // network helpers

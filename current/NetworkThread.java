@@ -32,7 +32,7 @@ public abstract class NetworkThread extends Thread {
     */
 
     // constants
-    public final int allocateBufferSize = 2048;
+    public final int allocateBufferSize = 32768;
     public final static int CONNECTIONS_FULL = -1;
 
     // Commands
@@ -44,7 +44,9 @@ public abstract class NetworkThread extends Thread {
         OBSERVE          (2, "ii", 4 + 4),
         DISCONNECT       (0),
         //CURRENT_CLIENTS  (2, "i(ii)*", 0); // ideally, should be something regex-like
-        CURRENT_CLIENTS  (1, "i", 4 + 4 + 4); // variadic
+        CURRENT_CLIENTS  (1, "i", 4 + 4 + 4), // variadic
+        
+        CHECKIN_RULES    (1, "i", 4); // variadic
 
         private packetCommand(int numArgs) {
             expectedCount = numArgs;

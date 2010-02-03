@@ -15,7 +15,10 @@ import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+
+import java.util.SortedSet;
 
 import javax.swing.JPanel;
 import javax.swing.border.LineBorder;
@@ -93,7 +96,6 @@ public class ClientToServer extends NetworkThread {
             }
 
             bb.flip();
-            System.out.println(bb);
             int newPort = bb.getInt();
             if (newPort == CONNECTIONS_FULL) {
                 loader.setMessage("Connections to server are full");
@@ -176,6 +178,17 @@ public class ClientToServer extends NetworkThread {
         bb.putInt(p.x);
         bb.putInt(p.y);
         return verifyAndSend(bb, cmd, serverSocket);
+    }
+    
+    public void sendAllClientRules(SortedSet<String> rules, int byteSize) {
+        packetCommand cmd = packetCommand.CHECKIN_RULES;
+        
+        ByteBuffer bb = prepareBuffer(cmd, byteSize + 4);
+        bb.putInt(rules.size());
+        for(String s : rules) {
+            writeStringToBuffer(bb, s);
+        }
+        verifyAndSend(bb, cmd, serverSocket);
     }
 
     // Packet handlers

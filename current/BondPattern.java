@@ -12,8 +12,8 @@ public class BondPattern {
     }
 
     // static fromString constructor
-    static Pattern bondPatternRegex = Pattern.compile("\\((\\S+),(\\S+),(\\S+)\\)");
-    static BondPattern fromString(String s) {
+    final static Pattern bondPatternRegex = Pattern.compile("\\((\\S+),(\\S+),(\\S+)\\)");
+    final static BondPattern fromString(String s) {
 	Matcher m = bondPatternRegex.matcher(s);
 	if (m.matches()) {
 	    return new BondPattern(m.group(1),m.group(3),m.group(2));

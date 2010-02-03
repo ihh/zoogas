@@ -33,6 +33,8 @@ public class WorldServer extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        
+        ruleset = new RuleSet(ZooGas.defaultPatternSetFilename);
 
         start();
     }
@@ -48,6 +50,7 @@ public class WorldServer extends Thread {
     private Map<Point, ServerToClient> clientLocations;
 
     // Validation
+    RuleSet ruleset = null;
     // RSA check
     // rules check (rules for rules?)
 
@@ -225,6 +228,9 @@ public class WorldServer extends Thread {
                 case CLAIM_GRID:
                     handleSetPlayerLoc(parameters.toArray());
                     return;
+                case CHECKIN_RULES:
+                    handleCheckRules(bb, parameters.toArray());
+                    return;
                 default:
                     System.err.println("Unhandled command type " + command);
                     return;
@@ -284,6 +290,15 @@ public class WorldServer extends Thread {
 
 
         // In-game methods
+        private void handleCheckRules(ByteBuffer bb, Object... args) {
+            int numRules = (Integer)args[0];
+            for(int i = 0; i < numRules; ++i) {
+                String s = getStringFromBuffer(bb);
+                if(!ruleset.containsRules(s)) {
+                    System.err.println("Unknown rule " + s);
+                }
+            }
+        }
     }
 
     // TODO: Move this to common "network" based abstract class

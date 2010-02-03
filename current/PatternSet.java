@@ -7,7 +7,21 @@ import java.net.*;
 import java.io.*;
 
 
-public class PatternSet {
+public class PatternSet extends RuleSet{
+    public PatternSet() {
+        super();
+    }
+    
+    PatternSet (Topology topology) {
+        super();
+
+        this.topology = topology;
+        int ns = topology.neighborhoodSize();
+        transformRuleMatch = new ArrayList<Vector<TransformRuleMatch>>(ns);
+        for (int d = 0; d < ns; ++d)
+            transformRuleMatch.add (new Vector<TransformRuleMatch>());
+    }
+    
     // data
     private Topology topology = null;
     private Vector<EnergyRulePattern> energyRulePattern = new Vector<EnergyRulePattern>();
@@ -20,15 +34,6 @@ public class PatternSet {
 
     // energy rules
     private HashMap<String,Vector<EnergyRuleMatch>> energyRuleMatch = new HashMap<String,Vector<EnergyRuleMatch>>();
-
-    // constructor
-    PatternSet (Topology topology) {
-	this.topology = topology;
-	int ns = topology.neighborhoodSize();
-	transformRuleMatch = new ArrayList<Vector<TransformRuleMatch>>(ns);
-	for (int d = 0; d < ns; ++d)
-	    transformRuleMatch.add (new Vector<TransformRuleMatch>());
-    }
 
     // method to lay down a template for a Particle
     void addParticlePattern (RuleSyntax s) {
@@ -121,24 +126,26 @@ public class PatternSet {
 
     // i/o patterns and syntax parsers
     static Pattern endRegex = Pattern.compile("END.*");
-    static Pattern commentRegex = Pattern.compile(" *#.*");
-    static Pattern nonWhitespaceRegex = Pattern.compile("\\S");
     static RuleSyntax nounSyntax = new RuleSyntax("NOUN n! c=ffffff e=0");
     static RuleSyntax verbSyntax = new RuleSyntax("VERB s= t=.* S=$S T=$T d= p=1 v=_ b* c* x* B* k* K*");
     static RuleSyntax bondSyntax = new RuleSyntax("BOND n= e= s=.* t=.* l=1 L=1.5 m=1 a=-1 A=1 b=1");
 
     // i/o methods
-    static PatternSet fromStream (InputStream in, Board board) {
-	PatternSet ps = new PatternSet(board);
+    static PatternSet fromStream (InputStream in, Topology topology) {
+	PatternSet ps = new PatternSet(topology);
 	InputStreamReader read = new InputStreamReader(in);
 	BufferedReader buff = new BufferedReader(read);
 	try {
 	    while (buff.ready()) {
 		String s = buff.readLine();
-		Matcher m = null;
-		if (commentRegex.matcher(s).matches()) {
+		if (!isRule(s)) {
 		    continue;
-		} else if (nounSyntax.matches(s)) {
+		}
+                
+	        ps.rules.add(s);
+	        ps.byteSize += 1 + s.getBytes().length;
+                
+                if (nounSyntax.matches(s)) {
 		    ps.addParticlePattern(nounSyntax);
 		} else if (verbSyntax.matches(s)) {
 		    ps.addTransformRule(verbSyntax);
@@ -146,7 +153,7 @@ public class PatternSet {
 		    ps.addEnergyRule(bondSyntax);
 		} else if (endRegex.matcher(s).matches()) {
 		    break;
-		} else if (nonWhitespaceRegex.matcher(s).matches()) {
+                } else {
 		    System.err.println("PatternSet: Ignoring unrecognized line: " + s);
 		}
 	    }
@@ -158,10 +165,10 @@ public class PatternSet {
 	return ps;
     }
 
-    static PatternSet fromFile (String filename, Board board) {
+    static PatternSet fromFile (String filename, Topology topology) {
 	try {
 	    FileInputStream fis = new FileInputStream(filename);
-	    return fromStream(fis,board);
+	    return fromStream(fis, topology);
 	} catch (Exception e) {
 	    e.printStackTrace();
 	}

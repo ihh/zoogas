@@ -44,7 +44,11 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JTextArea;
 import javax.swing.border.LineBorder;
 
@@ -106,7 +110,7 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
         ++c.gridx;
 
         launchMPButton = new JButton("Launch!");
-        launchMPButton.setActionCommand("LaunchToWorld");
+        launchMPButton.setActionCommand("LaunchMP");
         launchMPButton.setEnabled(false);
         launchMPButton.setToolTipText("Select a location on the grid");
         launchMPButton.addActionListener(this);
@@ -126,6 +130,23 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
         server.setActionCommand("TestServer");
         server.addActionListener(this);
         add(server, c);
+        
+        // Menu items
+        JMenuBar menubar = new JMenuBar();
+        JMenu file = new JMenu("File");
+        file.setMnemonic('f');
+        JMenuItem openRulesFile = new JMenuItem("Open rules");
+        openRulesFile.setMnemonic('r');
+        openRulesFile.setActionCommand("openrules");
+        openRulesFile.addActionListener(this);
+        file.add(openRulesFile);
+
+        JMenu options = new JMenu("Options");
+        options.setMnemonic('o');
+        menubar.add(file);
+        menubar.add(options);
+        
+        setJMenuBar(menubar);
 
         pack();
 
@@ -161,9 +182,17 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
     private boolean readyToLaunch = false;
     private String[] launchArgs;
 
-    public static WorldServer ws;
+    public WorldServer ws;
+
     public static void main(String[] args) {
-        new Loader();
+        Loader load = new Loader();
+        while(!load.readyToLaunch) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+            }
+        }
+        ZooGas.main(load.getArgs(), load.toWorldServer);
     }
 
     public String[] getArgs() {
@@ -175,7 +204,7 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
         if (e.getItemSelectable() == showWorldCheck) {
 
         } else {
-            System.out.println(e.getItemSelectable());
+            System.out.println(e.getItemSelectable());  
             return;
         }
     }
@@ -191,12 +220,17 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
             forceReconnect.setText("Reconnect");
             return;
         } else if ("LaunchMP".equals(e.getActionCommand())) {
+            (observerMap.get(currentSelection)).getJPanel().setBorder(new LineBorder(Color.YELLOW, 3));
             toWorldServer.sendJoinLocation(currentSelection);
             return;
         } else if ("TestServer".equals(e.getActionCommand())) {
             forceReconnect.setEnabled(false);
             ws = new WorldServer();
             forceReconnect.setEnabled(true);
+            return;
+        } else if ("openrules".equals(e.getActionCommand())) {
+            // TODO: add real implementation
+            ZooGas.defaultPatternSetFilename = "ECOLOGY2.txt";
             return;
         }
     }
@@ -206,16 +240,15 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
     }
 
     public void launch() {
+        launchArgs = new String[] {"-s", "-p", String.valueOf(6112)};
+        readyToLaunch = true;
         dispose();
-        ZooGas.main(new String[]{ });
     }
     public void launch(int listeningPort) {
-        (observerMap.get(currentSelection)).getJPanel().setBorder(new LineBorder(Color.GREEN, 3));
+        //(observerMap.get(currentSelection)).getJPanel().setBorder(new LineBorder(Color.GREEN, 3));
         launchArgs = new String[] {"-s", "-p", String.valueOf(listeningPort)};
         readyToLaunch = true;
         dispose();
-
-        ZooGas.main(launchArgs, toWorldServer);
     }
 
     public void setGridSize(int width, int height) {
@@ -232,6 +265,7 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
                 pane.addMouseListener(
                     new MouseAdapter() {
                         public void mousePressed(MouseEvent e) {
+                            // double click
                             if(readyToLaunch) {
                                 return;
                             }
