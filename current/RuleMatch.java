@@ -108,8 +108,8 @@ public class RuleMatch {
     public final boolean sourceBound() { return A != null; }
 
     // expanded pattern methods
-    public final String regexA() { return expandDir(pattern.A); }
-    public final String regexAB() { return expandDir(pattern.A+' '+pattern.B); }
+    public final String regexA() { return expandDir(pattern.prefix+pattern.A); }
+    public final String regexAB() { return expandDir(pattern.prefix+pattern.A+' '+pattern.B); }
     public final String A() { return A; }
     public final String B() { return B; }
 
