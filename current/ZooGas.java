@@ -127,6 +127,7 @@ public class ZooGas implements KeyListener {
         // create ZooGas object
         ZooGas gas = new ZooGas();
         gas.toWorldServer = toWorldServer;
+        toWorldServer.setInterface(gas);
 
         // Process options and args before initializing ZooGas
         boolean isServer = false;

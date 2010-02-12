@@ -32,7 +32,7 @@ public abstract class NetworkThread extends Thread {
     */
 
     // constants
-    public final int allocateBufferSize = 32768;
+    public final int allocateBufferSize = 32768*16;
     public final static int CONNECTIONS_FULL = -1;
 
     // Commands
@@ -46,7 +46,13 @@ public abstract class NetworkThread extends Thread {
         //CURRENT_CLIENTS  (2, "i(ii)*", 0); // ideally, should be something regex-like
         CURRENT_CLIENTS  (1, "i", 4 + 4 + 4), // variadic
         
-        CHECKIN_RULES    (1, "i", 4); // variadic
+        CHECKIN_RULES    (1, "i", 4), // variadic
+        REQUEST_PARTICLES(0),
+        SEND_PARTICLES   (1, "i", 4), // variadic
+        
+        REFRESH_OBSERVED (2, "ii", 4 + 4),
+        UPDATE_OBSERVED  (2, "ii", 4 + 4); // variadic
+        
 
         private packetCommand(int numArgs) {
             expectedCount = numArgs;
@@ -120,6 +126,7 @@ public abstract class NetworkThread extends Thread {
         return true;
     }
     public boolean verifyAndSend(ByteBuffer bb, packetCommand cmd, SocketChannel sc) {
+        //System.out.println(" Sent " + cmd + " " + bb);
         return verifyAndSend(bb, cmd, sc, false);
     }
 }

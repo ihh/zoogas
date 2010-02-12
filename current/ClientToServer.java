@@ -14,6 +14,7 @@ import java.nio.channels.SocketChannel;
 
 import java.util.ArrayList;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -26,12 +27,12 @@ import javax.swing.border.LineBorder;
 public class ClientToServer extends NetworkThread {
     public ClientToServer (ZooGas gas) {
         super();
-        this.gas = gas;
+        setInterface(gas);
         start();
     }
     public ClientToServer (Loader loader) {
         super();
-        this.loader = loader;
+        setInterface(loader);
         start();
     }
 
@@ -60,8 +61,23 @@ public class ClientToServer extends NetworkThread {
     }
 
     SocketChannel serverSocket = null;
-    ZooGas gas = null;
-    Loader loader = null;
+    private ZooGas gas = null;
+    private Loader loader = null;
+    
+    public void setInterface(Object o) {
+        if(o instanceof ZooGas) {
+            gas = (ZooGas)o;
+            loader = null;
+        }
+        else if(o instanceof Loader) {
+            loader = (Loader)o;
+            gas = null;
+        }
+        else {
+            System.err.println("Interface can only be ZooGas or Loader class");
+            return;
+        }
+    }
 
     public void connectToWorld() {
         InetAddress serverAddress;
@@ -134,7 +150,7 @@ public class ClientToServer extends NetworkThread {
         // one buffer may contain more than one command!
         while(bb.limit() != bb.position()) {
             packetCommand command = packetCommand.values()[bb.getInt()];
-            System.out.println("Received " + command + " " + bb);
+            //System.out.println("Client Received " + command + " " + bb);
             ArrayList<Object> parameters = new ArrayList<Object>();
             for(int i = 0; i < command.getExpectedCount(); ++i) {
                 char c = command.getExpectedArgs().charAt(i);
@@ -163,6 +179,9 @@ public class ClientToServer extends NetworkThread {
                 case CURRENT_CLIENTS:
                     handleGetPlayerLocs(bb, parameters.toArray());
                     break;
+                case REQUEST_PARTICLES:
+                    handleSendParticles();
+                    break;
                 default:
                     System.err.println("Unhandled command type " + command);
                     return;
@@ -190,7 +209,57 @@ public class ClientToServer extends NetworkThread {
         }
         verifyAndSend(bb, cmd, serverSocket);
     }
+    
+    public void sendParticles() {
+        packetCommand cmd = packetCommand.SEND_PARTICLES;
 
+        HashMap<Particle, Integer> numParts = new HashMap<Particle, Integer>();
+        int byteSize = 4;
+        for(Particle p : gas.board.nameToParticle.values()) {
+            int size = p.getOccupiedPoints().size();
+            if(size > 0 && !"_".equals(p.name)) {
+                byteSize += 1 + p.name.getBytes().length; // name
+                byteSize += 4; // int storing the number of particles
+                numParts.put(p, size);
+                byteSize += (4 + 4) * size; // x,y coordinates
+            }
+        }
+        
+        ByteBuffer bb = prepareBuffer(cmd, byteSize);
+        bb.putInt(numParts.size());
+        for(Particle p : numParts.keySet()) {
+            writeStringToBuffer(bb, p.name);
+            bb.putInt(numParts.get(p));
+            Set<Point> occupied = p.getOccupiedPoints();
+            synchronized(occupied) {
+                int count = 0;
+                for(Point point : occupied) {
+                    if(count >= numParts.get(p))
+                        break;
+
+                    bb.putInt(point.x);
+                    bb.putInt(point.y);
+                    ++count;
+                }
+            }
+        }
+
+        verifyAndSend(bb, cmd, serverSocket);
+    }
+    
+    /**
+     * Updates the currently observed board
+     */
+    public void sendRefreshObserved(Point obs) {
+        packetCommand cmd = packetCommand.REFRESH_OBSERVED;
+        ByteBuffer bb = prepareBuffer(cmd);
+        
+        bb.putInt(obs.x);
+        bb.putInt(obs.y);
+        
+        verifyAndSend(bb, cmd, serverSocket);
+    }
+    
     // Packet handlers
     private void handleSetSize(Object... args) {
         if(loader == null) {
@@ -230,5 +299,13 @@ public class ClientToServer extends NetworkThread {
         }
 
         loader.initPlayerLocs(set);
+    }
+    private void handleSendParticles() {
+        if(gas == null) {
+            System.err.println("handleSendParticles called when not in game");
+            return;
+        }
+        
+        sendParticles();
     }
 }

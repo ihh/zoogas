@@ -123,13 +123,20 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
         launchSPButton.addActionListener(this);
         add(launchSPButton, c);
         ++c.gridy;
-        c.gridwidth = 3;
+        c.gridwidth = 2;
         c.gridx = 0;
 
-        JButton server = new JButton("Start Debug Server") {};
-        server.setActionCommand("TestServer");
+        server = new JButton("Start Debug Server");
+        server.setActionCommand("testServer");
         server.addActionListener(this);
         add(server, c);
+        c.gridwidth = 1;
+        c.gridx = 2;
+        
+        manualRefresh = new JButton("Refresh");
+        manualRefresh.setActionCommand("manualRefresh");
+        manualRefresh.addActionListener(this);
+        add(manualRefresh, c);
         
         // Menu items
         JMenuBar menubar = new JMenuBar();
@@ -174,7 +181,9 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
     private JButton launchSPButton;
     private JButton launchMPButton;
     private JButton forceReconnect;
-    private Point currentSelection; // the currently selected space on the grid of all active boards
+    private JButton server;
+    private JButton manualRefresh;
+    public Point currentSelection; // the currently selected space on the grid of all active boards
     private BoardRenderer world = null;
     private int updateTime = 5;
 
@@ -223,15 +232,22 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
             (observerMap.get(currentSelection)).getJPanel().setBorder(new LineBorder(Color.YELLOW, 3));
             toWorldServer.sendJoinLocation(currentSelection);
             return;
-        } else if ("TestServer".equals(e.getActionCommand())) {
+        } else if ("testServer".equals(e.getActionCommand())) {
             forceReconnect.setEnabled(false);
             ws = new WorldServer();
             forceReconnect.setEnabled(true);
+            return;
+        } else if ("manualRefresh".equals(e.getActionCommand())) {
+            if(currentSelection == null)
+                return;
+            toWorldServer.sendRefreshObserved(currentSelection);
             return;
         } else if ("openrules".equals(e.getActionCommand())) {
             // TODO: add real implementation
             ZooGas.defaultPatternSetFilename = "ECOLOGY2.txt";
             return;
+        } else {
+            System.err.println("Handler for action " + e.getActionCommand() + " not found");
         }
     }
 
@@ -240,7 +256,7 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
     }
 
     public void launch() {
-        launchArgs = new String[] {"-s", "-p", String.valueOf(6112)};
+        //launchArgs = new String[] {"-s", "-p", String.valueOf(6112)}; // TODO remove
         readyToLaunch = true;
         dispose();
     }

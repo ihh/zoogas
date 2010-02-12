@@ -26,7 +26,7 @@ import java.util.SortedSet;
 public class WorldServer extends Thread {
     public WorldServer() {
         usedPorts = new HashMap<Integer, ServerToClient>();
-        clientLocations = new HashMap<Point, ServerToClient>();
+        pointToClient = new HashMap<Point, ServerToClient>();
         try {
             incomingClientsSSC = ServerSocketChannel.open();
             incomingClientsSSC.socket().bind(new InetSocketAddress(newConnectionPort));
@@ -47,7 +47,8 @@ public class WorldServer extends Thread {
     private Map<Integer, ServerToClient> usedPorts;
 
     // ZooGas connectivity
-    private Map<Point, ServerToClient> clientLocations;
+    private Map<Point, ServerToClient> pointToClient;
+    private Map<ServerToClient, Point> clientLocation;
 
     // Validation
     RuleSet ruleset = null;
@@ -101,11 +102,11 @@ public class WorldServer extends Thread {
 
     public void deregisterClient(ServerToClient ct) {
         usedPorts.remove(ct.port); // allow this key to be reused now
-        clientLocations.remove(ct.location);
+        pointToClient.remove(ct.location);
     }
 
     public int getNumPlayers() {
-        return clientLocations.size();
+        return pointToClient.size();
     }
 
     /**
@@ -153,22 +154,21 @@ public class WorldServer extends Thread {
         ServerSocketChannel serverSocketChannel;
         SocketChannel socketChannel;
         boolean isConnected = false;
-
-        // members for after the client has started playing
-        // TODO: maybe use a different class for this, or extend ClientThread?
         Point location;
 
         public void run() {
             try {
+                socketChannel.configureBlocking(false);
                 while (socketChannel.isConnected()) {
                     ByteBuffer bb = ByteBuffer.allocate(allocateBufferSize);
-                    int temp;
                     if(socketChannel.read(bb) > 0) {
                         processPacket(bb);
                     }
                     else {
-                        sleep(100);
-                        socketChannel.socket().getOutputStream().write(0); // Keep alive
+                        sleep(1000);
+                        if(location != null)
+                            sendRequestCurrentParticles();
+                        //socketChannel.socket().getOutputStream().write(0); // Keep alive
                     }
                 }
 
@@ -205,22 +205,31 @@ public class WorldServer extends Thread {
         void processPacket(ByteBuffer bb) {
             // first int is always the ordinal
             bb.rewind();
-            packetCommand command = packetCommand.values()[bb.getInt()];
-            ArrayList<Object> parameters = new ArrayList<Object>();
-            for(int i = 0; i < command.getExpectedCount(); ++i) {
-                char c = command.getExpectedArgs().charAt(i);
-                switch(c) {
-                    case 'i':
-                        parameters.add(bb.getInt());
-                        break;
-                    case 's':
-                        parameters.add(getStringFromBuffer(bb));
-                        break;
-                    default:
-                        System.err.println("Unknown parameter type " + c);
-                        return;
-                }
+            packetCommand command;
+            try {
+                command = packetCommand.values()[bb.getInt()];
             }
+            catch(ArrayIndexOutOfBoundsException e) {
+                e.printStackTrace();
+                System.err.println(bb);
+                return;
+            }
+                //System.out.println("Server Received " + command + " " + bb);
+                ArrayList<Object> parameters = new ArrayList<Object>();
+                for(int i = 0; i < command.getExpectedCount(); ++i) {
+                    char c = command.getExpectedArgs().charAt(i);
+                    switch(c) {
+                        case 'i':
+                            parameters.add(bb.getInt());
+                            break;
+                        case 's':
+                            parameters.add(getStringFromBuffer(bb));
+                            break;
+                        default:
+                            System.err.println("Unknown parameter type " + c);
+                            return;
+                    }
+                }
 
             switch(command) {
                 case OBSERVE:
@@ -230,6 +239,12 @@ public class WorldServer extends Thread {
                     return;
                 case CHECKIN_RULES:
                     handleCheckRules(bb, parameters.toArray());
+                    return;
+                case SEND_PARTICLES:
+                    handleClientParticles(bb, parameters.toArray());
+                    return;
+                case REFRESH_OBSERVED:
+                    handleRefreshObserved(parameters.toArray());
                     return;
                 default:
                     System.err.println("Unhandled command type " + command);
@@ -255,25 +270,30 @@ public class WorldServer extends Thread {
 
         private void sendCurrentPlayerLocs() {
             // send an x, y coordinate for every client:
-            ByteBuffer bb = prepareBuffer(packetCommand.CURRENT_CLIENTS, 4 + (4 + 4) * clientLocations.size());
-            bb.putInt(clientLocations.size());
-            for(Point p : clientLocations.keySet()) {
+            ByteBuffer bb = prepareBuffer(packetCommand.CURRENT_CLIENTS, 4 + (4 + 4) * pointToClient.size());
+            bb.putInt(pointToClient.size());
+            for(Point p : pointToClient.keySet()) {
                 bb.putInt(p.x);
                 bb.putInt(p.y);
             }
             verifyAndSend(bb, packetCommand.CURRENT_CLIENTS, socketChannel);
+        }
+        
+        private void sendRequestCurrentParticles() {
+            ByteBuffer bb = prepareBuffer(packetCommand.REQUEST_PARTICLES);
+            verifyAndSend(bb, packetCommand.REQUEST_PARTICLES, socketChannel);
         }
 
         // Packet handlers
         private void handleSetPlayerLoc(Object... args) {
             final Point requestedPoint = new Point((Integer)args[0], (Integer)args[1]);
             // atomic test and set block
-            synchronized(clientLocations) {
+            synchronized(pointToClient) {
                 // Another client is already there, do nothing
-                if(clientLocations.containsKey(requestedPoint))
+                if(pointToClient.containsKey(requestedPoint))
                     return;
 
-                clientLocations.put(requestedPoint, this);
+                pointToClient.put(requestedPoint, this);
             }
 
             // Give the position to the client
@@ -298,6 +318,25 @@ public class WorldServer extends Thread {
                     System.err.println("Unknown rule " + s);
                 }
             }
+        }
+
+
+        private void handleClientParticles(ByteBuffer bb, Object... args) {
+            int particles = (Integer)args[0];
+            //bb.duplicate();
+            for(int i = 0; i < particles; ++i) {
+                String name = getStringFromBuffer(bb);
+                int numPoints = bb.getInt();
+                for(int j = 0; j < numPoints; ++j) {
+                    int x = bb.getInt();
+                    int y = bb.getInt();
+                }
+            }
+        }
+        private void handleRefreshObserved(Object... args) {
+            Point p = new Point((Integer)args[0], (Integer)args[1]);
+            if(!pointToClient.containsKey(p))
+                return;
         }
     }
 

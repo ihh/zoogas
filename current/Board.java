@@ -6,6 +6,8 @@ import java.awt.image.*;
 import java.net.*;
 import java.io.*;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 public class Board extends MooreTopology {
     public int size = 0;  // size of board in cells
 
@@ -16,7 +18,7 @@ public class Board extends MooreTopology {
     private PatternSet patternSet = null;
 
     // particle name registry
-    protected Map<String,Particle> nameToParticle = new HashMap<String,Particle>();  // updated by Particle constructor
+    protected Map<String,Particle> nameToParticle = new ConcurrentHashMap<String,Particle>();  // updated by Particle constructor
 
     // off-board connections
     private HashMap<Point,RemoteCellCoord> remoteCell = null;  // map of connections from off-board Point's to RemoteCellCoord's
@@ -549,8 +551,9 @@ public class Board extends MooreTopology {
     // method to init PatternSet from file
     public final void loadPatternSetFromFile(String filename) {
 	patternSet = PatternSet.fromFile(filename,this);
-        
-        toWorldServer.sendAllClientRules(patternSet.getAllRawRules(), patternSet.getByteSize());
+
+        if(toWorldServer != null)
+            toWorldServer.sendAllClientRules(patternSet.getAllRawRules(), patternSet.getByteSize());
     }
 
     // network helpers
