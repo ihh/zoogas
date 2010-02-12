@@ -1,3 +1,10 @@
+# A simple rock-paper-scissors ecology.
+# Many more realistic lattice ecology sims are detailed in the literature, e.g.
+# Sato, Matsuda & Sasaki, JMB, 1994; Ellner, J Theor Biol, 2001 (these describe "pair approximations" for aggregate simulation by coupled ODEs)
+# Wootton, Nature, 2001 (simulation of mussel populations, fitted to empirical data)
+# Kondoh, Science, 2003; Ackland & Gallagher, PRL, 2004 (models that show how adaptation can stabilize complex food webs)
+# See also the many cool applets at the EPSRC NANIA cluster: http://www2.ph.ed.ac.uk/nania/examples.html
+
 # The different colored species particles
 # The species follow a simple (unrealistic) cyclic ecology.
 # The species number is prefixed by "/s:".
@@ -50,7 +57,6 @@ VERB s=photon/$B t=.* S=_ T=$T p=.001 v=scatter
 # Initial conditions
 VERB s=/INIT.* S=beacon v=/start
 #VERB s=/INIT.* S=_ v=/start
-#VERB s=/INIT.* S=RNA_sequence_a20u20 v=/start
 
 # Initial animals
 NOUN n=animal c=0000ff
@@ -288,6 +294,15 @@ VERB s=.*conga_dude t=.*conga_dude S=$S T=_ v=conga_death K=(x,handsToHips,s) c=
 
 
 # RNA
+# Shortly after I began working on the RNA model, a "proper" scientific paper appeared describing an RNA folding simulation.
+# The work by Gillespie et al is actually much more optimized than the limited engine described here,
+# allowing moves that change many cells on the lattice simultaneously, such as "pull" and "pivot" moves.
+# RNA folding on the 3D triangular lattice
+# Joel Gillespie , Martin Mayne  and Minghui Jiang 
+# BMC Bioinformatics 2009, 10:369doi:10.1186/1471-2105-10-369
+
+# The simulation here is 
+
 # base colors: HSV values with S=1, V=0.5 & H depending on the first nucleotide: 0(a), .25(c), .5(g), .75(u)
 NOUN n=(base|RNA_sequence)_a.* c=800000 e=-10
 NOUN n=(base|RNA_sequence)_c.* c=408000 e=-10
@@ -326,8 +341,9 @@ VERB s=basepair_(.)(.) t=_ S=base_$1 T=base_$2 p=1 v=unpair_$1_from_$2 b=(s,f5to
 # all bases and basepairs do Brownian drift
 VERB s=(base|basepair)_.* t=_ S=$T T=$S p=1 v=/drift k=(sT,5to3,x) k=(y,5to3,sT) k=(sT,5to3f,xf) k=(yf,5to3f,sT) k=(sT,f5to3,fx) k=(fy,f5to3,sT) k=(sT,f5to3f,xff) k=(yff,f5to3f,sT) k=(sT,r5to3,xr) k=(yr,r5to3,sT) k=(sT,5to3r,rx) k=(ry,5to3r,sT) k=(sT,r5to3r,xrr) k=(yrr,r5to3r,sT)
 
-# all bases, basepairs and constructors will eventually disappear if they become unbonded
-VERB s=(base|basepair)_.* S=_ p=.01 v=/degrade
+# bases and basepairs gradually degrade.
+# the consequent loss of bond energy limits this in the middle of polymer chains, but not at the ends
+VERB s=(base|basepair)_.* S=_ p=.0001 v=/degrade
 
 
 # Photons mutate bases, preferring transitions to transversions

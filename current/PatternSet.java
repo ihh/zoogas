@@ -37,12 +37,12 @@ public class PatternSet extends RuleSet{
 
     // method to lay down a template for a Particle
     void addParticlePattern (RuleSyntax s) {
-	particlePattern.add (new ParticlePattern(s.getValue("n"),s.getValue("c"),s.getValue("e")));
+	particlePattern.add (new ParticlePattern(s.getValue("n"),s.getValue("c"),s.getValue("e"))); // TODO: change first arg to s.getvalue("w")+s.getvalue("n")
     }
 
     // method to lay down a template for a transformation rule
     void addTransformRule (RuleSyntax s) {
-	TransformRulePattern p = new TransformRulePattern(s.getValue("d"),s.getValue("s"),s.getValue("t"),s.getValue("S"),s.getValue("T"),
+	TransformRulePattern p = new TransformRulePattern(s.getValue("d"),s.getValue("s"),s.getValue("t"),s.getValue("S"),s.getValue("T"),  // TODO: pass the prefix in here too: s.getvalue("w")
 							  Double.parseDouble(s.getValue("p")),s.getValue("v"));
 	if (s.hasValue("b"))
 	    p.addOptionalLhsBonds(s.getValue("b").split(" "));
@@ -75,7 +75,7 @@ public class PatternSet extends RuleSet{
 
     // method to lay down a template for an energy rule
     void addEnergyRule (RuleSyntax s) {
-	EnergyRulePattern p = new EnergyRulePattern(s.getValue("s"),s.getValue("t"),s.getValue("n"),Double.parseDouble(s.getValue("e")),
+	EnergyRulePattern p = new EnergyRulePattern(s.getValue("s"),s.getValue("t"),s.getValue("n"),Double.parseDouble(s.getValue("e")),  // TODO: pass the prefix in here too: s.getValue("w")
 						    Double.parseDouble(s.getValue("l")),Double.parseDouble(s.getValue("L")),Double.parseDouble(s.getValue("m")),
 						    Double.parseDouble(s.getValue("a")),Double.parseDouble(s.getValue("A")),Double.parseDouble(s.getValue("b")));
 	energyRulePattern.add(p);
@@ -126,9 +126,9 @@ public class PatternSet extends RuleSet{
 
     // i/o patterns and syntax parsers
     static Pattern endRegex = Pattern.compile("END.*");
-    static RuleSyntax nounSyntax = new RuleSyntax("NOUN n! c=ffffff e=0");
-    static RuleSyntax verbSyntax = new RuleSyntax("VERB s= t=.* S=$S T=$T d= p=1 v=_ b* c* x* B* k* K*");
-    static RuleSyntax bondSyntax = new RuleSyntax("BOND n= e= s=.* t=.* l=1 L=1.5 m=1 a=-1 A=1 b=1");
+    static RuleSyntax nounSyntax = new RuleSyntax("NOUN n! c=ffffff e=0");  // TODO: add an extra mandatory field: w!
+    static RuleSyntax verbSyntax = new RuleSyntax("VERB s= t=.* S=$S T=$T d= p=1 v=_ b* c* x* B* k* K*");  // TODO: add an extra mandatory field: w!
+    static RuleSyntax bondSyntax = new RuleSyntax("BOND n= e= s=.* t=.* l=1 L=1.5 m=1 a=-1 A=1 b=1");  // TODO: add an extra mandatory field: w!
 
     // i/o methods
     static PatternSet fromStream (InputStream in, Topology topology) {
