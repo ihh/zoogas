@@ -11,10 +11,11 @@ public class ParticlePattern {
     Pattern namePattern = null;
     Color color = null;
     double energy = 0;
+    String prefix = null; // The set of rules this pattern belongs to
     
     // constructors
     static Pattern catchAllPattern = Pattern.compile(".*");
-    public ParticlePattern (String n, Color c, double en) {
+    public ParticlePattern (String w, String n, Color c, double en) {
 	try {
 	    namePattern = Pattern.compile(n);
 	} catch (Exception e) {
@@ -23,10 +24,11 @@ public class ParticlePattern {
 	}
 	color = c;
 	energy = en;
+        prefix = w;
     }
 
-    public ParticlePattern (String n, String colorString, String energyString) {
-	this(n,new Color(Integer.parseInt(colorString,16)),Double.parseDouble(energyString));
+    public ParticlePattern (String w, String n, String colorString, String energyString) {
+	this(w, n, new Color(Integer.parseInt(colorString,16)),Double.parseDouble(energyString));
     }
 
     // method to match a name and return a Particle, or null if match fails

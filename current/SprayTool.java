@@ -9,22 +9,30 @@ public class SprayTool {
     protected Particle particle = null;
 
     // constructor
-    static RuleSyntax toolSyntax = new RuleSyntax("TOOL n= k= d=1 p=1 r=1 f=1 w=.1");
+    static RuleSyntax toolSyntax = new RuleSyntax("TOOL W! n= k= d=1 p=1 r=1 f=1 w=.1");
     static SprayTool fromString (String toolString, Board board) {
 	SprayTool stat = null;
-	if (toolSyntax.matches(toolString)) {
-	    stat = new SprayTool();
-	    stat.particleName = toolSyntax.getValue("n");
-	    stat.hotKey = toolSyntax.getValue("k").charAt(0);
-	    stat.sprayDiameter = Double.parseDouble(toolSyntax.getValue("d"));
-	    stat.sprayPower = Double.parseDouble(toolSyntax.getValue("p"));
-	    stat.maxReserve = Double.parseDouble(toolSyntax.getValue("r"));
-	    stat.refillRate = Double.parseDouble(toolSyntax.getValue("f"));
-	    stat.barWidth = Double.parseDouble(toolSyntax.getValue("w"));
-	} else
-	    System.err.println("Wrong no. of args in toolString '" + toolString + "'");
-	stat.particle = board.getOrCreateParticle (stat.particleName);
-	return stat;
+        if(RuleSet.isRule(toolString)) {
+            if (toolSyntax.matches(toolString)) {
+                stat = new SprayTool();
+                stat.particleName = toolSyntax.getValue("n");
+                stat.hotKey = toolSyntax.getValue("k").charAt(0);
+                stat.sprayDiameter = Double.parseDouble(toolSyntax.getValue("d"));
+                stat.sprayPower = Double.parseDouble(toolSyntax.getValue("p"));
+                stat.maxReserve = Double.parseDouble(toolSyntax.getValue("r"));
+                stat.refillRate = Double.parseDouble(toolSyntax.getValue("f"));
+                stat.barWidth = Double.parseDouble(toolSyntax.getValue("w"));
+            }
+            else {
+                System.err.println("Wrong no. of args in toolString '" + toolString + "'");
+                return null;
+            }
+        }
+        else {
+            return null;
+        }
+        stat.particle = board.getOrCreateParticle(stat.particleName); // initializes the tool in the board
+        return stat;
     }
 
     // methods

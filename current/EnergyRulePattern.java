@@ -14,8 +14,8 @@ public class EnergyRulePattern extends RulePattern {
     double E;
     
     // constructors
-    public EnergyRulePattern (String a, String b, String n, double e, double l, double L, double lTol, double minAngle, double maxAngle, double aTol) {
-	super(a,b);
+    public EnergyRulePattern (String w, String a, String b, String n, double e, double l, double L, double lTol, double minAngle, double maxAngle, double aTol) {
+	super(w,a,b);
 	bondName = n;
 	minLen = l;
 	maxLen = L;

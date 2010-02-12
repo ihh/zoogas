@@ -481,7 +481,7 @@ public class ZooGas implements KeyListener {
             zooGasFrame.setCursor(boardCursor);
 
             // do spray
-            if (mouseDown) {
+            if (mouseDown && toolBox.currentTool != null) {
                 toolBox.currentTool.spray(cursorPos, board, renderer, spaceParticle);
                 return;
             }

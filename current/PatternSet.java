@@ -6,7 +6,9 @@ import java.text.*;
 import java.net.*;
 import java.io.*;
 
-
+/**
+ * A set that contains rules parsed into definitions of pairwise interactions
+ */
 public class PatternSet extends RuleSet{
     public PatternSet() {
         super();
@@ -37,12 +39,17 @@ public class PatternSet extends RuleSet{
 
     // method to lay down a template for a Particle
     void addParticlePattern (RuleSyntax s) {
-	particlePattern.add (new ParticlePattern(s.getValue("n"),s.getValue("c"),s.getValue("e"))); // TODO: change first arg to s.getvalue("w")+s.getvalue("n")
+        try {
+            particlePattern.add(new ParticlePattern(s.getValue("W"), s.getValue("n"),s.getValue("c"),s.getValue("e")));
+        }
+        catch (RuntimeException e) {
+            e.printStackTrace();
+        }
     }
 
     // method to lay down a template for a transformation rule
     void addTransformRule (RuleSyntax s) {
-	TransformRulePattern p = new TransformRulePattern(s.getValue("d"),s.getValue("s"),s.getValue("t"),s.getValue("S"),s.getValue("T"),  // TODO: pass the prefix in here too: s.getvalue("w")
+	TransformRulePattern p = new TransformRulePattern(s.getValue("W"),s.getValue("d"),s.getValue("s"),s.getValue("t"),s.getValue("S"),s.getValue("T"),
 							  Double.parseDouble(s.getValue("p")),s.getValue("v"));
 	if (s.hasValue("b"))
 	    p.addOptionalLhsBonds(s.getValue("b").split(" "));
@@ -75,7 +82,7 @@ public class PatternSet extends RuleSet{
 
     // method to lay down a template for an energy rule
     void addEnergyRule (RuleSyntax s) {
-	EnergyRulePattern p = new EnergyRulePattern(s.getValue("s"),s.getValue("t"),s.getValue("n"),Double.parseDouble(s.getValue("e")),  // TODO: pass the prefix in here too: s.getValue("w")
+	EnergyRulePattern p = new EnergyRulePattern(s.getValue("W"), s.getValue("s"),s.getValue("t"),s.getValue("n"),Double.parseDouble(s.getValue("e")),
 						    Double.parseDouble(s.getValue("l")),Double.parseDouble(s.getValue("L")),Double.parseDouble(s.getValue("m")),
 						    Double.parseDouble(s.getValue("a")),Double.parseDouble(s.getValue("A")),Double.parseDouble(s.getValue("b")));
 	energyRulePattern.add(p);
@@ -125,10 +132,10 @@ public class PatternSet extends RuleSet{
     }
 
     // i/o patterns and syntax parsers
-    static Pattern endRegex = Pattern.compile("END.*");
-    static RuleSyntax nounSyntax = new RuleSyntax("NOUN n! c=ffffff e=0");  // TODO: add an extra mandatory field: w!
-    static RuleSyntax verbSyntax = new RuleSyntax("VERB s= t=.* S=$S T=$T d= p=1 v=_ b* c* x* B* k* K*");  // TODO: add an extra mandatory field: w!
-    static RuleSyntax bondSyntax = new RuleSyntax("BOND n= e= s=.* t=.* l=1 L=1.5 m=1 a=-1 A=1 b=1");  // TODO: add an extra mandatory field: w!
+    final static Pattern endRegex = Pattern.compile("END.*");
+    static RuleSyntax nounSyntax = new RuleSyntax("NOUN W! n! c=ffffff e=0");
+    static RuleSyntax verbSyntax = new RuleSyntax("VERB W! s= t=.* S=$S T=$T d= p=1 v=_ b* c* x* B* k* K*");
+    static RuleSyntax bondSyntax = new RuleSyntax("BOND W! n= e= s=.* t=.* l=1 L=1.5 m=1 a=-1 A=1 b=1");
 
     // i/o methods
     static PatternSet fromStream (InputStream in, Topology topology) {
@@ -142,21 +149,22 @@ public class PatternSet extends RuleSet{
 		    continue;
 		}
                 
-	        ps.rules.add(s);
-	        ps.byteSize += 1 + s.getBytes().length;
-                
-                if (nounSyntax.matches(s)) {
-		    ps.addParticlePattern(nounSyntax);
-		} else if (verbSyntax.matches(s)) {
-		    ps.addTransformRule(verbSyntax);
-		} else if (bondSyntax.matches(s)) {
-		    ps.addEnergyRule(bondSyntax);
-		} else if (endRegex.matcher(s).matches()) {
-		    break;
-                } else {
-		    System.err.println("PatternSet: Ignoring unrecognized line: " + s);
-		}
-	    }
+                if(ps.add(s)) {
+                    ps.byteSize += 1 + s.getBytes().length;
+
+                    if (nounSyntax.matches(s)) {
+                        ps.addParticlePattern(nounSyntax);
+                    } else if (verbSyntax.matches(s)) {
+                        ps.addTransformRule(verbSyntax);
+                    } else if (bondSyntax.matches(s)) {
+                        ps.addEnergyRule(bondSyntax);
+                    } else if (endRegex.matcher(s).matches()) {
+                        break;
+                    } else {
+                        System.err.println("PatternSet: Ignoring unrecognized line: " + s);
+                    }
+                }
+            }
 
 	    buff.close();
 	} catch (IOException e) {

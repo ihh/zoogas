@@ -120,8 +120,8 @@ public class RuleMatch {
     }
 
     // expanded pattern methods
-    public final String regexA() { return expandDir(pattern.prefix+pattern.A); }
-    public final String regexAB() { return expandDir(pattern.prefix+pattern.A+' '+pattern.B); }
+    public final String regexA() { return expandDir(pattern.getSourceName()); }
+    public final String regexAB() { return expandDir(pattern.getSourceName() + ' ' + pattern.getTargetName()); }
     public final String A() { return A; }
     public final String B() { return B; }
 

@@ -7,8 +7,8 @@ public class TransformRulePattern extends RulePattern {
     Vector<BondPattern> optionalLhsBond = null, requiredLhsBond = null, excludedLhsBond = null, rhsBond = null;
 
     // constructors
-    public TransformRulePattern (String dir, String a, String b, String c, String d, double p, String v) {
-	super(a,b);
+    public TransformRulePattern (String w, String dir, String a, String b, String c, String d, double p, String v) {
+	super(w,a,b);
 	if (dir != null && dir.length() > 0)
 	    this.dir = dir;
 	C = c;

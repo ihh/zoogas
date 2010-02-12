@@ -21,10 +21,12 @@ public class ToolBox {
 	try {
 	    while (buff.ready()) {
 		String s = buff.readLine();
-		tb.tool.add (SprayTool.fromString(s,board));
+                SprayTool st = SprayTool.fromString(s,board);
+                if(st != null)
+                    tb.tool.add(st);
 	    }
 	    buff.close();
-	    tb.currentTool = tb.tool.get(0);
+            tb.currentTool = tb.tool.size() > 0? tb.tool.get(0) : null;
 	} catch (IOException e) {
 	    e.printStackTrace();
 	}
@@ -38,6 +40,7 @@ public class ToolBox {
 	} catch (Exception e) {
 	    e.printStackTrace();
 	}
+        System.err.println("No TOOLS files found");
 	return null;
     }
 

@@ -1,3 +1,5 @@
+import java.io.IOException;
+
 import java.util.*;
 import java.util.regex.*;
 
@@ -26,10 +28,14 @@ public class RuleSyntax {
 	    firstWord = m.group(1);
 	    m = defaultArgPattern.matcher(init);
 	    while (m.find()) {
-		String attr = m.group(1), eq = m.group(2), val = m.group(3);
-		argType.put(attr,eq);
-		if (eq.equals("="))
+		String attr = m.group(1), type = m.group(2), val = m.group(3);
+		argType.put(attr,type);
+                if (type.equals("=")) {
 		    defaultArg.put(attr,val);
+                }
+                else if (type.equals("!")) {
+	            defaultArg.put(attr,null);
+                }
 	    }
 	}
     }
@@ -43,7 +49,8 @@ public class RuleSyntax {
 	    match = true;
 	    m = parsedArgPattern.matcher(s);
 	    while (m.find()) {
-		String arg = m.group(1), val = m.group(2);
+		String arg = m.group(1);
+		String val = m.group(2);
 		String type = argType.get(arg);
 		if (type == null)
 		    System.err.println("RuleSyntax: unrecognized argument "+arg+" in "+firstWord+" line");
@@ -54,20 +61,21 @@ public class RuleSyntax {
 			    parsedArg.put(arg,oldVal+" "+val);
 			else
 			    System.err.println("RuleSyntax: duplicate argument "+arg+" in "+firstWord+" line");
-		    } else
+                    } else {
 			parsedArg.put(arg,val);
+                    }
 		}
 	    }
 	    for (Map.Entry<String,String> argVal : defaultArg.entrySet()) {
-		String arg = argVal.getKey();
-		String type = argType.get(arg);
-		String val = parsedArg.get(arg);
-		if (type.equals("!") && val == null) {
-		    System.err.println("RuleSyntax: mandatory argument "+arg+" missing from "+firstWord+" line");
-		    match = false;
-		    break;
-		}
-	    }
+                String arg = argVal.getKey();
+                String type = argType.get(arg);
+                String val = parsedArg.get(arg);
+                if (type.equals("!") && val == null) {
+                    System.err.println("RuleSyntax: mandatory argument "+arg+" missing from "+firstWord+" line");
+                    match = false;
+                    break;
+                }
+            }
 	}
 	return match;
     }
