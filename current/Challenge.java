@@ -146,15 +146,11 @@ public class Challenge
     public static TreeSet<Point> getWallParticles(Board b) {
 	TreeSet<Point> walls = new TreeSet<Point>();
 
-	// TODO: use a more fixed indication of what a wall is other than name
-	for(int i = 1; i <= 5; ++i) {
-	    Particle p = b.getParticleByName("wall/" + i);
-	    if(p != null){
-                Set<Point> wallSet = p.getOccupiedPoints();
-                synchronized(wallSet) {
-                    walls.addAll(wallSet);
-                }
-	    }
+        for(Particle p : b.getParticlesByPrefix("Wall/")) {
+            Set<Point> wallSet = p.getOccupiedPoints();
+            synchronized(wallSet) {
+                walls.addAll(wallSet);
+            }
 	}
 
 	return walls;

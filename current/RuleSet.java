@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -18,8 +21,8 @@ import java.util.regex.Pattern;
  */
 public class RuleSet {
     public RuleSet() {
-        ruleLines = new TreeSet<String>();
-        wordSets = new HashMap<String, SortedSet<String>>();
+        ruleLines = new PrefixSet();
+        wordSets = new HashMap<String, PrefixSet>();
     }
     public RuleSet(String filename) {
         this();
@@ -51,7 +54,7 @@ public class RuleSet {
 
     protected int byteSize = 0;
     private SortedSet<String> ruleLines = null; // set containing all rule lines
-    private HashMap<String, SortedSet<String>> wordSets = null; // set of Words, and their rules
+    private HashMap<String, PrefixSet> wordSets = null; // set of Words, and their rules
     private Set<String> undeclaredWords = new HashSet<String>();
 
     public boolean containsRules(String s) {
@@ -64,6 +67,15 @@ public class RuleSet {
      */
     public SortedSet<String> getAllRawRules() {
         return ruleLines;
+    }
+    
+    /**
+     *Gets all rules associated with a <i>prefix</i>
+     * @param prefix
+     * @return
+     */
+    public PrefixSet getPrefixSet(String prefix) {
+        return wordSets.get(prefix);
     }
 
     /**
@@ -89,12 +101,12 @@ public class RuleSet {
     }
     
     private SortedSet<String> getOrCreateWordSet(String prefix) {
-        SortedSet<String> set;
+        PrefixSet set;
         if(wordSets.containsKey(prefix)) {
             set = wordSets.get(prefix);
         }
         else {
-            set = new TreeSet<String>();
+            set = new PrefixSet();
             wordSets.put(prefix, set);
             undeclaredWords.add(prefix);
         }
@@ -121,7 +133,7 @@ public class RuleSet {
                     String[] prefixes = matcher.group(1).split(" ");
                     for(String s : prefixes) {
                         if(!wordSets.containsKey(s)) {
-                            wordSets.put(s, new TreeSet<String>());
+                            wordSets.put(s, new PrefixSet());
                         }
                         
                         undeclaredWords.remove(s);
@@ -131,5 +143,30 @@ public class RuleSet {
             }
         }
         return true; // TODO: add other declaration types?
+    }
+    
+    
+    public class PrefixSet extends TreeSet<String>{
+        PrefixSet(){
+            super();
+        }
+        private int byteSize = 0;
+        
+        public int getByteSize(){
+            return byteSize;
+        }
+        
+        public boolean add(String str) {
+            byteSize += str.getBytes().length + 1;
+            return super.add(str);
+        }
+                
+        public boolean remove(Object str) {
+            boolean ret = super.remove(str);
+            if(ret)
+                byteSize -= ((String)str).getBytes().length;
+
+            return ret;
+        }
     }
 }

@@ -46,7 +46,8 @@ public abstract class NetworkThread extends Thread {
         //CURRENT_CLIENTS  (2, "i(ii)*", 0); // ideally, should be something regex-like
         CURRENT_CLIENTS  (1, "i", 4 + 4 + 4), // variadic
         
-        CHECKIN_RULES    (1, "i", 4), // variadic
+        CHECKIN_ALL_RULES    (1, "i", 4), // variadic
+        CHECKIN_RULESET    (1, "i", 4), // variadic
         REQUEST_PARTICLES(0),
         SEND_PARTICLES   (1, "i", 4), // variadic
         

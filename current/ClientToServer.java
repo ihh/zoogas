@@ -191,7 +191,7 @@ public class ClientToServer extends NetworkThread {
 
     // Packet senders
     public boolean sendJoinLocation(Point p) {
-        packetCommand cmd = packetCommand.CLAIM_GRID;
+        final packetCommand cmd = packetCommand.CLAIM_GRID;
 
         ByteBuffer bb = prepareBuffer(cmd);
         bb.putInt(p.x);
@@ -199,9 +199,9 @@ public class ClientToServer extends NetworkThread {
         return verifyAndSend(bb, cmd, serverSocket);
     }
     
-    public void sendAllClientRules(SortedSet<String> rules, int byteSize) {
-        packetCommand cmd = packetCommand.CHECKIN_RULES;
-        
+    public void sendAllClientRules(RuleSet ruleSets, int byteSize) {
+        final packetCommand cmd = packetCommand.CHECKIN_ALL_RULES;
+        SortedSet<String> rules = ruleSets.getAllRawRules();
         ByteBuffer bb = prepareBuffer(cmd, byteSize + 4);
         bb.putInt(rules.size());
         for(String s : rules) {
@@ -210,8 +210,21 @@ public class ClientToServer extends NetworkThread {
         verifyAndSend(bb, cmd, serverSocket);
     }
     
+    public void sendRuleSet(RuleSet ruleSets, String prefix) {
+        final packetCommand cmd = packetCommand.CHECKIN_RULESET;
+        RuleSet.PrefixSet ruleSet = ruleSets.getPrefixSet(prefix);
+        
+        if(ruleSet == null) {
+            System.err.println("sendRuleSet did not find prefix " + prefix );
+            return;
+        }
+        
+        ByteBuffer bb = prepareBuffer(cmd, prefix.getBytes().length + 1 + ruleSet.getByteSize());
+        verifyAndSend(bb, cmd, serverSocket);
+    }
+    
     public void sendParticles() {
-        packetCommand cmd = packetCommand.SEND_PARTICLES;
+        final packetCommand cmd = packetCommand.SEND_PARTICLES;
 
         HashMap<Particle, Integer> numParts = new HashMap<Particle, Integer>();
         int byteSize = 4;
@@ -251,7 +264,7 @@ public class ClientToServer extends NetworkThread {
      * Updates the currently observed board
      */
     public void sendRefreshObserved(Point obs) {
-        packetCommand cmd = packetCommand.REFRESH_OBSERVED;
+        final packetCommand cmd = packetCommand.REFRESH_OBSERVED;
         ByteBuffer bb = prepareBuffer(cmd);
         
         bb.putInt(obs.x);

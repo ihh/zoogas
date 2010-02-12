@@ -7,10 +7,11 @@ import java.net.*;
 import java.io.*;
 
 // Particle class, encapsulating the behavior, appearance & summary statistics of a given CA state
-public class Particle {
+public class Particle implements Comparable{
     // appearance
     public static final int maxNameLength = 256;  // maximum length of a Particle name. Introduced to stop runaway regex rules from crashing the engine
     public String name = null;  // noun uniquely identifying this Particle (no whitespace)
+    public String prefix = null; // String representing the set of rules that this particle belongs to (W=... in rules files)
     public Color color = null;
     public double energy = 0;
 
@@ -33,12 +34,13 @@ public class Particle {
 	visibleSpaceChar = "_";
 
     // constructor
-    public Particle (String name, Color color, double energy, Board board, PatternSet ps) {
+    public Particle (String name, String prefix, Color color, double energy, Board board, PatternSet ps) {
 	if (name.length() > maxNameLength) {
 	    System.err.println("Warning: truncating name " + name);
 	    this.name = name.substring(0,maxNameLength);
 	} else
 	    this.name = name;
+        this.prefix = prefix;
 	this.color = color;
 	this.energy = energy;
 	this.board = board;
@@ -207,4 +209,8 @@ public class Particle {
 	//	super.finalize();
     }
     */
+    public int compareTo(Object o) {
+        Particle p = (Particle)o;
+        return name.compareTo(p.name);
+    }
 }

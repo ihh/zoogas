@@ -92,17 +92,20 @@ public class PatternSet extends RuleSet{
     }
 
     // method to get a Particle from the Board object or create and add one
-    Particle getOrCreateParticle (String particleName, Board board) {
+    Particle getOrCreateParticle(String particleName, Board board) {
 	// look for existing particle
 	Particle p = board.getParticleByName (particleName);
+
 	// if no such particle, look for a pattern that matches this particle
 	for (int n = 0; p == null && n < particlePattern.size(); ++n) {
 	    ParticlePattern pp = particlePattern.get(n);
 	    p = pp.makeParticle(particleName,board,this);  // returns null if fails to match
 	}
+
 	// if still no such particle, create a bright white default with this PatternSet 
-	if (p == null)
-	    p = new Particle (particleName, Color.white, 0, board, this);
+        if (p == null) {
+	    p = new Particle(particleName, "*/", Color.white, 0, board, this);
+        }
 	// return
 	return p;
     }

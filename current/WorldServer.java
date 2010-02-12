@@ -237,7 +237,7 @@ public class WorldServer extends Thread {
                 case CLAIM_GRID:
                     handleSetPlayerLoc(parameters.toArray());
                     return;
-                case CHECKIN_RULES:
+                case CHECKIN_ALL_RULES:
                     handleCheckRules(bb, parameters.toArray());
                     return;
                 case SEND_PARTICLES:

@@ -7,7 +7,9 @@ import java.io.*;
 
 public class RulePattern {
     // data
-    private String prefix = null, A = null, B = null;
+    private String prefix = null;
+    protected String A = null;
+    private String B = null;
     
     // constructors
     public RulePattern (String w, String a, String b) {

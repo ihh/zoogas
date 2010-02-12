@@ -105,12 +105,14 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
 
         forceReconnect = new JButton("Connect");
         forceReconnect.setActionCommand("Connect");
+        forceReconnect.setMnemonic('c');
         forceReconnect.addActionListener(this);
         add(forceReconnect, c);
         ++c.gridx;
 
         launchMPButton = new JButton("Launch!");
         launchMPButton.setActionCommand("LaunchMP");
+        launchMPButton.setMnemonic('l');
         launchMPButton.setEnabled(false);
         launchMPButton.setToolTipText("Select a location on the grid");
         launchMPButton.addActionListener(this);
@@ -119,6 +121,7 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
 
         launchSPButton = new JButton("Single Player");
         launchSPButton.setActionCommand("LaunchSP");
+        launchSPButton.setMnemonic('s');
         launchSPButton.setToolTipText("Launch ZooGas in single player");
         launchSPButton.addActionListener(this);
         add(launchSPButton, c);
@@ -128,6 +131,7 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
 
         server = new JButton("Start Debug Server");
         server.setActionCommand("testServer");
+        server.setMnemonic('d');
         server.addActionListener(this);
         add(server, c);
         c.gridwidth = 1;
