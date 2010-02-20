@@ -234,57 +234,30 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 
 	// init hints
 	String specialKeys = "Special keys: "+cheatKey+" (reveal state) "+slowKey+" (reveal bonds) "+stopKey+" (freeze)";
-	hints.add ("Hi, welcome to Zoo Gas!");
-	hints.add ("I am the Deputy Head Zookeeper, Celia O'Tuamata.");
-	hints.add ("I'll be walking you through your first day.");
-	hints.add ("This job is pretty open-ended. Just make a zoo.");
-	hints.add ("You have a bunch of tools to do this, in your Toolbox.");
-	hints.add ("The Toolbox is the list to the right of the board...");
-	hints.add ("... i.e. just to the left of this message.");
+	hints.add ("Deputy Head Zookeeper, Celia O'Tuamata.");
+	hints.add ("Make a zoo using the tools in your Toolbox (left).");
 	hints.add ("Select a tool by clicking, or press its hot-key.");
+	hints.add ("Try building a cage.");
 	if (toolBox.tool.size() > 0)
-	    hints.add ("For example, press \"" + toolBox.tool.get(0).hotKey + "\" to select " + toolBox.tool.get(0).particleName + ".");
-	hints.add ("Click on the board to use the currently selected tool...");
-	hints.add ("...or hold down the tool hotkey with the mouse over the board.");
+	    hints.add ("Press \"" + toolBox.tool.get(0).hotKey + "\" to select " + toolBox.tool.get(0).particleName + "; etc.");
+	hints.add ("Click on the board to use the currently selected tool.");
+	hints.add ("Hold down the tool hotkey with the mouse over the board.");
 	if (toolBox.tool.size() > 0)
-	    hints.add ("Like, mouseover the board & hold \"" + toolBox.tool.get(0).hotKey + "\" to spray " + toolBox.tool.get(0).particleName + " pixels.");
-	hints.add ("Next to each tool there is a bar...");
-	hints.add ("...this shows how many pixels you have in reserve.");
-	hints.add ("The bars recharge - gradually! We're not made of money.");
-	hints.add ("The board itself is on the far left, within the white square.");
-	hints.add ("Actually I'm assuming you already figured that out.");
-	hints.add ("This area to the right contains feedback messages...");
-	hints.add ("...such as these helpful hints (click to hurry'em along, btw).");
-	hints.add ("If you mouseover a pixel on the board, a message appears...");
-	hints.add ("...telling you the name of that pixel.");
+	    hints.add ("Mouseover the board & hold \"" + toolBox.tool.get(0).hotKey + "\" to spray " + toolBox.tool.get(0).particleName + " pixels; etc.");
+	hints.add ("Use cage-builders to get your zoo started.");
+	hints.add ("Next to each tool is a bar showing the reserve.");
+	hints.add ("If you mouseover a pixel on the board, its name appears.");
 	hints.add ("At bottom right, you can also see a list of recent events.");
-	hints.add ("Now you can experiment with the pixels a bit...");
-	hints.add ("...they interact in a lot of different ways.");
-	hints.add ("Meanwhile I'm gonna tell you some stuff I probably shouldn't.");
-	hints.add ("It's not cheating, exactly, but it's sort of bending the rules.");
-	hints.add ("Some of these hacks kinda mess reality up a bit, y'know?");
-	hints.add ("You might find some cracks in the Matrix.");
-	hints.add ("Anyways... here are the special keys. Don't say I didn't warn ya.");
+	hints.add ("When you build a cage, it contains a few animals.");
 	hints.add (specialKeys);
-	hints.add ("The \""+cheatKey+"\" key reveals the hidden state of a pixel...");
-	hints.add ("...that is, when you mouseover that pixel.");
-	hints.add ("It also reveals the pixel's outgoing(>) and incoming(<) bonds,");
-	hints.add ("along with the number of pixels of this type in existence.");
+	hints.add ("The \""+cheatKey+"\" key reveals the hidden state of a pixel.");
 	hints.add (specialKeys);
+	hints.add ("The \""+cheatKey+"\" key reveals outgoing(>) and incoming(<) bonds.");
 	hints.add ("The \""+stopKey+"\" key stops all action on the board.");
-	hints.add ("Try it now. Add pixels, press \""+stopKey+"\" and Feel the Power!");
+	hints.add ("Keep cage walls in good repair, or animals will escape.");
 	hints.add (specialKeys);
+	hints.add ("The \""+cheatKey+"\" key reveals the number of pixels in existence.");
 	hints.add ("The \""+slowKey+"\" key draws bonds on the board.");
-	hints.add ("This also slows things down a bit.");
-	hints.add ("You won't see anything unless you have some bonded pixels.");
-	hints.add ("I'll leave you to find out what these are.");
-	hints.add (specialKeys);
-	hints.add ("OK, that's pretty much all I got for ya...");
-	hints.add ("...I'm going to loop now, because I'm an NPC and we do that.");
-	hints.add ("Plus, I'm kinda forgetful: every five minutes is like a new day.");
-	hints.add ("I think it might be a side effect of the mutator gas.");
-	hints.add ("I've kind of lost my train of thought.... what was I saying...");
-	hints.add ("oh yeah...");
 
 	// init JFrame
 	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

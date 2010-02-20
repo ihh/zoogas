@@ -1,6 +1,7 @@
 TOOL n=cement k=s d=2.0 p=15.0 r=600 f=2.625 w=1
 TOOL n=lava k=l d=2.0 p=15.0 r=600 f=2.625 w=1
 TOOL n=acid k=d d=2.0 p=15.0 r=200 f=2.8125 w=.8
+TOOL n=high_pressure_acid k=e d=20 p=5 r=400 f=10 w=.8
 TOOL n=perfume k=f d=2.0 p=15.0 r=80 f=1.875 w=.5
 TOOL n=mutator k=g d=2.0 p=15.0 r=40 f=0.11249999999999999 w=.2
 TOOL n=animal k=a
@@ -9,9 +10,4 @@ TOOL n=zoo_guest k=z
 TOOL n=conga k=x
 TOOL n=cage_builder k=c
 TOOL n=cell_builder k=v
-TOOL n=RNA_sequence_a5u5 k=q
-TOOL n=RNA_sequence_ccacucc k=w
-TOOL n=RNA_sequence_ggaggugg k=e
-TOOL n=RNA_sequence_ccaaccccuucc k=r
-TOOL n=RNA_sequence_a20u20 k=t
 TOOL n=bomb k=n
