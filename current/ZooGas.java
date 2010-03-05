@@ -180,18 +180,19 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 	if (isServer) // start as server
 	    gas.board.initServer(port, gas);
 
+	InetSocketAddress serverAddr = null;
 	if (isClient) // start as client (and server)
 	{
 	    String[] address = socketAddress.split(":");
 	    if(address.length > 1) {
-	        gas.board.initClient(new InetSocketAddress(address[0], new Integer(address[1])));
+	        serverAddr = new InetSocketAddress(address[0], new Integer(address[1]));
 	    }
 	    else {
-	        gas.board.initClient(new InetSocketAddress(address[0], defaultPort));
+	        serverAddr = new InetSocketAddress(address[0], defaultPort);
 	    }
 	}
 
-	gas.start();
+	gas.start (serverAddr);
     }
 
     public ZooGas() {
@@ -199,7 +200,7 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 	board = new Board(size);
     }
 
-    public void start()
+    public void start (InetSocketAddress serverAddr)
     {
 	// set helpers, etc.
 	boardSize = board.getBoardSize(size,pixelsPerCell);
@@ -352,6 +353,11 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 	
 	addKeyListener(this);
 
+	// connect to server
+	if (serverAddr != null)
+	    board.initClient(serverAddr);
+
+	// run
 	gameLoop();
     }
 
