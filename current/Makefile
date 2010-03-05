@@ -1,6 +1,9 @@
 # program name
 ZOOGAS = ZooGas
 
+# loader and world server
+LOADER = Loader
+
 # set heap to 512MB
 JAVA = java -Xmx512m
 
@@ -24,6 +27,9 @@ testserver: classfiles
 
 testclient: classfiles
 	$(JAVA) $(ZOOGAS) -p 4445 -c localhost
+    
+loader: classfiles
+	$(JAVA) $(LOADER)
 
 %.class: %.java
 	$(JAVAC) $<
