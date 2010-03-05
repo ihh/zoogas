@@ -8,6 +8,8 @@ public class UpdateServer extends BoardServer {
 
     UpdateServer (Board board, int port, BoardRenderer renderer) throws IOException {
 	super(board,port,renderer);
+        if(renderer == null)
+            System.out.println("Update server renderer should not be null");
 	socket = new DatagramSocket(port);
     }
 

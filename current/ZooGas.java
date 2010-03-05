@@ -126,8 +126,10 @@ public class ZooGas implements KeyListener {
     public static void main(String[] args, ClientToServer toWorldServer) {
         // create ZooGas object
         ZooGas gas = new ZooGas();
-        gas.toWorldServer = toWorldServer;
-        toWorldServer.setInterface(gas);
+        if(toWorldServer != null) {
+            gas.toWorldServer = toWorldServer;
+            toWorldServer.setInterface(gas);
+        }
 
         // Process options and args before initializing ZooGas
         boolean isServer = false;
@@ -202,6 +204,7 @@ public class ZooGas implements KeyListener {
         }
 
         // initialize after options have been considered
+        gas.renderer = new PlayerRenderer(gas, gas.board, gas.size);
         if (isServer) // start as server
             gas.board.initServer(port, gas);
 
@@ -228,7 +231,7 @@ public class ZooGas implements KeyListener {
 
     public void start() {
         // set helpers, etc.
-        renderer = new PlayerRenderer(this, board, size);
+        //renderer = new PlayerRenderer(this, board, size);
         boardSize = renderer.getBoardSize(size);
 
         spaceParticle = board.getOrCreateParticle(spaceParticleName);

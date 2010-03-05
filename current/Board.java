@@ -146,10 +146,10 @@ public class Board extends MooreTopology {
     }
 
     public final void initClient(InetSocketAddress remote) {
-        connectBorder(new Point(0, 0), new Point(-1, 0), new Point(0, 1), 128, new Point(-size, 0), remote); // west
-        connectBorder(new Point(127, 0), new Point(128, 0), new Point(0, 1), 128, new Point(+size, 0), remote); // east
-        connectBorder(new Point(0, 0), new Point(0, -1), new Point(1, 0), 128, new Point(0, -size), remote); // north
-        connectBorder(new Point(0, 127), new Point(0, 128), new Point(1, 0), 128, new Point(0, +size), remote); // south
+        connectBorderInDirection(0, remote);
+        connectBorderInDirection(1, remote);
+        connectBorderInDirection(2, remote);
+        connectBorderInDirection(3, remote);
     }
 
     // read/write methods for cells
@@ -488,7 +488,7 @@ public class Board extends MooreTopology {
 
     // method to send requests to establish two-way network connections between cells
     // (called in the client during initialization)
-    private final void connectBorder(Point sourceStart, Point targetStart, Point lineVector, int lineLength, Point remoteOrigin,
+    protected final void connectBorder(Point sourceStart, Point targetStart, Point lineVector, int lineLength, Point remoteOrigin,
                                      InetSocketAddress remoteBoard) {
         String[] connectRequests = new String[lineLength];
         Point source = new Point(sourceStart);
@@ -508,6 +508,23 @@ public class Board extends MooreTopology {
         }
 
         BoardServer.sendTCPPacket(remoteBoard.getAddress(), remoteBoard.getPort(), connectRequests);
+    }
+    
+    protected final void connectBorderInDirection(int dir, InetSocketAddress remote) {
+        switch(dir) {
+            case 0:
+                connectBorder(new Point(0, 0), new Point(0, -1), new Point(1, 0), 128, new Point(0, -size), remote); // north
+                break;
+            case 1:
+                connectBorder(new Point(127, 0), new Point(128, 0), new Point(0, 1), 128, new Point(+size, 0), remote); // east
+                break;
+            case 2:
+                connectBorder(new Point(0, 127), new Point(0, 128), new Point(1, 0), 128, new Point(0, +size), remote); // south
+                break;
+            case 3:
+                connectBorder(new Point(0, 0), new Point(-1, 0), new Point(0, 1), 128, new Point(-size, 0), remote); // west
+                break;
+        }
     }
 
     protected final void addRemoteCellCoord(Point p, InetSocketAddress remoteBoard, Point pRemote) {

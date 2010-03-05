@@ -160,7 +160,7 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
         setJMenuBar(menubar);
 
         pack();
-
+        setResizable(false);
         setVisible(true);
 
         toWorldServer = new ClientToServer(this);
@@ -242,9 +242,7 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
             forceReconnect.setEnabled(true);
             return;
         } else if ("manualRefresh".equals(e.getActionCommand())) {
-            if(currentSelection == null)
-                return;
-            toWorldServer.sendRefreshObserved(currentSelection);
+            toWorldServer.sendRefreshObserved();
             return;
         } else if ("openrules".equals(e.getActionCommand())) {
             // TODO: add real implementation
@@ -317,7 +315,7 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
     }
     void initPlayerLocs(Set<Point> clientSet) {
         for(Point p : clientSet) {
-            observerMap.get(p).hasPlayer(true);
+            observerMap.get(p).setHasPlayer(true);
         }
     }
 }

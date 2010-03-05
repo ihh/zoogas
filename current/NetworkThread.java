@@ -37,22 +37,24 @@ public abstract class NetworkThread extends Thread {
 
     // Commands
     public static enum packetCommand {
-        PING             (0),
-        SEND_SIZE        (2, "ii", 4 + 4),
-        CLAIM_GRID       (2, "ii", 4 + 4),
-        LAUNCH           (0),
-        OBSERVE          (2, "ii", 4 + 4),
-        DISCONNECT       (0),
+        PING              (0),
+        SEND_SIZE         (2, "ii", 4 + 4),
+        CLAIM_GRID        (2, "ii", 4 + 4),
+        LAUNCH            (0),
+        OBSERVE           (2, "ii", 4 + 4),
+        DISCONNECT        (0),
+
         //CURRENT_CLIENTS  (2, "i(ii)*", 0); // ideally, should be something regex-like
-        CURRENT_CLIENTS  (1, "i", 4 + 4 + 4), // variadic
+        CURRENT_CLIENTS   (1, "i", 4 + 4 + 4), // variadic
+        CONNECT_PEER      (3, "sii", 4), // address, port, int
+
+        CHECKIN_ALL_RULES (1, "i", 4), // variadic
+        CHECKIN_RULESET   (1, "i", 4), // variadic
+        REQUEST_PARTICLES (0),
+        SEND_PARTICLES    (1, "i", 4), // variadic
         
-        CHECKIN_ALL_RULES    (1, "i", 4), // variadic
-        CHECKIN_RULESET    (1, "i", 4), // variadic
-        REQUEST_PARTICLES(0),
-        SEND_PARTICLES   (1, "i", 4), // variadic
-        
-        REFRESH_OBSERVED (2, "ii", 4 + 4),
-        UPDATE_OBSERVED  (2, "ii", 4 + 4); // variadic
+        REFRESH_OBSERVED  (2, "ii", 4 + 4),
+        UPDATE_OBSERVED   (2, "ii", 4 + 4); // variadic
         
 
         private packetCommand(int numArgs) {

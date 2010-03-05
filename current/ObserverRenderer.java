@@ -12,9 +12,14 @@ public class ObserverRenderer extends BoardRenderer {
     public ObserverRenderer(int size) {
         super();
         pixelsPerCell = 1;
-        int pixelsPerSide = getBoardSize(size);
-        image = new BufferedImage(pixelsPerSide, pixelsPerSide, BufferedImage.TYPE_3BYTE_BGR);
-        panel = new JPanel();
+        pixelsPerSide = getBoardSize(size);
+        image = new BufferedImage(pixelsPerSide, pixelsPerSide, BufferedImage.TYPE_4BYTE_ABGR); // TODO: can this be replaced with 3BYTE_BGR?
+        panel = new JPanel() {
+                public void paintComponent(Graphics g) {
+                    super.paintComponent(g);
+                    g.drawImage(image, 0, 0, null);
+                }
+        };
         panel.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));
 
         Color c = new Color(100,100,150);
@@ -26,13 +31,14 @@ public class ObserverRenderer extends BoardRenderer {
 
     JPanel panel;
     boolean hasPlayer = false;
+    int pixelsPerSide;
         HashMap<Point, Color> particles;
 
     public JPanel getJPanel() {
         return panel;
     }
 
-    public boolean hasPlayer(boolean b) {
+    public boolean setHasPlayer(boolean b) {
         hasPlayer = b;
         if(b)
             panel.setBackground(Color.BLACK);
@@ -45,6 +51,16 @@ public class ObserverRenderer extends BoardRenderer {
         Point q = getGraphicsCoords(p);
         bfGraphics.fillRect(q.x, q.y, pixelsPerCell, pixelsPerCell);
     }
+    public void drawCell(Point p, Color c) {
+        Graphics bfGraphics = image.getGraphics();
+        bfGraphics.setColor(c);
+        Point q = getGraphicsCoords(p);
+        bfGraphics.fillRect(q.x, q.y, pixelsPerCell, pixelsPerCell);
+    }
+    public void clear() {
+        image = new BufferedImage(pixelsPerSide, pixelsPerSide, BufferedImage.TYPE_4BYTE_ABGR); // TODO: can this be replaced with 3BYTE_BGR?
+    }
+    
     public void showVerb(Point p, Point n, Particle oldSource, Particle oldTarget, UpdateEvent newPair) {
         return;
     }

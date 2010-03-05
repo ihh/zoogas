@@ -2,6 +2,8 @@ import java.awt.Color;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
+import java.awt.image.BufferedImage;
+
 import java.io.IOException;
 
 import java.net.InetAddress;
@@ -148,44 +150,55 @@ public class ClientToServer extends NetworkThread {
         bb.rewind();
 
         // one buffer may contain more than one command!
-        while(bb.limit() != bb.position()) {
-            packetCommand command = packetCommand.values()[bb.getInt()];
-            //System.out.println("Client Received " + command + " " + bb);
-            ArrayList<Object> parameters = new ArrayList<Object>();
-            for(int i = 0; i < command.getExpectedCount(); ++i) {
-                char c = command.getExpectedArgs().charAt(i);
-                switch(c) {
-                    case 'i':
-                        parameters.add(bb.getInt());
+        try {
+            while(bb.limit() != bb.position()) {
+                packetCommand command = packetCommand.values()[bb.getInt()];
+                //System.out.println("Client Received " + command + " " + bb);
+                ArrayList<Object> parameters = new ArrayList<Object>();
+                for(int i = 0; i < command.getExpectedCount(); ++i) {
+                    char c = command.getExpectedArgs().charAt(i);
+                    switch(c) {
+                        case 'i':
+                            parameters.add(bb.getInt());
+                            break;
+                        case 's':
+                            parameters.add(getStringFromBuffer(bb));
+                            break;
+                        default:
+                            System.err.println("Unknown parameter type " + c + ". Buffer discarded.");
+                            return;
+                    }
+                }
+    
+                switch(command) {
+                    case PING: // End of buffer is read as a ping. No harm done
+                        return;
+                    case SEND_SIZE:
+                        handleSetSize(parameters.toArray());
                         break;
-                    case 's':
-                        parameters.add(getStringFromBuffer(bb));
+                    case LAUNCH:
+                        handleLaunch();
+                        break;
+                    case CURRENT_CLIENTS:
+                        handleGetPlayerLocs(bb, parameters.toArray());
+                        break;
+                    case REQUEST_PARTICLES:
+                        handleSendParticles();
+                        break;
+                    case SEND_PARTICLES:
+                        handleClientParticles(bb, parameters.toArray());
+                        break;
+                    case CONNECT_PEER:
+                        handleConnectPeer(bb, parameters.toArray());
                         break;
                     default:
-                        System.err.println("Unknown parameter type " + c + ". Buffer discarded.");
+                        System.err.println("Client: Unhandled command type " + command);
                         return;
                 }
             }
-
-            switch(command) {
-                case PING: // End of buffer is read as a ping. No harm done
-                    return;
-                case SEND_SIZE:
-                    handleSetSize(parameters.toArray());
-                    break;
-                case LAUNCH:
-                    handleLaunch();
-                    break;
-                case CURRENT_CLIENTS:
-                    handleGetPlayerLocs(bb, parameters.toArray());
-                    break;
-                case REQUEST_PARTICLES:
-                    handleSendParticles();
-                    break;
-                default:
-                    System.err.println("Unhandled command type " + command);
-                    return;
-            }
+        }
+        catch(Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -220,6 +233,9 @@ public class ClientToServer extends NetworkThread {
         }
         
         ByteBuffer bb = prepareBuffer(cmd, prefix.getBytes().length + 1 + ruleSet.getByteSize());
+        for(String rule : ruleSet) {
+            writeStringToBuffer(bb, rule);
+        }
         verifyAndSend(bb, cmd, serverSocket);
     }
     
@@ -261,22 +277,34 @@ public class ClientToServer extends NetworkThread {
     }
     
     /**
-     * Updates the currently observed board
+     * Updates the currently observed board at Point obs
      */
     public void sendRefreshObserved(Point obs) {
         final packetCommand cmd = packetCommand.REFRESH_OBSERVED;
-        ByteBuffer bb = prepareBuffer(cmd);
-        
+        ByteBuffer bb = prepareBuffer(cmd);        
         bb.putInt(obs.x);
         bb.putInt(obs.y);
-        
-        verifyAndSend(bb, cmd, serverSocket);
+        System.out.println("Asking world server for " + obs);
+        verifyAndSend(bb, cmd, serverSocket, true);
+    }
+    public void sendRefreshObserved() {
+        for(Point p : loader.observerMap.keySet()) {
+            ObserverRenderer obsRenderer = loader.observerMap.get(p);
+            if(obsRenderer.hasPlayer) {
+                sendRefreshObserved(p);
+                try {
+                    Thread.currentThread().sleep(500);
+                } catch (Exception e) {
+                }
+            }
+        }
     }
     
     // Packet handlers
     private void handleSetSize(Object... args) {
         if(loader == null) {
             System.err.println("handleSetSize called when already in game");
+            System.err.println(serverSocket.socket().getRemoteSocketAddress());
             return;
         }
 
@@ -320,5 +348,42 @@ public class ClientToServer extends NetworkThread {
         }
         
         sendParticles();
+    }
+    private void handleClientParticles(ByteBuffer bb, Object... args) {
+        int particles = (Integer)args[0];
+        int x0 = bb.getInt();
+        int y0 = bb.getInt();
+        System.out.println("Received " + x0 + " " + y0);
+        ObserverRenderer renderer = loader.observerMap.get(new Point(x0, y0));
+        if(renderer == null) {
+            System.err.println("Renderer not found");
+            return;
+        }
+        renderer.clear();
+        //HashMap<String, List<Point>> particleMap = new HashMap<String, List<Point>>();
+        for(int i = 0; i < particles; ++i) {
+            String name = getStringFromBuffer(bb);
+            ArrayList<Point> list = new ArrayList<Point>();
+            int numPoints = bb.getInt();
+            for(int j = 0; j < numPoints; ++j) {
+                int x = bb.getInt();
+                int y = bb.getInt();
+                renderer.drawCell(new Point(x, y), Color.WHITE);
+            }
+        }
+        
+        renderer.getJPanel().repaint();
+    }
+    private void handleConnectPeer(ByteBuffer bb, Object... args){
+        String address = (String)args[0];
+        int port = (Integer)args[1];
+        int direction = (Integer)args[2];
+        while(gas == null) {
+            try {
+                Thread.currentThread().sleep(500);
+            } catch (InterruptedException e) {
+            }
+        }
+        gas.board.connectBorderInDirection(direction, new InetSocketAddress(address, port));
     }
 }
