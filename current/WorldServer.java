@@ -31,7 +31,7 @@ public class WorldServer extends Thread {
         pointToClient = new HashMap<Point, ServerToClient>();
         clientLocation = new HashMap<ServerToClient, Point>();
         
-        clientParticles = new HashMap<ServerToClient, HashMap<String, List<Point>>>();
+        clientParticles = new HashMap<ServerToClient, HashMap<Integer, List<Point>>>();
         try {
             incomingClientsSSC = ServerSocketChannel.open();
             incomingClientsSSC.socket().bind(new InetSocketAddress(newConnectionPort));
@@ -56,7 +56,7 @@ public class WorldServer extends Thread {
     private Map<ServerToClient, Point> clientLocation;
     
     // Observations
-    private Map<ServerToClient, HashMap<String, List<Point>>> clientParticles;
+    private Map<ServerToClient, HashMap<Integer, List<Point>>> clientParticles;
 
     // Validation
     RuleSet ruleset = null;
@@ -341,12 +341,13 @@ public class WorldServer extends Thread {
         }
         private void sendClientParticles(Point p) {
             int byteSize = 12;
-            HashMap<String, List<Point>> sentParticles = new HashMap<String, List<Point>>();
+            HashMap<Integer, List<Point>> sentParticles = new HashMap<Integer, List<Point>>();
             ServerToClient selectedClient = pointToClient.get(p);
-            HashMap<String, List<Point>> particles = clientParticles.get(selectedClient);
-            for(String part : particles.keySet()) {
+            HashMap<Integer, List<Point>> particles = clientParticles.get(selectedClient);
+            for(Integer part : particles.keySet()) {
                 ArrayList<Point> list = new ArrayList<Point>(particles.get(part));
-                byteSize += part.getBytes().length + 1; // name
+                //byteSize += part.getBytes().length + 1; // name
+                byteSize += 4; // color
                 byteSize += 4; // number of particles
                 byteSize += particles.get(part).size() * (4 + 4); // x,y coordinates
                 sentParticles.put(part, list);
@@ -354,12 +355,18 @@ public class WorldServer extends Thread {
             
             ByteBuffer bb = prepareBuffer(packetCommand.SEND_PARTICLES, byteSize);
             bb.putInt(sentParticles.size());
-            System.err.println("Observer is paging " + p);
+            //System.err.println("Observer is paging " + p);
             bb.putInt(p.x);
             bb.putInt(p.y);
-            for(String part : sentParticles.keySet()) {
-                writeStringToBuffer(bb, part);
-                List<Point> list = sentParticles.get(part);
+            for(Integer c : sentParticles.keySet()) {
+                //writeStringToBuffer(bb, part);
+                //bb.put((byte)(c & 0xFF));
+                //bb.put((byte)((c & 0xFF00) >> 8));
+                //bb.put((byte)((c & 0xFF0000) >> 16));
+                
+                bb.putInt(c);
+                
+                List<Point> list = sentParticles.get(c);
                 bb.putInt(list.size());
                 for(Point q : list) {
                     bb.putInt(q.x);
@@ -425,10 +432,15 @@ public class WorldServer extends Thread {
 
 
         private void handleClientParticles(ByteBuffer bb, Object... args) {
-            int particles = (Integer)args[0];
-            HashMap<String, List<Point>> particleMap = new HashMap<String, List<Point>>();
-            for(int i = 0; i < particles; ++i) {
-                String name = getStringFromBuffer(bb);
+            int color = (Integer)args[0];
+            //HashMap<String, List<Point>> particleMap = new HashMap<String, List<Point>>();
+            HashMap<Integer, List<Point>> particleMap = new HashMap<Integer, List<Point>>();
+            for(int i = 0; i < color; ++i) {
+                //String name = getStringFromBuffer(bb);
+                
+                //int c = (bb.get() << 16) | (bb.get() << 8) | bb.get();
+                int c = bb.getInt();
+                
                 ArrayList<Point> list = new ArrayList<Point>();
                 int numPoints = bb.getInt();
                 for(int j = 0; j < numPoints; ++j) {
@@ -436,7 +448,8 @@ public class WorldServer extends Thread {
                     int y = bb.getInt();
                     list.add(new Point(x, y));
                 }
-                particleMap.put(name, list);
+                //particleMap.put(name, list);
+                particleMap.put(c, list);
             }
             clientParticles.put(this, particleMap);
         }

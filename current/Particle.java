@@ -26,7 +26,7 @@ public class Particle implements Comparable{
 
     // reference counting
     private Board board = null;
-    protected Map<Point, Integer> references = null;
+    protected Set<Point> references = null;
 
     // static variables
     public static String
@@ -45,7 +45,7 @@ public class Particle implements Comparable{
 	this.energy = energy;
 	this.board = board;
 	this.patternSet = ps;
-	references = Collections.synchronizedMap(new HashMap<Point, Integer>());
+	references = Collections.synchronizedSet(new HashSet<Point>());
 
 	// init transformation rule patterns in each direction
 	int N = board.neighborhoodSize();
@@ -73,7 +73,7 @@ public class Particle implements Comparable{
     }
 
     public int addReference(Point p) {
-        if(references.containsKey(p)) {
+        /*if(references.containsKey(p)) {
             int num = references.get(p) + 1;
             if(num == 0)
                 references.remove(p);
@@ -81,13 +81,13 @@ public class Particle implements Comparable{
                 references.put(p, num);
         }
         else
-            references.put(p, 1);
-        
+            references.put(p, 1);*/
+        references.add(p);
 	return getReferenceCount();
     }
 
     public int removeReference(Point p) {
-        try {
+        /*try {
             int num = references.containsKey(p) ? references.get(p) - 1 : -1;
             if(num == 0)
                 references.remove(p);
@@ -99,11 +99,13 @@ public class Particle implements Comparable{
             e.printStackTrace();
             System.err.println(name);
             return 0;
-        }
+        }*/
+        references.remove(p);
+        return getReferenceCount();
     }
 
     public Set<Point> getOccupiedPoints() {
-	return references.keySet();
+	return references;
     }
 
     // part of name visible to player

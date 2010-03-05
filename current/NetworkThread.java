@@ -89,11 +89,14 @@ public abstract class NetworkThread extends Thread {
         for(int i = 0; i < command.getExpectedCount(); ++i) {
             char c = command.getExpectedArgs().charAt(i);
             switch(c) {
-                case 'i':
-                    parameters.add(bb.getInt());
+                case 'b':
+                    parameters.add(bb.get());
                     break;
                 case 'c':
                     parameters.add(bb.getChar());
+                    break;
+                case 'i':
+                    parameters.add(bb.getInt());
                     break;
                 case 's':
                     parameters.add(getStringFromBuffer(bb));

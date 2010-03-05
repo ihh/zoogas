@@ -230,40 +230,67 @@ public class ClientToServer extends NetworkThread {
     public void sendParticles() {
         final packetCommand cmd = packetCommand.SEND_PARTICLES;
 
-        HashMap<Particle, Integer> numParts = new HashMap<Particle, Integer>();
+        /*HashMap<Particle, Integer> numParts = new HashMap<Particle, Integer>();
         int byteSize = 4;
         for(Particle p : gas.board.nameToParticle.values()) {
             int size = p.getOccupiedPoints().size();
             if(size > 0 && !"_".equals(p.name)) {
-                byteSize += 1 + p.name.getBytes().length; // name
+                //byteSize += 1 + p.name.getBytes().length; // name
+                byteSize += 3; // color
                 byteSize += 4; // int storing the number of particles
                 numParts.put(p, size);
+                byteSize += (4 + 4) * size; // x,y coordinates
+            }
+        }*/
+        
+        HashMap<Integer, Integer> numParts = new HashMap<Integer, Integer>();
+        HashMap<Integer, List<Particle>> colors = new HashMap<Integer, List<Particle>>();
+        int byteSize = 4;
+        for(Particle p : gas.board.nameToParticle.values()) {
+            int size = p.getOccupiedPoints().size();
+            if(size > 0 && !"_".equals(p.name)) {
+                //byteSize += 1 + p.name.getBytes().length; // name
+                
+                int c = p.color.getRGB();
+                if(!colors.containsKey(c)) {
+                    byteSize += 4; // color, but only if this color is not already present
+                    colors.put(c, new ArrayList<Particle>());
+                    numParts.put(c, 0);
+                }
+                colors.get(c).add(p);
+                
+                numParts.put(c, numParts.get(c) + size);
+
+                byteSize += 4; // int storing the number of particles
                 byteSize += (4 + 4) * size; // x,y coordinates
             }
         }
         
         ByteBuffer bb = prepareBuffer(cmd, byteSize);
         bb.putInt(numParts.size());
-        for(Particle p : numParts.keySet()) {
-            writeStringToBuffer(bb, p.name);
-            bb.putInt(numParts.get(p));
+        for(Integer c : colors.keySet()) {
+            //writeStringToBuffer(bb, p.name);
+
+            //bb.put((byte)(c & 0xFF));
+            //bb.put((byte)((c & 0xFF00) >> 8));
+            //bb.put((byte)((c & 0xFF0000) >> 16));
+            bb.putInt(c);
+
+            bb.putInt(numParts.get(c));
+            for(Particle p : colors.get(c)) {
             Set<Point> occupied = p.getOccupiedPoints();
-
-            //System.out.println(p.name);
-            //for(Map.Entry<Point, Integer> entry : p.references.entrySet())
-            //    System.out.println(entry.getKey() + " " + entry.getValue());
-
-            synchronized(occupied) {
-                int count = 0;
-                for(Point point : occupied) {
-                    if(count >= numParts.get(p))
-                        break;
-
-                    bb.putInt(point.x);
-                    bb.putInt(point.y);
-                    ++count;
+                synchronized(occupied) {
+                    int count = 0;
+                    for(Point point : occupied) {
+                        if(count >= numParts.get(c))
+                            break;
+    
+                        bb.putInt(point.x);
+                        bb.putInt(point.y);
+                        ++count;
+                    }
+                    //System.err.println(count + " of " +  numParts.get(p) + " " + p.name + " sent");
                 }
-                //System.err.println(count + " of " +  numParts.get(p) + " " + p.name + " sent");
             }
         }
 
@@ -356,13 +383,18 @@ public class ClientToServer extends NetworkThread {
         renderer.clear();
 
         for(int i = 0; i < particles; ++i) {
-            String name = getStringFromBuffer(bb);
+            //String name = getStringFromBuffer(bb);
+            //Byte b = bb.get();
+            //Byte g = bb.get();
+            //Byte r = bb.get();
+            int rgb = bb.getInt();
+
             ArrayList<Point> list = new ArrayList<Point>();
             int numPoints = bb.getInt();
             for(int j = 0; j < numPoints; ++j) {
                 int x = bb.getInt();
                 int y = bb.getInt();
-                renderer.drawCell(new Point(x, y), Color.WHITE);
+                renderer.drawCell(new Point(x, y), new Color(rgb)); //new Color(r, g, b)
             }
         }
         
