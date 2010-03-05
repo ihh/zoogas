@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import java.util.SortedSet;
@@ -153,23 +154,10 @@ public class ClientToServer extends NetworkThread {
         try {
             while(bb.limit() != bb.position()) {
                 packetCommand command = packetCommand.values()[bb.getInt()];
+
                 //System.out.println("Client Received " + command + " " + bb);
-                ArrayList<Object> parameters = new ArrayList<Object>();
-                for(int i = 0; i < command.getExpectedCount(); ++i) {
-                    char c = command.getExpectedArgs().charAt(i);
-                    switch(c) {
-                        case 'i':
-                            parameters.add(bb.getInt());
-                            break;
-                        case 's':
-                            parameters.add(getStringFromBuffer(bb));
-                            break;
-                        default:
-                            System.err.println("Unknown parameter type " + c + ". Buffer discarded.");
-                            return;
-                    }
-                }
-    
+                ArrayList<Object> parameters = collectParameters(command, bb);
+
                 switch(command) {
                     case PING: // End of buffer is read as a ping. No harm done
                         return;
@@ -260,6 +248,11 @@ public class ClientToServer extends NetworkThread {
             writeStringToBuffer(bb, p.name);
             bb.putInt(numParts.get(p));
             Set<Point> occupied = p.getOccupiedPoints();
+
+            //System.out.println(p.name);
+            //for(Map.Entry<Point, Integer> entry : p.references.entrySet())
+            //    System.out.println(entry.getKey() + " " + entry.getValue());
+
             synchronized(occupied) {
                 int count = 0;
                 for(Point point : occupied) {
@@ -270,6 +263,7 @@ public class ClientToServer extends NetworkThread {
                     bb.putInt(point.y);
                     ++count;
                 }
+                //System.err.println(count + " of " +  numParts.get(p) + " " + p.name + " sent");
             }
         }
 
@@ -360,7 +354,7 @@ public class ClientToServer extends NetworkThread {
             return;
         }
         renderer.clear();
-        //HashMap<String, List<Point>> particleMap = new HashMap<String, List<Point>>();
+
         for(int i = 0; i < particles; ++i) {
             String name = getStringFromBuffer(bb);
             ArrayList<Point> list = new ArrayList<Point>();

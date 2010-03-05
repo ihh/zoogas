@@ -170,9 +170,9 @@ public class Board extends MooreTopology {
             cell[p.x][p.y].particle = pc;
             ++cell[p.x][p.y].writeCount;
             if (old_pc != null)
-                old_pc.removeReference(p);
-            pc.addReference(p);
-            quad.updateQuadTree(p, pc.normalizedTotalTransformRate());
+                old_pc.removeReference(new Point(p));
+            pc.addReference(new Point(p)); // Note: must be new point!
+            quad.updateQuadTree(new Point(p), pc.normalizedTotalTransformRate());
         }
     }
 

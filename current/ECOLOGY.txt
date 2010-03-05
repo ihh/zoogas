@@ -5,6 +5,8 @@
 # Kondoh, Science, 2003; Ackland & Gallagher, PRL, 2004 (models that show how adaptation can stabilize complex food webs)
 # See also the many cool applets at the EPSRC NANIA cluster: http://www2.ph.ed.ac.uk/nania/examples.html
 
+VERB W=*/ s=/INIT.* S=_ v=/start
+
 NOUN W=*/ n=_ c=000000
 
 # The different colored species particles

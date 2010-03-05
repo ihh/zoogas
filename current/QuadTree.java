@@ -21,7 +21,13 @@ public class QuadTree {
     // public methods
     public int log2size() { return K; }
 
-    public void updateQuadTree(Point p,double val) {
+    /**
+     *Updates the quad tree with the transform rate of the particle in this point
+     * Note: p is edited in this call!
+     * @param p
+     * @param val
+     */
+    public void updateQuadTree(Point p, double val) {
 	double oldVal = quadRate[quadNodeIndex(p,K)];
 	double diff = val - oldVal;
 	for (int lev = 0; lev <= K; ++lev) {

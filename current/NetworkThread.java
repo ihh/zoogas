@@ -3,6 +3,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
+import java.util.ArrayList;
+
 public abstract class NetworkThread extends Thread {
     /*
     public NetworkThread(ThreadGroup threadGroup, Runnable runnable, String string, long l) {
@@ -80,6 +82,29 @@ public abstract class NetworkThread extends Thread {
         public boolean matchArgCount(int numArgs) {
             return numArgs == expectedCount;
         }
+    }
+    
+    protected ArrayList<Object> collectParameters(packetCommand command, ByteBuffer bb) {
+        ArrayList<Object> parameters = new ArrayList<Object>();
+        for(int i = 0; i < command.getExpectedCount(); ++i) {
+            char c = command.getExpectedArgs().charAt(i);
+            switch(c) {
+                case 'i':
+                    parameters.add(bb.getInt());
+                    break;
+                case 'c':
+                    parameters.add(bb.getChar());
+                    break;
+                case 's':
+                    parameters.add(getStringFromBuffer(bb));
+                    break;
+                default:
+                    System.err.println("Unknown parameter type " + c);
+                    break;
+            }
+        }
+        
+        return parameters;
     }
 
     abstract void processPacket(ByteBuffer bb);

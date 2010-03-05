@@ -1,1 +1,2 @@
 TOOL W=wall/ n=cement k=s d=2.0 p=15.0 r=600 f=2.625 w=1
+# TOOL W=wall/ n=wall/1 k=w d=2 p=15.0 r=100 f=100 w=1

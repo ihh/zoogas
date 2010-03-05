@@ -98,6 +98,7 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
         c.gridx = 2;
 
         automaticallyRefresh = new JCheckBox("Automatically Refresh");
+        automaticallyRefresh.setActionCommand("AutoRefresh");
         automaticallyRefresh.setMnemonic('r');
         add(automaticallyRefresh, c);
         c.gridx = 0;

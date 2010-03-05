@@ -284,22 +284,9 @@ public class WorldServer extends Thread {
                 System.err.println(bb);
                 return;
             }
-                //System.out.println("Server Received " + command + " " + bb);
-                ArrayList<Object> parameters = new ArrayList<Object>();
-                for(int i = 0; i < command.getExpectedCount(); ++i) {
-                    char c = command.getExpectedArgs().charAt(i);
-                    switch(c) {
-                        case 'i':
-                            parameters.add(bb.getInt());
-                            break;
-                        case 's':
-                            parameters.add(getStringFromBuffer(bb));
-                            break;
-                        default:
-                            System.err.println("Unknown parameter type " + c);
-                            return;
-                    }
-                }
+
+            //System.out.println("Server Received " + command + " " + bb);            
+            ArrayList<Object> parameters = collectParameters(command, bb);
 
             switch(command) {
                 case OBSERVE:
