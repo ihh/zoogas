@@ -34,7 +34,7 @@ public abstract class NetworkThread extends Thread {
     */
 
     // constants
-    public final int allocateBufferSize = 32768*16;
+    public final int allocateBufferSize = Integer.MAX_VALUE >> 16;
     public final static int CONNECTIONS_FULL = -1;
 
     // Commands

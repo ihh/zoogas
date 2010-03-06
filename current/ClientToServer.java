@@ -92,7 +92,7 @@ public class ClientToServer extends NetworkThread {
             }
 
             // Connect to server
-            serverAddress = InetAddress.getLocalHost().getHostName(); // TODO: replace with real server
+            serverAddress = InetAddress.getLocalHost().getHostAddress(); // TODO: replace with real server
             loader.setMessage("Connecting to server at " + serverAddress + "...");
             SocketChannel ssTemp = SocketChannel.open();
             InetSocketAddress connectionToWorld = new InetSocketAddress(serverAddress, WorldServer.newConnectionPort); // must use address string version of constructor

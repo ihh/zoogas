@@ -88,7 +88,7 @@ public class WorldServer extends Thread {
 
                     if (newPort != ServerToClient.CONNECTIONS_FULL) {
                         System.out.println("new Client on " + newPort);
-                        new ServerToClient(new InetSocketAddress(newClientAdd.getHostName(), newPort), newPort);
+                        new ServerToClient(new InetSocketAddress(newClientAdd.getHostAddress(), newPort), newPort);
                     }
                 } else {
                     sleep(50);
@@ -424,8 +424,10 @@ public class WorldServer extends Thread {
             int numRules = (Integer)args[0];
             for(int i = 0; i < numRules; ++i) {
                 String s = getStringFromBuffer(bb);
-                if(!ruleset.containsRules(s)) {
-                    System.err.println("Unknown rule " + s);
+                if(s.length() > 0) {
+                    if(!ruleset.containsRules(s)) {
+                        System.err.println("Unknown rule " + s + " " + s.length());
+                    }
                 }
             }
         }
