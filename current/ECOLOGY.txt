@@ -109,7 +109,7 @@ VERB s=critter/.*/s:16 t=critter/.*/s:([0-7]|17) S=$S T=$S p=.006 v=kill
 VERB s=critter/.*/s:17 t=critter/.*/s:([0-8]) S=$S T=$S p=.006 v=kill
 
 # Breeding, overcrowding
-VERB s=critter/.*/s:\d+ t=critter/_ S=$S T=$S p=.0007 v=spawn
+VERB s=critter/.*/s:\d+ t=_ S=$S T=$S p=.0007 v=spawn
 VERB s=critter/.*/s:\d+ t=critter/.*/s:\d+ S=_ T=$T p=0.0015 v=choke
 
 # Movement is on von Neumann topology (so they can't escape through cracks)
