@@ -83,7 +83,7 @@ public class ClientToServer extends NetworkThread {
     }
 
     public void connectToWorld() {
-        InetAddress serverAddress;
+        String serverAddress;
         try {
             // Close current connection if any
             if(serverSocket != null && serverSocket.isOpen()) {
@@ -92,7 +92,7 @@ public class ClientToServer extends NetworkThread {
             }
 
             // Connect to server
-            serverAddress = InetAddress.getLocalHost(); // TODO: replace with real server
+            serverAddress = InetAddress.getLocalHost().getHostName(); // TODO: replace with real server
             loader.setMessage("Connecting to server at " + serverAddress + "...");
             SocketChannel ssTemp = SocketChannel.open();
             InetSocketAddress connectionToWorld = new InetSocketAddress(serverAddress, WorldServer.newConnectionPort); // must use address string version of constructor
@@ -131,7 +131,7 @@ public class ClientToServer extends NetworkThread {
                 }
                 serverSocket.configureBlocking(false);
 
-                loader.setMessage("Connected to " + serverAddress.getHostName() + ":" + newPort);
+                loader.setMessage("Connected to " + serverAddress + ":" + newPort);
             }
         } catch (SocketTimeoutException ste) {
             loader.setMessage("Connection timed out");
