@@ -534,17 +534,6 @@ public class ZooGas implements KeyListener {
         if (objective != null)
             printOrHide(g, objective.getDescription(), objectiveRow, true, Color.white);
 
-        // hint
-        int fg = (int)(hintBrightness > 255 ? (511 - hintBrightness) : hintBrightness);
-        int bg = 16;
-        Color hintForeground = new Color(bg, Math.max(fg, bg), 0);
-        Color hintBackground = new Color(bg, bg, 0);
-        printOrHide(g, hints.get(currentHint), hintRow, true, hintForeground, hintBackground);
-        if ((hintBrightness += 1) >= 512) {
-            hintBrightness = 0;
-            currentHint = (currentHint + 1) % hints.size();
-        }
-
         // identify particle that cursor is currently over
         if (board.onBoard(cursorPos)) {
             Particle cursorParticle = board.readCell(cursorPos);
