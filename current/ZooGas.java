@@ -221,7 +221,7 @@ public class ZooGas implements KeyListener {
 	}
         
         gas.board.loadPatternSetFromFile(gas.patternSetFilename);
-        gas.start (serverAddr);
+        gas.start(serverAddr);
     }
 
     public ZooGas() {
@@ -229,7 +229,7 @@ public class ZooGas implements KeyListener {
         board = new Board(size);
     }
 
-    public void start (InetSocketAddress serverAddr)
+    public void start(InetSocketAddress serverAddr)
     {
 	// set helpers, etc.
 	boardSize = board.getBoardSize(size,renderer.pixelsPerCell);
@@ -359,6 +359,27 @@ public class ZooGas implements KeyListener {
         // create cursors
         boardCursor = new Cursor(Cursor.HAND_CURSOR);
         normalCursor = new Cursor(Cursor.DEFAULT_CURSOR);
+        
+        // register for mouse & keyboard events
+        BoardMouseAdapter boardMouse = new BoardMouseAdapter();
+        boardPanel.addMouseListener(boardMouse);
+        boardPanel.addMouseMotionListener(boardMouse);
+
+        MouseListener toolsMouse = new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                toolBox.clickSelect(e.getPoint().y);
+            }
+        };
+        toolBoxPanel.addMouseListener(toolsMouse);
+         
+        MouseListener statusMouse = new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                hintBrightness = 240;
+                currentHint = (currentHint + 1) % hints.size();
+            }
+        };
+        statusPanel.addMouseListener(statusMouse);
+        zooGasFrame.addKeyListener(this);
 
 	// connect to server
 	if (serverAddr != null)
