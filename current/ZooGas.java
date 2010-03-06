@@ -532,7 +532,7 @@ public class ZooGas extends JFrame implements BoardRenderer, KeyListener {
 		? cursorParticle.name + " (" + cursorParticle.count + ")" + board.singleNeighborhoodDescription(cursorPos,false)
 		: cursorParticle.visibleName();
 	    Color fgCurs = cursorParticle == null ? Color.white : cursorParticle.color;
-	    Color bgCurs = cheatPressed ? new Color(255-fgCurs.getRed(),255-fgCurs.getGreen(),255-fgCurs.getBlue()) : Color.black;
+	    Color bgCurs = cheatPressed ? new Color(fgCurs.getRed()>128?32:255,fgCurs.getGreen()>128?32:255,fgCurs.getBlue()>128?32:255) : Color.black;
 	    printOrHide (g, nameToShow, nounRow+1, true, fgCurs, bgCurs);
 	}
 	else {

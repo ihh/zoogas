@@ -11,24 +11,24 @@ NOUN n=_ c=000000
 # The different colored species particles
 # The species follow a simple (unrealistic) cyclic ecology.
 # The species number is prefixed by "/s:".
-NOUN n=critter/.*/s:0 c=ff0000
-NOUN n=critter/.*/s:1 c=ff5100
-NOUN n=critter/.*/s:2 c=ffa100
-NOUN n=critter/.*/s:3 c=fff200
-NOUN n=critter/.*/s:4 c=bcff00
-NOUN n=critter/.*/s:5 c=6bff00
-NOUN n=critter/.*/s:6 c=1bff00
-NOUN n=critter/.*/s:7 c=00ff36
-NOUN n=critter/.*/s:8 c=00ff86
-NOUN n=critter/.*/s:9 c=00ffd7
-NOUN n=critter/.*/s:10 c=00d7ff
-NOUN n=critter/.*/s:11 c=0086ff
-NOUN n=critter/.*/s:12 c=0036ff
-NOUN n=critter/.*/s:13 c=1b00ff
-NOUN n=critter/.*/s:14 c=6b00ff
-NOUN n=critter/.*/s:15 c=bc00ff
-NOUN n=critter/.*/s:16 c=ff00f2
-NOUN n=critter/.*/s:17 c=ff00a1
+NOUN n=critter/'.*'.*/s:0 c=ff0000
+NOUN n=critter/'.*'.*/s:1 c=ff5100
+NOUN n=critter/'.*'.*/s:2 c=ffa100
+NOUN n=critter/'.*'.*/s:3 c=fff200
+NOUN n=critter/'.*'.*/s:4 c=bcff00
+NOUN n=critter/'.*'.*/s:5 c=6bff00
+NOUN n=critter/'.*'.*/s:6 c=1bff00
+NOUN n=critter/'.*'.*/s:7 c=00ff36
+NOUN n=critter/'.*'.*/s:8 c=00ff86
+NOUN n=critter/'.*'.*/s:9 c=00ffd7
+NOUN n=critter/'.*'.*/s:10 c=00d7ff
+NOUN n=critter/'.*'.*/s:11 c=0086ff
+NOUN n=critter/'.*'.*/s:12 c=0036ff
+NOUN n=critter/'.*'.*/s:13 c=1b00ff
+NOUN n=critter/'.*'.*/s:14 c=6b00ff
+NOUN n=critter/'.*'.*/s:15 c=bc00ff
+NOUN n=critter/'.*'.*/s:16 c=ff00f2
+NOUN n=critter/'.*'.*/s:17 c=ff00a1
 
 # The tools and behavior accessible to the player
 NOUN n=wall/1 c=2b2b2b
@@ -63,9 +63,9 @@ VERB s=/INIT.* S=beacon v=/start
 
 # Initial animals
 NOUN n=animal c=0000ff
-VERB s=animal S=critter/rock_imp/s:0
-VERB s=animal S=critter/blade_beetle/s:6
-VERB s=animal S=critter/paper_bird/s:12
+VERB s=animal S=critter/'rock_imp'/s:0
+VERB s=animal S=critter/'blade_beetle'/s:6
+VERB s=animal S=critter/'paper_bird'/s:12
 
 # Animal rules. This is where the ecology actually happens.
 # Successful predation
@@ -119,7 +119,61 @@ VERB s=critter/.*/s:\d+ t=_ S=$T T=$S p=0.02 v=step d=.
 # Animals eat guests:
 VERB s=critter/.*/s:\d+ t=zoo_guest.* S=_ T=$S p=1.0 v=maul
 # Imps feed on lava:
-VERB s=critter/.*_imp/s:\d+ t=lava.* S=$S T=$S p=.01 v=frolic
+VERB s=critter/'.*_imp'/s:\d+ t=lava.* S=$S T=$S p=.01 v=frolic
+
+
+
+
+
+# Fast animals
+
+# Successful predation
+VERB s=critter/.*/fast/s:0 t=critter/.*/fast/s:([1-9]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s:1 t=critter/.*/fast/s:([2-9]|10) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s:2 t=critter/.*/fast/s:([3-9]|1[0-1]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s:3 t=critter/.*/fast/s:([4-9]|1[0-2]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s:4 t=critter/.*/fast/s:([5-9]|1[0-3]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s:5 t=critter/.*/fast/s:([6-9]|1[0-4]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s:6 t=critter/.*/fast/s:([7-9]|1[0-5]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s:7 t=critter/.*/fast/s:([8-9]|1[0-6]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s:8 t=critter/.*/fast/s:(9|1[0-7]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s:9 t=critter/.*/fast/s:(0|1[0-7]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s:10 t=critter/.*/fast/s:([0-1]|1[1-7]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s:11 t=critter/.*/fast/s:([0-2]|1[2-7]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s:12 t=critter/.*/fast/s:([0-3]|1[3-7]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s:13 t=critter/.*/fast/s:([0-4]|1[4-7]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s:14 t=critter/.*/fast/s:([0-5]|1[5-7]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s:15 t=critter/.*/fast/s:([0-6]|1[6-7]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s:16 t=critter/.*/fast/s:([0-7]|17) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s:17 t=critter/.*/fast/s:([0-8]) S=$S T=$S p=.24 v=eat
+
+# Unsuccessful predation
+VERB s=critter/.*/fast/s:0 t=critter/.*/fast/s:([1-9]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s:1 t=critter/.*/fast/s:([2-9]|10) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s:2 t=critter/.*/fast/s:([3-9]|1[0-1]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s:3 t=critter/.*/fast/s:([4-9]|1[0-2]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s:4 t=critter/.*/fast/s:([5-9]|1[0-3]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s:5 t=critter/.*/fast/s:([6-9]|1[0-4]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s:6 t=critter/.*/fast/s:([7-9]|1[0-5]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s:7 t=critter/.*/fast/s:([8-9]|1[0-6]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s:8 t=critter/.*/fast/s:(9|1[0-7]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s:9 t=critter/.*/fast/s:(0|1[0-7]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s:10 t=critter/.*/fast/s:([0-1]|1[1-7]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s:11 t=critter/.*/fast/s:([0-2]|1[2-7]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s:12 t=critter/.*/fast/s:([0-3]|1[3-7]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s:13 t=critter/.*/fast/s:([0-4]|1[4-7]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s:14 t=critter/.*/fast/s:([0-5]|1[5-7]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s:15 t=critter/.*/fast/s:([0-6]|1[6-7]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s:16 t=critter/.*/fast/s:([0-7]|17) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s:17 t=critter/.*/fast/s:([0-8]) S=$S T=$S p=.06 v=kill
+
+# Breeding, overcrowding
+VERB s=critter/.*/fast/s:\d+ t=_ S=$S T=$S p=.007 v=spawn
+VERB s=critter/.*/fast/s:\d+ t=critter/.*/fast/s:\d+ S=_ T=$T p=0.015 v=choke
+
+# Movement is on von Neumann topology (so they can't escape through cracks)
+VERB s=critter/.*/fast/s:\d+ t=_ S=$T T=$S p=0.2 v=step d=.
+
 
 
 
@@ -181,58 +235,65 @@ VERB s=perfume t=_ S=_ T=$T p=0.1 v=disperse
 VERB s=perfume t=_ S=$S T=$S p=0.09 v=billow
 VERB s=perfume t=_ S=$T T=$S p=0.81 v=drift
 
+# Stimulant gas: makes animals fast
+NOUN n=stimulant c=80ffa8
+VERB s=stimulant t=(critter/'.*')(/s:(\d+)) S=_ T=$1/fast$2 p=1.0 v=stimulate
+VERB s=stimulant t=_ S=_ T=_ p=0.1 v=disperse
+VERB s=stimulant t=_ S=$T T=$S p=0.9 v=drift
+
+
 # Mutator gas: change the species number.
-VERB s=mutator t=critter/(.*)/s:(\d+) S=_ T=critter/mutant/s:$%18+1.2 p=1.0 v=mutate
-VERB s=mutator t=critter/(.*)/s:(\d+) S=_ T=critter/mutant/s:$%18+17.2 p=1.0 v=mutate
-VERB s=mutator t=critter/(.*)/s:(\d+) S=_ T=critter/mutant/s:$%18+2.2 p=0.1 v=mutate
-VERB s=mutator t=critter/(.*)/s:(\d+) S=_ T=critter/mutant/s:$%18+16.2 p=0.1 v=mutate
+VERB s=mutator t=critter/'.*'(.*)/s:(\d+) S=_ T=critter/'mutant'$1/s:$%18+1.2 p=1.0 v=mutate
+VERB s=mutator t=critter/'.*'(.*)/s:(\d+) S=_ T=critter/'mutant'$1/s:$%18+17.2 p=1.0 v=mutate
+VERB s=mutator t=critter/'.*'(.*)/s:(\d+) S=_ T=critter/'mutant'$1/s:$%18+2.2 p=0.1 v=mutate
+VERB s=mutator t=critter/'.*'(.*)/s:(\d+) S=_ T=critter/'mutant'$1/s:$%18+16.2 p=0.1 v=mutate
 VERB s=mutator t=_ S=_ T=_ p=0.1 v=disperse
 VERB s=mutator t=_ S=$T T=$S p=0.9 v=drift
 VERB s=mutator t=perfume S=$T T=$T p=1.0 v=react
 
 # Generate random names for mutant animals
 # form of mutant name is (adjective) (locale) (species)
-VERB s=critter/mutant/(.*) S=critter/mutant_imp/$1
-VERB s=critter/mutant/(.*) S=critter/mutant_beetle/$1
-VERB s=critter/mutant/(.*) S=critter/mutant_bird/$1
-VERB s=critter/mutant/(.*) S=critter/mutant_badger/$1
-VERB s=critter/mutant/(.*) S=critter/mutant_kangaroo/$1
-VERB s=critter/mutant/(.*) S=critter/mutant_panda/$1
-VERB s=critter/mutant/(.*) S=critter/mutant_moth/$1
-VERB s=critter/mutant/(.*) S=critter/mutant_cow/$1
-VERB s=critter/mutant/(.*) S=critter/mutant_cat/$1
-VERB s=critter/mutant/(.*) S=critter/mutant_wombat/$1
-VERB s=critter/mutant/(.*) S=critter/mutant_elephant/$1
-VERB s=critter/mutant/(.*) S=critter/mutant_wolf/$1
-VERB s=critter/mutant/(.*) S=critter/mutant_pig/$1
-VERB s=critter/mutant/(.*) S=critter/mutant_monkey/$1
-VERB s=critter/mutant/(.*) S=critter/mutant_gorilla/$1
-VERB s=critter/mutant/(.*) S=critter/mutant_chimp/$1
-VERB s=critter/mutant/(.*) S=critter/mutant_meerkat/$1
-VERB s=critter/mutant/(.*) S=critter/mutant_tick/$1
+VERB s=critter/'mutant'/(.*) S=critter/'mutant_imp'/$1
+VERB s=critter/'mutant'/(.*) S=critter/'mutant_beetle'/$1
+VERB s=critter/'mutant'/(.*) S=critter/'mutant_bird'/$1
+VERB s=critter/'mutant'/(.*) S=critter/'mutant_badger'/$1
+VERB s=critter/'mutant'/(.*) S=critter/'mutant_kangaroo'/$1
+VERB s=critter/'mutant'/(.*) S=critter/'mutant_panda'/$1
+VERB s=critter/'mutant'/(.*) S=critter/'mutant_moth'/$1
+VERB s=critter/'mutant'/(.*) S=critter/'mutant_cow'/$1
+VERB s=critter/'mutant'/(.*) S=critter/'mutant_cat'/$1
+VERB s=critter/'mutant'/(.*) S=critter/'mutant_wombat'/$1
+VERB s=critter/'mutant'/(.*) S=critter/'mutant_elephant'/$1
+VERB s=critter/'mutant'/(.*) S=critter/'mutant_wolf'/$1
+VERB s=critter/'mutant'/(.*) S=critter/'mutant_pig'/$1
+VERB s=critter/'mutant'/(.*) S=critter/'mutant_monkey'/$1
+VERB s=critter/'mutant'/(.*) S=critter/'mutant_gorilla'/$1
+VERB s=critter/'mutant'/(.*) S=critter/'mutant_chimp'/$1
+VERB s=critter/'mutant'/(.*) S=critter/'mutant_meerkat'/$1
+VERB s=critter/'mutant'/(.*) S=critter/'mutant_tick'/$1
 # avoid water 
-VERB s=critter/mutant_([^/_]+/.*) S=critter/mutant_space_$1
-VERB s=critter/mutant_([^/_]+/.*) S=critter/mutant_water_$1
-VERB s=critter/mutant_([^/_]+/.*) S=critter/mutant_desert_$1
-VERB s=critter/mutant_([^/_]+/.*) S=critter/mutant_cloud_$1
-VERB s=critter/mutant_([^/_]+/.*) S=critter/mutant_shadow_$1
-VERB s=critter/mutant_([^/_]+/.*) S=critter/mutant_dung_$1
-VERB s=critter/mutant_([^/_]+/.*) S=critter/mutant_marsh_$1
-VERB s=critter/mutant_([^/_]+/.*) S=critter/mutant_bistro_$1
-VERB s=critter/mutant_([^/_]+/.*) S=critter/mutant_coffeeshop_$1
-VERB s=critter/mutant_([^/_]+/.*) S=critter/mutant_schoolie_$1
-VERB s=critter/mutant_([^/_]+/.*) S=critter/mutant_tundra_$1
+VERB s=critter/'mutant_([^/_']+'/.*) S=critter/'mutant_space_$1
+VERB s=critter/'mutant_([^/_']+'/.*) S=critter/'mutant_water_$1
+VERB s=critter/'mutant_([^/_']+'/.*) S=critter/'mutant_desert_$1
+VERB s=critter/'mutant_([^/_']+'/.*) S=critter/'mutant_cloud_$1
+VERB s=critter/'mutant_([^/_']+'/.*) S=critter/'mutant_shadow_$1
+VERB s=critter/'mutant_([^/_']+'/.*) S=critter/'mutant_dung_$1
+VERB s=critter/'mutant_([^/_']+'/.*) S=critter/'mutant_marsh_$1
+VERB s=critter/'mutant_([^/_']+'/.*) S=critter/'mutant_bistro_$1
+VERB s=critter/'mutant_([^/_']+'/.*) S=critter/'mutant_coffeeshop_$1
+VERB s=critter/'mutant_([^/_']+'/.*) S=critter/'mutant_schoolie_$1
+VERB s=critter/'mutant_([^/_']+'/.*) S=critter/'mutant_tundra_$1
 # and, adjective
-VERB s=critter/mutant_([^/_]+_.*) S=critter/lesser_spotted_$1
-VERB s=critter/mutant_([^/_]+_.*) S=critter/greater_spotted_$1
-VERB s=critter/mutant_([^/_]+_.*) S=critter/diffident_$1
-VERB s=critter/mutant_([^/_]+_.*) S=critter/ironic_$1
-VERB s=critter/mutant_([^/_]+_.*) S=critter/fierce_$1
-VERB s=critter/mutant_([^/_]+_.*) S=critter/hooting_$1
-VERB s=critter/mutant_([^/_]+_.*) S=critter/chirping_$1
-VERB s=critter/mutant_([^/_]+_.*) S=critter/striped_$1
-VERB s=critter/mutant_([^/_]+_.*) S=critter/luminous_$1
-VERB s=critter/mutant_([^/_]+_.*) S=critter/horned_$1
+VERB s=critter/'mutant_([^/_]+_.*) S=critter/'lesser_spotted_$1
+VERB s=critter/'mutant_([^/_]+_.*) S=critter/'greater_spotted_$1
+VERB s=critter/'mutant_([^/_]+_.*) S=critter/'diffident_$1
+VERB s=critter/'mutant_([^/_]+_.*) S=critter/'ironic_$1
+VERB s=critter/'mutant_([^/_]+_.*) S=critter/'fierce_$1
+VERB s=critter/'mutant_([^/_]+_.*) S=critter/'hooting_$1
+VERB s=critter/'mutant_([^/_]+_.*) S=critter/'chirping_$1
+VERB s=critter/'mutant_([^/_]+_.*) S=critter/'striped_$1
+VERB s=critter/'mutant_([^/_]+_.*) S=critter/'luminous_$1
+VERB s=critter/'mutant_([^/_]+_.*) S=critter/'horned_$1
 
 # Lava. Sticks around longer than cement (long enough to make diffusion-limited aggregation fractals).
 VERB s=lava.* t=wall/. S=wall/basalt T=$T p=0.01 v=set

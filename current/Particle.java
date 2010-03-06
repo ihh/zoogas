@@ -80,9 +80,11 @@ public class Particle {
     }
 
     static Pattern nonWhitespace = Pattern.compile("\\S");
+    static Pattern aliasPattern = Pattern.compile("[^/]+/'([^']+)'.*");
     public static String visibleText(String s) {
-	String[] partsOfName = s.split (visibleSeparatorChar, 3);
-	String visiblePart = partsOfName[partsOfName.length > 2 ? 1 : 0];
+	String[] partsOfName = s.split (visibleSeparatorChar, 2);
+	Matcher aliasMatcher = aliasPattern.matcher(s);
+	String visiblePart = aliasMatcher.matches() ? aliasMatcher.group(1) : partsOfName[0];
 	String viz = visiblePart.replaceAll (visibleSpaceChar, " ");
 	return nonWhitespace.matcher(viz).find() ? viz : "";
     }
