@@ -47,7 +47,8 @@ NOUN n=wall/basalt c=ffc800
 NOUN n=zoo_guest.* c=fefefe
 
 # Beacon: an example directional particle
-NOUN n=(beacon|photon).* c=c0c000
+NOUN n=photon.* c=c0c000
+NOUN n=beacon.* c=c0c000
 VERB s=beacon t=_ S=beacon T=photon/$F p=.5 v=shine
 VERB s=beacon t=_ S=_ T=_ p=.01 v=extinguish
 VERB s=photon/$F t=_ S=$T T=$S p=10 v=beam
@@ -318,16 +319,17 @@ VERB s=zoo_guest.* t=_ S=$T T=$S p=0.01 v=perambulate d=.
 # conga line
 # this models a simple polymer (e.g. a hydrocarbon) by creating energetically favored adjacencies between consecutive monomers
 # the builder is directional to avoid intractable tangles (the polymer is initially stretched in a straight line, but quickly relaxes)
-NOUN n=conga.* c=80c0c0 e=-10
+NOUN n=conga c=80c0c0 e=-10
+NOUN n=conga_head c=80c0c0 e=-10
+NOUN n=conga_dude/ c=80c0c0 e=-10
+NOUN n=conga_dude/'crazy_conga_dude'/ c=ffc0c0 e=-10
+NOUN n=conga_dude/'wild_conga_dude'/ c=80c0ff e=-10
 
 # the energy terms that effectively create a covalent bond between consecutive monomers (conga_dude's)
-BOND s=.*conga.* t=.*conga.* n=handsToHips e=+10 l=0 L=6 b=0
-BOND s=.*conga.* t=.*conga.* n=handsToHips e=+5 l=0 L=6 b=0 m=0
-# give the line a bit of rigidity
-#BOND s=conga.* t=conga.* n=handsToHips e=+1 a=-.5 A=+.5 L=7.5
-#BOND s=conga.* t=conga.* n=handsToHips e=+2 a=-.5 A=+.5 b=0 L=7.5
-#BOND s=conga.* t=conga.* n=handsToHips e=+2 a=-.25 A=+.25 L=2
-#BOND s=conga.* t=conga.* n=handsToHips e=+1 a=-.5 A=+.5 L=2 b=.5
+BOND s=conga_dude/.* t=.*conga.* n=handsToHips e=+10 l=0 L=6 b=0
+BOND s=conga_dude/.* t=.*conga.* n=handsToHips e=+5 l=0 L=6 b=0 m=0
+BOND s=conga_head t=.*conga.* n=handsToHips e=+10 l=0 L=6 b=0
+BOND s=conga_head t=.*conga.* n=handsToHips e=+5 l=0 L=6 b=0 m=0
 
 # initial production rule:  conga -> conga_head/pos:$POS   where $POS \in { 10, 20, 30 }
 # this (as you can probably guess) sets the length of the conga line at 10, 20 or 30
@@ -339,34 +341,37 @@ VERB s=conga t=.* S=conga_head/pos:30 T=$T p=.3 v=start_monsta_conga
 # its stateful form is  conga_head/pos:$POS/dir:$DIR  where $POS is an integer and $DIR a compass direction
 # the first rule randomly picks $DIR
 VERB s=conga_head/pos:(\d+) t=.* S=conga_head/dir:$F/pos:$1 T=$T p=1 v=line_em_up d=.
-VERB s=conga_head/dir:$F/pos:([2-9]|\d\d+) t=_ S=conga_dude T=conga_head/dir:$F/pos:$-1 p=1 v=partay B=(s,handsToHips,t) k=(x,handsToHips,s)
+VERB s=conga_head/dir:$F/pos:([2-9]|\d\d+) t=_ S=conga_dude/ T=conga_head/dir:$F/pos:$-1 p=1 v=partay B=(s,handsToHips,t) k=(x,handsToHips,s)
 VERB s=conga_head.* t=_ S=$T T=$S p=.01 v=wobble k=(sT,handsToHips,x) k=(y,handsToHips,sT)
-VERB s=conga_head/dir:(.*)/pos:1 S=conga_dude p=1 v=lets_go k=(x,handsToHips,s)
+VERB s=conga_head/dir:(.*)/pos:1 S=conga_dude/ p=1 v=lets_go k=(x,handsToHips,s)
 
-# conga_dudes are wild and crazy
-VERB s=conga_dude S=wild_conga_dude k=(x,handsToHips,s) k=(s,handsToHips,y)
-VERB s=conga_dude S=crazy_conga_dude k=(x,handsToHips,s) k=(s,handsToHips,y)
-NOUN n=crazy_conga_dude c=ffc0c0 e=-10
-NOUN n=wild_conga_dude c=80c0ff e=-10
+# conga_dudes can be wild or crazy
+VERB s=conga_dude/ S=conga_dude/'wild_conga_dude'/ k=(x,handsToHips,s) k=(s,handsToHips,y)
+VERB s=conga_dude/ S=conga_dude/'crazy_conga_dude'/ k=(x,handsToHips,s) k=(s,handsToHips,y)
 
 # jiggle the conga guests at max speed, since most of their random steps are rejected anyway
-VERB s=.*conga_dude t=_ S=$T T=$S p=1 v=go_nuts k=(x,handsToHips,sT) k=(sT,handsToHips,y) d=.
-VERB s=conga_.* S=_ p=.0001 v=expire
+VERB s=conga_dude/.* t=_ S=$T T=$S p=1 v=go_nuts k=(x,handsToHips,sT) k=(sT,handsToHips,y) d=.
+
+VERB s=conga_dude/ S=_ p=.0001 v=expire
+VERB s=conga_head S=_ p=.0001 v=expire
 
 # birth-death on conga_dudes
-VERB s=.*conga_dude t=_ S=$S T=$S p=.0001 v=conga_birth k=(x,handsToHips,s) K=(sT,handsToHips,y) B=(s,handsToHips,t)
-VERB s=.*conga_dude t=.*conga_dude S=$S T=_ v=conga_death K=(x,handsToHips,s) c=(s,handsToHips,t) K=(tS,handsToHips,y)
+VERB s=conga_dude/.* t=_ S=$S T=$S p=.0001 v=conga_birth k=(x,handsToHips,s) K=(sT,handsToHips,y) B=(s,handsToHips,t)
+VERB s=conga_dude/.* t=.*conga_dude S=$S T=_ v=conga_death K=(x,handsToHips,s) c=(s,handsToHips,t) K=(tS,handsToHips,y)
 
 
 
 
 
 # Cell walls
-NOUN n=(anchored_cell_wall|cell_builder.*) c=103010 e=-10
+NOUN n=anchored_cell_wall.* c=103010 e=-10
+NOUN n=cell_builder.* c=103010 e=-10
 NOUN n=cell_wall c=204020 e=-10
-BOND s=(anchored_|)cell_wall t=cell_(wall|builder.*) n=cellWall e=+10 L=1
+BOND s=cell_wall t=cell_(wall|builder.*) n=cellWall e=+10 L=1
+BOND s=anchored_cell_wall t=cell_(wall|builder.*) n=cellWall e=+10 L=1
 VERB s=cell_wall t=_ S=$T T=$S k=(x,cellWall,sT) k=(sT,cellWall,y)
-VERB s=(anchored_|)cell_wall S=_ p=.0001 v=degrade
+VERB s=cell_wall S=_ p=.0001 v=degrade
+VERB s=anchored_cell_wall S=_ p=.0001 v=degrade
 
 # Cell builders
 # Choose size and orientation:
@@ -385,7 +390,8 @@ VERB s=cell_builder/.*dir:$F t=anchored_cell_wall S=cell_wall T=cell_wall p=1 v=
 VERB s=cell_builder/.*/dir:$+R t=_ T=animal v=seed p=.04
 
 # Bombs throw off shrapnel...
-NOUN n=(bomb|.*shrapnel).* c=00c080
+NOUN n=bomb.* c=00c080
+NOUN n=shrapnel.* c=00c080
 VERB s=bomb S=bomb/r:4/n:6
 VERB s=bomb/r:(\d)/n:([1-9]|\d\d+) S=bomb/r:$1/n:$-2 T=shrapnel/d:$F/v:$1 v=explode
 VERB s=bomb/r:(\d)/n:0 S=shrapnel/d:$F/v:$1 v=explode
@@ -402,7 +408,7 @@ VERB s=shrapnel/d:$F/v:2 p=2 t=_ S=$T T=$S v=fly
 VERB s=shrapnel/d:$F/v:1 p=1 t=_ S=$T T=$S v=fly
 
 # shrapnel deceleration, explosion, ricochet
-VERB s=(shrapnel/d:$F/v:)([1-9]) t=_ S=$T T=$1$-2 v=fly/decelerate
+VERB s=shrapnel/(d:$F/v:)([1-9]) t=_ S=$T T=shrapnel/$1$-2 v=fly/decelerate
 VERB s=shrapnel/d:.*/v:[01] S=exploding_shrapnel p=.9 v=explode
 VERB s=shrapnel/d:.*/.* t=[^_].* S=exploding_shrapnel v=explode
 VERB s=shrapnel/d:$F/v:(\d) t=[^_].* S=shrapnel/d:$++L/v:$1 T=$T p=.1 v=ricochet
@@ -462,10 +468,17 @@ VERB s=fire/e:0 S=_ p=.05 v=extinguish
 # BMC Bioinformatics 2009, 10:369doi:10.1186/1471-2105-10-369
 
 # base colors: HSV values with S=1, V=0.5 & H depending on the first nucleotide: 0(a), .25(c), .5(g), .75(u)
-NOUN n=(base|RNA_sequence)/a.* c=800000 e=-10
-NOUN n=(base|RNA_sequence)/c.* c=408000 e=-10
-NOUN n=(base|RNA_sequence)/g.* c=008080 e=-10
-NOUN n=(base|RNA_sequence)/u.* c=400080 e=-10
+NOUN n=base/a.* c=800000 e=-10
+NOUN n=base/c.* c=408000 e=-10
+NOUN n=base/g.* c=008080 e=-10
+NOUN n=base/u.* c=400080 e=-10
+
+NOUN n=base/[ryn] c=888888 e=-10
+
+NOUN n=RNA_sequence/a.* c=800000 e=-10
+NOUN n=RNA_sequence/c.* c=408000 e=-10
+NOUN n=RNA_sequence/g.* c=008080 e=-10
+NOUN n=RNA_sequence/u.* c=400080 e=-10
 
 # canonical basepairs: RGB components are the the sums of the RGB components of individual bases.
 # these lines also define the stabilizing energy of a Watson-Crick or wobble basepair
@@ -482,13 +495,16 @@ NOUN n=basepair/gg.* c=00c0c0 e=-23
 NOUN n=basepair/uu.* c=6000c0 e=-23
 
 # define the covalent bond between consecutive bases on the same chain
-BOND n=5to3 s=(RNA_sequence|base|basepair)/.* t=(RNA_sequence|base|basepair)/.* e=+10
-BOND n=f5to3 s=(RNA_sequence|base|basepair)/.* t=(RNA_sequence|base|basepair)/.* e=+10
-BOND n=r5to3 s=(RNA_sequence|base|basepair)/.* t=(RNA_sequence|base|basepair)/.* e=+10
-BOND n=5to3f s=(RNA_sequence|base|basepair)/.* t=(RNA_sequence|base|basepair)/.* e=+10
-BOND n=5to3r s=(RNA_sequence|base|basepair)/.* t=(RNA_sequence|base|basepair)/.* e=+10
-BOND n=f5to3f s=(RNA_sequence|base|basepair)/.* t=(RNA_sequence|base|basepair)/.* e=+10
-BOND n=r5to3r s=(RNA_sequence|base|basepair)/.* t=(RNA_sequence|base|basepair)/.* e=+10
+BOND n=5to3 s=base/.* t=(RNA_sequence|base)/.* e=+10
+BOND n=5to3 s=RNA_sequence/.* t=(RNA_sequence|base)/.* e=+10
+BOND n=f5to3 s=basepair/.* t=(RNA_sequence|base)/.* e=+10
+BOND n=r5to3 s=basepair/.* t=(RNA_sequence|base)/.* e=+10
+BOND n=5to3f s=base/.* t=basepair/.* e=+10
+BOND n=5to3f s=RNA_sequence/.* t=basepair/.* e=+10
+BOND n=5to3r s=base/.* t=basepair/.* e=+10
+BOND n=5to3r s=RNA_sequence/.* t=basepair/.* e=+10
+BOND n=f5to3f s=basepair/.* t=basepair/.* e=+10
+BOND n=r5to3r s=basepair/.* t=basepair/.* e=+10
 
 # to make a basepair, merge two bases and their upstream(x) and downstream(y) bonds
 VERB s=base/([acgu]) t=base/([acgu]) S=basepair/$1$2 T=_ p=1 v=pair_$1_to_$2 x=(s,5to3,t) x=(t,5to3,s) b=(s,5to3,xf) B=(s,f5to3,xf) b=(s,5to3f,xff) B=(s,f5to3f,xff) b=(yf,5to3,s) B=(yf,5to3f,s) b=(yff,f5to3,s) B=(yff,f5to3f,s) b=(t,5to3,xr) B=(s,r5to3,xr) b=(t,5to3r,xrr) B=(s,r5to3r,xrr) b=(yr,5to3,t) B=(yr,5to3r,s) b=(yrr,r5to3,t) B=(yrr,r5to3r,s)
@@ -497,23 +513,25 @@ VERB s=base/([acgu]) t=base/([acgu]) S=basepair/$1$2 T=_ p=1 v=pair_$1_to_$2 x=(
 VERB s=basepair/(.)(.) t=_ S=base/$1 T=base/$2 p=1 v=unpair_$1_from_$2 b=(s,f5to3,xf) B=(s,5to3,xf) b=(s,f5to3f,xff) B=(s,5to3f,xff) b=(yf,5to3f,s) B=(yf,5to3,s) b=(yff,f5to3f,s) B=(yff,f5to3,s) b=(s,r5to3,xr) B=(t,5to3,xr) b=(s,r5to3r,xrr) B=(t,5to3r,xrr) b=(yr,5to3r,s) B=(yr,5to3,t) b=(yrr,r5to3r,s) B=(yrr,r5to3,t)
 
 # all bases and basepairs do Brownian drift
-VERB s=(base|basepair)/.* t=_ S=$T T=$S p=1 v=/drift k=(sT,5to3,x) k=(y,5to3,sT) k=(sT,5to3f,xf) k=(yf,5to3f,sT) k=(sT,f5to3,fx) k=(fy,f5to3,sT) k=(sT,f5to3f,xff) k=(yff,f5to3f,sT) k=(sT,r5to3,xr) k=(yr,r5to3,sT) k=(sT,5to3r,rx) k=(ry,5to3r,sT) k=(sT,r5to3r,xrr) k=(yrr,r5to3r,sT)
+VERB s=base/.* t=_ S=$T T=$S p=1 v=/drift k=(sT,5to3,x) k=(y,5to3,sT) k=(sT,5to3f,xf) k=(yf,5to3f,sT) k=(sT,f5to3,fx) k=(fy,f5to3,sT) k=(sT,f5to3f,xff) k=(yff,f5to3f,sT) k=(sT,r5to3,xr) k=(yr,r5to3,sT) k=(sT,5to3r,rx) k=(ry,5to3r,sT) k=(sT,r5to3r,xrr) k=(yrr,r5to3r,sT)
+VERB s=basepair/.* t=_ S=$T T=$S p=1 v=/drift k=(sT,5to3,x) k=(y,5to3,sT) k=(sT,5to3f,xf) k=(yf,5to3f,sT) k=(sT,f5to3,fx) k=(fy,f5to3,sT) k=(sT,f5to3f,xff) k=(yff,f5to3f,sT) k=(sT,r5to3,xr) k=(yr,r5to3,sT) k=(sT,5to3r,rx) k=(ry,5to3r,sT) k=(sT,r5to3r,xrr) k=(yrr,r5to3r,sT)
 
 # bases and basepairs gradually degrade.
 # the consequent loss of bond energy limits this in the middle of polymer chains, but not at the ends
-VERB s=(base|basepair)/.* S=_ p=.0001 v=/degrade
+VERB s=base/.* S=_ p=.0001 v=/degrade
+VERB s=basepair/.* S=_ p=.0001 v=/degrade
 
 
 # Photons mutate bases, preferring transitions to transversions
-VERB s=photon/.* t=base/[ag] S=_ T=base/r p=.8 k=(x,5to3,t) k=(t,5to3,y)
-VERB s=photon/.* t=base/[cu] S=_ T=base/y p=.8 k=(x,5to3,t) k=(t,5to3,y)
-VERB s=photon/.* t=base/[acgu] S=_ T=base/n p=.2 k=(x,5to3,t) k=(t,5to3,y)
-VERB s=base/r S=base/a k=(x,5to3,s) k=(s,5to3,y)
-VERB s=base/r S=base/g k=(x,5to3,s) k=(s,5to3,y)
-VERB s=base/y S=base/c k=(x,5to3,s) k=(s,5to3,y)
-VERB s=base/y S=base/u k=(x,5to3,s) k=(s,5to3,y)
-VERB s=base/n S=base/r k=(x,5to3,s) k=(s,5to3,y)
-VERB s=base/n S=base/y k=(x,5to3,s) k=(s,5to3,y)
+VERB s=photon/.* t=base/[ag] S=_ T=base/r p=.8 k=(x,5to3,t) k=(t,5to3,y) k=(xf,f5to3,t) k=(t,5to3f,yf) k=(xr,r5to3,t) k=(t,5to3r,yr)
+VERB s=photon/.* t=base/[cu] S=_ T=base/y p=.8 k=(x,5to3,t) k=(t,5to3,y) k=(xf,f5to3,t) k=(t,5to3f,yf) k=(xr,r5to3,t) k=(t,5to3r,yr)
+VERB s=photon/.* t=base/[acgu] S=_ T=base/n p=.2 k=(x,5to3,t) k=(t,5to3,y) k=(xf,f5to3,s) k=(t,5to3f,yf) k=(xr,r5to3,t) k=(t,5to3r,yr)
+VERB s=base/r S=base/a k=(x,5to3,s) k=(s,5to3,y) k=(xf,f5to3,s) k=(s,5to3f,yf) k=(xr,r5to3,s) k=(s,5to3r,yr)
+VERB s=base/r S=base/g k=(x,5to3,s) k=(s,5to3,y) k=(xf,f5to3,s) k=(s,5to3f,yf) k=(xr,r5to3,s) k=(s,5to3r,yr)
+VERB s=base/y S=base/c k=(x,5to3,s) k=(s,5to3,y) k=(xf,f5to3,s) k=(s,5to3f,yf) k=(xr,r5to3,s) k=(s,5to3r,yr)
+VERB s=base/y S=base/u k=(x,5to3,s) k=(s,5to3,y) k=(xf,f5to3,s) k=(s,5to3f,yf) k=(xr,r5to3,s) k=(s,5to3r,yr)
+VERB s=base/n S=base/r k=(x,5to3,s) k=(s,5to3,y) k=(xf,f5to3,s) k=(s,5to3f,yf) k=(xr,r5to3,s) k=(s,5to3r,yr)
+VERB s=base/n S=base/y k=(x,5to3,s) k=(s,5to3,y) k=(xf,f5to3,s) k=(s,5to3f,yf) k=(xr,r5to3,s) k=(s,5to3r,yr)
 
 
 # now here is the constructor for an RNA sequence
@@ -523,20 +541,20 @@ VERB s=base/n S=base/y k=(x,5to3,s) k=(s,5to3,y)
 VERB s=RNA_sequence/[acgu]+ t=.* S=$S/d:e T=$T p=.05 v=/pick_direction
 
 # generate first base
-VERB s=(RNA_sequence/)([acgu])([acgu]+)(/d:$F) t=_ S=base/$2 T=$1$3$4 p=1 v=generate_base_$2 B=(s,5to3,t) k=(x,5to3,s)
+VERB s=RNA_sequence/([acgu])([acgu]+)(/d:$F) t=_ S=base/$1 T=RNA_sequence/$2$3 p=1 v=generate_base_$1 B=(s,5to3,t) k=(x,5to3,s)
 
 # generate last base
-VERB s=(RNA_sequence/)([acgu])/.* t=.* S=base/$2 T=$T p=1 v=generate_last_base_$2 k=(x,5to3,s)
+VERB s=RNA_sequence/([acgu])/.* t=.* S=base/$1 T=$T p=1 v=generate_last_base_$1 k=(x,5to3,s)
 
 
 # allow run-length encoding of RNA sequences
 # again with the blue/cyan pulsing
 NOUN n=RNA_sequence/([acgu\d][acgu\d])* c=0000ff
 NOUN n=RNA_sequence/[acgu\d]* c=00ffff
-VERB s=(RNA_sequence/[acgu]*)([acgu])(\d+)(.*) t=.* S=$1$2$2$-3$4 T=$T p=1 v=/expand_run_length_encoding
+VERB s=RNA_sequence/([acgu]*)([acgu])(\d+)(.*) t=.* S=RNA_sequence/$1$2$2$-3$4 T=$T p=1 v=/expand_run_length_encoding
 # override run-length of 2:
-VERB s=(RNA_sequence/[acgu]*)([acgu])(2)([^\d].*|) t=.* S=$1$2$2$-3$4 T=$T p=0 v=/expand_run_length_encoding
-VERB s=(RNA_sequence/[acgu]*)([acgu])(2)([^\d].*|) t=.* S=$1$2$2$4 T=$T p=1 v=/expand_run_length_encoding
+VERB s=RNA_sequence/([acgu]*)([acgu])(2)([^\d].*|) t=.* S=RNA_sequence/$1$2$2$-3$4 T=$T p=0 v=/expand_run_length_encoding
+VERB s=RNA_sequence/([acgu]*)([acgu])(2)([^\d].*|) t=.* S=RNA_sequence/$1$2$2$4 T=$T p=1 v=/expand_run_length_encoding
 
 # randomly generate one of several preset RNA sequences
 NOUN n=RNA_sequence c=7f0000 e=-10
