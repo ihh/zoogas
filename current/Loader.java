@@ -1,4 +1,5 @@
 import java.awt.Color;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -98,9 +99,45 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
         add(showWorldCheck, c);
         c.gridx = 2;
 
-        automaticallyRefresh = new JCheckBox("Automatically Refresh");
+        automaticallyRefresh = new JCheckBox("Automatically Refresh") {
+            Thread refresher = null;
+            Loader loader = null;
+            
+            public void fireActionPerformed(ActionEvent e){
+                if(loader == null) {
+                    if(getActionListeners().length > 0)
+                        loader = (Loader)this.getActionListeners()[0];
+                    else {
+                        return;
+                    }
+                }
+                if(isSelected() && loader.toWorldServer.isConnected()) {
+                    refresher = new Thread() {
+                        public void run() {
+                            while(isSelected()) {
+                                if(loader != null) {
+                                    loader.refreshObserved();
+                                }
+                                try {
+                                    Thread.currentThread().sleep(5000);
+                                }
+                                catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    };
+                    refresher.start();
+                }
+                else {
+                    refresher = null;
+                }
+                super.fireActionPerformed(e);
+            }
+        };
         automaticallyRefresh.setActionCommand("AutoRefresh");
         automaticallyRefresh.setMnemonic('r');
+        automaticallyRefresh.addActionListener(this);
         add(automaticallyRefresh, c);
         c.gridx = 0;
         ++c.gridy;
@@ -248,7 +285,10 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
             forceReconnect.setEnabled(true);
             return;
         } else if ("manualRefresh".equals(e.getActionCommand())) {
-            toWorldServer.sendRefreshObserved();
+            refreshObserved();
+            return;
+        } else if ("AutoRefresh".equals(e.getActionCommand())){
+            // See constructor of automaticallyRefresh
             return;
         } else if ("openrules".equals(e.getActionCommand())) {
             // TODO: add real implementation
@@ -256,6 +296,17 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
             return;
         } else {
             System.err.println("Handler for action " + e.getActionCommand() + " not found");
+        }
+    }
+    
+    private void refreshObserved(){
+        toWorldServer.sendRefreshObserved();
+    }
+
+    public void setConnected(boolean connected) {
+        if(connected == true && automaticallyRefresh.isSelected()) {
+            automaticallyRefresh.setSelected(false);
+            automaticallyRefresh.doClick();
         }
     }
 

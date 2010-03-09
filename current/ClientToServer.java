@@ -66,6 +66,20 @@ public class ClientToServer extends NetworkThread {
     SocketChannel serverSocket = null;
     private ZooGas gas = null;
     private Loader loader = null;
+    private ConnectionState state = ConnectionState.NOT_CONNECTED;
+
+    private enum ConnectionState{
+        NOT_CONNECTED,
+        OBSERVING
+    }
+    
+    /**
+     *Returns true if the client is connected
+     * @return
+     */
+    public boolean isConnected(){
+        return state != ConnectionState.NOT_CONNECTED;
+    }
     
     public void setInterface(Object o) {
         if(o instanceof ZooGas) {
@@ -132,6 +146,8 @@ public class ClientToServer extends NetworkThread {
                 serverSocket.configureBlocking(false);
 
                 loader.setMessage("Connected to " + serverAddress + ":" + newPort);
+                state = ConnectionState.OBSERVING;
+                loader.setConnected(true);
             }
         } catch (SocketTimeoutException ste) {
             loader.setMessage("Connection timed out");
