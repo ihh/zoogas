@@ -2,6 +2,7 @@ import java.awt.Rectangle;
 
 import java.io.IOException;
 
+import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -26,15 +27,18 @@ import java.util.SortedSet;
  * The main server that enables connections between players on a grid
  */
 public class WorldServer extends Thread {
-    public WorldServer() {
+    public WorldServer() throws BindException{
         usedPorts = new HashMap<Integer, ServerToClient>();
         pointToClient = new HashMap<Point, ServerToClient>();
         clientLocation = new HashMap<ServerToClient, Point>();
+        lastPinged = new HashMap<Integer, Long>();
         
         clientParticles = new HashMap<ServerToClient, HashMap<Integer, List<Point>>>();
         try {
             incomingClientsSSC = ServerSocketChannel.open();
             incomingClientsSSC.socket().bind(new InetSocketAddress(newConnectionPort));
+        } catch (BindException e) {
+            throw e;
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -49,14 +53,14 @@ public class WorldServer extends Thread {
     public final static int newConnectionPort = 4440;
     public final int minPort = newConnectionPort + 1;
     public final int maxPort = 4450;
-    private Map<Integer, ServerToClient> usedPorts;
 
     // ZooGas connectivity
+    //  Note: the less containers that have ServerToClient, the better
+    private Map<Integer, ServerToClient> usedPorts;
     private Map<Point, ServerToClient> pointToClient;
     private Map<ServerToClient, Point> clientLocation;
-    
-    // Observations
-    private Map<ServerToClient, HashMap<Integer, List<Point>>> clientParticles;
+    private Map<ServerToClient, HashMap<Integer, List<Point>>> clientParticles; // observers
+    private Map<Integer, Long> lastPinged;
 
     // Validation
     RuleSet ruleset = null;
@@ -117,6 +121,8 @@ public class WorldServer extends Thread {
 
     public void deregisterClient(ServerToClient ct) {
         usedPorts.remove(ct.port); // allow this key to be reused now
+        clientLocation.remove(ct.port);
+        clientParticles.remove(ct);
         pointToClient.remove(ct.getLocation());
     }
 
@@ -223,20 +229,24 @@ public class WorldServer extends Thread {
                     ByteBuffer bb = ByteBuffer.allocate(allocateBufferSize);
                     if(socketChannel.read(bb) > 0) {
                         processPacket(bb);
+                        lastPinged.put(port, System.currentTimeMillis());
                     }
                     else {
-                        sleep(1000);
-                        if(getLocation() != null)
-                            sendRequestCurrentParticles();
-                        //socketChannel.socket().getOutputStream().write(0); // Keep alive
+                        Long last = lastPinged.get(port);
+                        if(last == null)
+                            lastPinged.put(port, System.currentTimeMillis());
+                        else if(last < System.currentTimeMillis() - 5000) {
+                            if(getLocation() != null)
+                                sendRequestCurrentParticles();
+                            else
+                                sendPing(); // Keep alive
+                            lastPinged.put(port, System.currentTimeMillis());
+                        }
                     }
                 }
 
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             } catch (IOException e) {
-                if (!e.getLocalizedMessage().startsWith("An established connection was aborted"))
-                    e.printStackTrace();
+                //e.printStackTrace();
             } finally {
                 try {
                     serverSocketChannel.close();
@@ -310,6 +320,11 @@ public class WorldServer extends Thread {
         }
 
         // Packet senders
+        private void sendPing() {
+            ByteBuffer bb = prepareBuffer(packetCommand.PING);
+            verifyAndSend(bb, packetCommand.PING, socketChannel);
+        }
+
         private void sendLaunch() {
             ByteBuffer bb = prepareBuffer(packetCommand.LAUNCH);
             verifyAndSend(bb, packetCommand.LAUNCH, socketChannel);

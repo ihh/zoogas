@@ -574,7 +574,10 @@ public class Board extends MooreTopology {
     }
 
     public final Set<Particle> getParticlesByPrefix(String prefix) {
-        return prefixToParticles.get(prefix);
+        if(prefixToParticles.containsKey(prefix))
+            return prefixToParticles.get(prefix);
+        System.err.println("Wall particles are not defined!");
+        return new HashSet<Particle>();
     }
 
     protected final Particle getOrCreateParticle(String name) {

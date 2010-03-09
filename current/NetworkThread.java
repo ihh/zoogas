@@ -153,6 +153,9 @@ public abstract class NetworkThread extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
             return false;
+        } catch(NullPointerException e) {
+            if(sc == null)
+                System.err.println("SocketChannel not yet created.");
         }
         return true;
     }

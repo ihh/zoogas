@@ -22,6 +22,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 
+import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -239,7 +240,11 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
             return;
         } else if ("testServer".equals(e.getActionCommand())) {
             forceReconnect.setEnabled(false);
-            ws = new WorldServer();
+            try {
+                ws = new WorldServer();
+            } catch (BindException f) {
+                setMessage("Could not bind WorldServer's address. WorldServer already started?");
+            }
             forceReconnect.setEnabled(true);
             return;
         } else if ("manualRefresh".equals(e.getActionCommand())) {
