@@ -152,6 +152,7 @@ public abstract class NetworkThread extends Thread {
                 sc.configureBlocking(false);
         } catch (IOException e) {
             e.printStackTrace();
+            System.err.println(this.getClass() + ": connection closed already?");
             return false;
         } catch(NullPointerException e) {
             if(sc == null)

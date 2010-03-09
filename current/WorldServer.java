@@ -85,14 +85,12 @@ public class WorldServer extends Thread {
                     bb.putInt(newPort);
                     bb.flip();
                     sc.configureBlocking(true);
-                    sc.write(bb);
 
-                    InetAddress newClientAdd = sc.socket().getInetAddress();
-                    sc.close();
-
+                    
+                    String newClientAdd = sc.socket().getInetAddress().getHostAddress();
                     if (newPort != ServerToClient.CONNECTIONS_FULL) {
                         System.out.println("new Client on " + newPort);
-                        new ServerToClient(new InetSocketAddress(newClientAdd.getHostAddress(), newPort), newPort);
+                        new ServerToClient(new InetSocketAddress(newClientAdd, newPort), newPort, sc, bb);
                     }
                 } else {
                     sleep(50);
@@ -187,7 +185,7 @@ public class WorldServer extends Thread {
 
 
     private class ServerToClient extends NetworkThread {
-        ServerToClient(InetSocketAddress clientAddress, int port) {
+        ServerToClient(InetSocketAddress clientAddress, int port, SocketChannel sc, ByteBuffer bb) {
             this.port = port;
 
             try {
@@ -197,6 +195,8 @@ public class WorldServer extends Thread {
                 serverSocketChannel.configureBlocking(true);
                 serverSocketChannel.socket().bind(clientAddress);
 
+                sc.write(bb);
+                sc.close();
                 System.out.println(" waiting for connection..." + port);
                 while(socketChannel == null) {
                     socketChannel = serverSocketChannel.accept();
