@@ -385,6 +385,7 @@ public class Challenge
     }
     
     public static class EncloseParticles extends Condition {
+	// TODO: particleName should be a regular expression so it can match multiple Particle names
         public EncloseParticles(int count, String particleName, Board b) {
             c = count;
             board = b;

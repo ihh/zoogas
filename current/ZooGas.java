@@ -260,17 +260,27 @@ public class ZooGas implements KeyListener {
         initSprayTools();
 
         // init objective
+
+	// TODO: create the following challenge sequence
+	// - place 5 animals
+	// - place 5 guests
+	// - create an enclosure
+	// - while keeping at least 5 guests alive, do each of the following:
+	//  - (once only) get animal population over 100
+	//  - (for at least 30 seconds) maintain species diversity at ~2.9 species or better, i.e. keep entropy of species distribution above log(2.9)
+	//  - (for at least 30 seconds) maintain species diversity at ~3.9 species or better, i.e. keep entropy of species distribution above log(3.9)
+
         // hackish test cases
         // place 5 guests anywhere
-        //objective = new Challenge(board, new Challenge.EncloseParticles(5, "zoo_guest", board));
+        // objective = new Challenge(board, new Challenge.EncloseParticles(5, "zoo_guest", board));
         // create 4 separated enclosures
-        //objective = new Challenge(board, new Challenge.EnclosuresCondition(board, null, null, 4));
+        // objective = new Challenge(board, new Challenge.EnclosuresCondition(board, null, null, 4));
         // create 3 separated enclosures with 4 zoo_guests in each
         //objective = new Challenge(board, new Challenge.EnclosuresCondition(board, null, new Challenge.EncloseParticles(4, "zoo_guest", board), 3));
         // place a zoo_guest, then wait 50 updates
         //objective = new Challenge(board, new Challenge.SucceedNTimes(null, new Challenge.EncloseParticles(1, "zoo_guest", board), 50));
-        // place 5 rock_imps anywhere
-        //objective = new Challenge(board, new Challenge.EncloseParticles(5, "rock_imp/s:0", board));
+        // place 5 animals anywhere
+        // objective = new Challenge(board, new Challenge.EncloseParticles(5, "critter/.*", board));
 
 	// init hints
 	String specialKeys = "Special keys: "+cheatKey+" (reveal state) "+slowKey+" (reveal bonds) "+stopKey+" (freeze)";
@@ -532,7 +542,50 @@ public class ZooGas implements KeyListener {
 
         // current objective
         if (objective != null)
-            printOrHide(g, objective.getDescription(), objectiveRow, true, Color.white);
+            printOrHide(g, "Goal: " + objective.getDescription(), objectiveRow, true, Color.white);
+	else {
+	    // quick, hacky feedback scores on population stats - to be replaced by more generic challenges (although these scores ARE nice)
+	    String guestName = "zoo_guest";
+	    String critterPrefix = "critter";
+	    int targetGuests = 10;
+	    int targetCritters = 100;
+	    double targetDiversity = 3.5;
+
+	    Particle guestParticle = board.getParticleByName(guestName);
+	    int totalGuests = guestParticle==null ? 0 : guestParticle.getReferenceCount();
+	    String guestString = "Guests: " + String.format("% 2d", totalGuests) + (totalGuests < targetGuests
+							     ? (" (goal: " + targetGuests + ")")
+							     : "");
+
+	    int totalCritters = 0;
+	    double diversityScore = 0;
+	    if (board.gotPrefix(critterPrefix)) {
+		Set<Particle> critters = board.getParticlesByPrefix(critterPrefix);
+		if (critters != null) {
+		    for (Particle critter : critters)
+			totalCritters += critter.getReferenceCount();
+		    double entropy = 0;
+		    for (Particle critter : critters) {
+			double p = ((double) critter.getReferenceCount()) / (double) totalCritters;
+			if (p > 0)
+			    entropy -= p * Math.log(p);
+		    }
+		    diversityScore = Math.exp(entropy);
+		}
+	    }
+
+	    String popString = "Animals: " + String.format("% 3d", totalCritters) + (totalCritters < targetCritters
+										     ? (" (goal: " + targetCritters + ")")
+										     : "");
+
+	    String divString = totalCritters < targetCritters
+		? ""
+		: (", diversity: " + String.format("%.2f", diversityScore) + (diversityScore < targetDiversity
+									      ? (" (goal: " + targetDiversity + ")")
+									      : ""));
+            printOrHide(g, guestString, objectiveRow, true, Color.green);
+            printOrHide(g, popString + divString, objectiveRow + 1, true, Color.green);
+	}
 
         // identify particle that cursor is currently over
         if (board.onBoard(cursorPos)) {
