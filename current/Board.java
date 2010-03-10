@@ -513,13 +513,13 @@ public class Board extends MooreTopology {
     protected final void connectBorderInDirection(int dir, InetSocketAddress remote) {
         switch(dir) {
             case 0:
-                connectBorder(new Point(0, 0), new Point(0, -1), new Point(1, 0), 128, new Point(0, -size), remote); // north
+                connectBorder(new Point(0, 127), new Point(0, 128), new Point(1, 0), 128, new Point(0, +size), remote); // north
                 break;
             case 1:
                 connectBorder(new Point(127, 0), new Point(128, 0), new Point(0, 1), 128, new Point(+size, 0), remote); // east
                 break;
             case 2:
-                connectBorder(new Point(0, 127), new Point(0, 128), new Point(1, 0), 128, new Point(0, +size), remote); // south
+                connectBorder(new Point(0, 0), new Point(0, -1), new Point(1, 0), 128, new Point(0, -size), remote); // south
                 break;
             case 3:
                 connectBorder(new Point(0, 0), new Point(-1, 0), new Point(0, 1), 128, new Point(-size, 0), remote); // west
