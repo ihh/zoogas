@@ -8,8 +8,8 @@ TOOL n=stimulant k=h d=2.0 p=15.0 r=40 f=0.11249999999999999 w=.2
 TOOL n=animal k=a
 TOOL n=beacon k=b
 TOOL n=zoo_guest k=z
-TOOL n=conga/ k=x
-TOOL n=cage_builder/ k=c
-TOOL n=cell_builder/ k=v
+TOOL n=conga k=x
+TOOL n=cage_builder k=c
+TOOL n=cell_builder k=v
 TOOL n=bomb k=n
 TOOL n=RNA_sequence k=q

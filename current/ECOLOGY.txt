@@ -319,7 +319,7 @@ VERB s=zoo_guest.* t=_ S=$T T=$S p=0.01 v=perambulate d=.
 # conga line
 # this models a simple polymer (e.g. a hydrocarbon) by creating energetically favored adjacencies between consecutive monomers
 # the builder is directional to avoid intractable tangles (the polymer is initially stretched in a straight line, but quickly relaxes)
-NOUN n=conga/ c=80c0c0 e=-10
+NOUN n=conga c=80c0c0 e=-10
 NOUN n=conga_head c=80c0c0 e=-10
 NOUN n=conga_dude/ c=80c0c0 e=-10
 NOUN n=conga_dude/'crazy_conga_dude'/ c=ffc0c0 e=-10
@@ -333,9 +333,9 @@ BOND s=conga_head t=.*conga.* n=handsToHips e=+5 l=0 L=6 b=0 m=0
 
 # initial production rule:  conga -> conga_head/pos:$POS   where $POS \in { 10, 20, 30 }
 # this (as you can probably guess) sets the length of the conga line at 10, 20 or 30
-VERB s=conga/ t=.* S=conga_head/pos:10 T=$T p=.3 v=start_lil_conga
-VERB s=conga/ t=.* S=conga_head/pos:20 T=$T p=.3 v=start_hapnin_conga
-VERB s=conga/ t=.* S=conga_head/pos:30 T=$T p=.3 v=start_monsta_conga
+VERB s=conga t=.* S=conga_head/pos:10 T=$T p=.3 v=start_lil_conga
+VERB s=conga t=.* S=conga_head/pos:20 T=$T p=.3 v=start_hapnin_conga
+VERB s=conga t=.* S=conga_head/pos:30 T=$T p=.3 v=start_monsta_conga
 
 # conga_head is the constructor
 # its stateful form is  conga_head/pos:$POS/dir:$DIR  where $POS is an integer and $DIR a compass direction
@@ -364,28 +364,28 @@ VERB s=conga_dude/.* t=.*conga_dude S=$S T=_ v=conga_death K=(x,handsToHips,s) c
 
 
 # Cell walls
-NOUN n=anchored_cell_wall/.* c=103010 e=-10
-NOUN n=cell_builder/.* c=103010 e=-10
+NOUN n=anchored_cell_wall.* c=103010 e=-10
+NOUN n=cell_builder.* c=103010 e=-10
 NOUN n=cell_wall c=204020 e=-10
 BOND s=cell_wall t=cell_(wall|builder.*) n=cellWall e=+10 L=1
-BOND s=anchored_cell_wall/ t=cell_(wall|builder.*) n=cellWall e=+10 L=1
+BOND s=anchored_cell_wall t=cell_(wall|builder.*) n=cellWall e=+10 L=1
 VERB s=cell_wall t=_ S=$T T=$S k=(x,cellWall,sT) k=(sT,cellWall,y)
 VERB s=cell_wall S=_ p=.0001 v=degrade
-VERB s=anchored_cell_wall/ S=_ p=.0001 v=degrade
+VERB s=anchored_cell_wall S=_ p=.0001 v=degrade
 
 # Cell builders
 # Choose size and orientation:
-VERB s=cell_builder/ t=.* S=cell_builder/len:5 T=$T p=.3 v=plan_small_cell
-VERB s=cell_builder/ t=.* S=cell_builder/len:11 T=$T p=.3 v=plan_medium_cell
-VERB s=cell_builder/ t=.* S=cell_builder/len:21 T=$T p=.3 v=plan_large_cell
+VERB s=cell_builder t=.* S=cell_builder/len:5 T=$T p=.3 v=plan_small_cell
+VERB s=cell_builder t=.* S=cell_builder/len:11 T=$T p=.3 v=plan_medium_cell
+VERB s=cell_builder t=.* S=cell_builder/len:21 T=$T p=.3 v=plan_large_cell
 VERB s=cell_builder/len:(\d+) t=.* S=cell_builder/len:$1/dir:$F T=$T p=1 v=choose_orientation d=.
 # OK, here's the program that actually builds the cell. It's a simple state machine: build, turn, stop.
-VERB s=cell_builder/len:(\d+)/dir:$F t=_ T=cell_builder/len:$1/walls:3/steps:$-1/dir:$F S=anchored_cell_wall/ v=start B=(s,cellWall,t)
+VERB s=cell_builder/len:(\d+)/dir:$F t=_ T=cell_builder/len:$1/walls:3/steps:$-1/dir:$F S=anchored_cell_wall v=start B=(s,cellWall,t)
 VERB s=cell_builder/len:(\d+)/walls:(\d)/steps:([^0].*)/dir:$F t=_ S=cell_wall T=cell_builder/len:$1/walls:$2/steps:$-3/dir:$F v=place_next_brick k=(x,cellWall,s) B=(s,cellWall,t)
 VERB s=cell_builder/len:(\d+)/walls:([^0])/steps:0/dir:$F S=cell_builder/len:$1/walls:$-2/steps:$1/dir:$+L v=build_next_wall k=(x,cellWall,s)
 VERB s=cell_builder/len:(\d+)/walls:0/steps:0/dir:.* S=cell_wall v=finish k=(x,cellWall,s)
 # Join up:
-VERB s=cell_builder/.*dir:$F t=anchored_cell_wall/ S=cell_wall T=cell_wall p=1 v=join_wall k=(x,cellWall,s) k=(t,cellWall,y) B=(s,cellWall,t)
+VERB s=cell_builder/.*dir:$F t=anchored_cell_wall S=cell_wall T=cell_wall p=1 v=join_wall k=(x,cellWall,s) k=(t,cellWall,y) B=(s,cellWall,t)
 # Drop an animal every now and then:
 VERB s=cell_builder/.*/dir:$+R t=_ T=animal v=seed p=.04
 

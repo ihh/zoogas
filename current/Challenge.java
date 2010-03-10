@@ -143,15 +143,18 @@ public class Challenge
 	    return poly;
 	}
     }
+
+    static String wallPrefix = "wall";
     public static TreeSet<Point> getWallParticles(Board b) {
 	TreeSet<Point> walls = new TreeSet<Point>();
 
-        for(Particle p : b.getParticlesByPrefix("wall/")) {
-            Set<Point> wallSet = p.getOccupiedPoints();
-            synchronized(wallSet) {
-                walls.addAll(wallSet);
-            }
-	}
+	if (b.gotPrefix(wallPrefix))
+	    for(Particle p : b.getParticlesByPrefix(wallPrefix)) {
+		Set<Point> wallSet = p.getOccupiedPoints();
+		synchronized(wallSet) {
+		    walls.addAll(wallSet);
+		}
+	    }
 
 	return walls;
     }

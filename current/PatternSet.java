@@ -37,24 +37,14 @@ public class PatternSet extends RuleSet{
     // energy rules
     private HashMap<String,Vector<EnergyRuleMatch>> energyRuleMatch = new HashMap<String,Vector<EnergyRuleMatch>>();
 
-    // getPrefix and getSuffix
-    static Pattern prefixPattern = Pattern.compile("([^/]+)/.*");
-    static Pattern suffixPattern = Pattern.compile("([^/]+)/(.*)");
-
+    // getPrefix
+    static Pattern prefixPattern = Pattern.compile("([A-Za-z0-9_]+).*");
     String getPrefix(String noun) {
 	Matcher prefixMatcher = prefixPattern.matcher(noun);
 	if (prefixMatcher.matches()) {
 	    return prefixMatcher.group(1);
 	}
 	return noun;
-    }
-
-    String getSuffix(String noun) {
-	Matcher suffixMatcher = suffixPattern.matcher(noun);
-	if (suffixMatcher.matches()) {
-	    return suffixMatcher.group(2);
-	}
-	return "";
     }
 
     // method to lay down a template for a Particle
