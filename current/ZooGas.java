@@ -675,19 +675,30 @@ public class ZooGas implements KeyListener {
             mouseDown = true;
         else {
             switch (c) {
-            case cheatKey:
-                cheatPressed = true;
-                break;
-            case stopKey:
-                stopPressed = true;
-                break;
-            case slowKey:
-                slowPressed = true;
-                break;
-            case 'm':
-                for (String ss : board.nameToParticle.keySet())
-                    System.err.println(ss);
-                break;
+                case cheatKey:
+                    cheatPressed = true;
+                    break;
+                case stopKey:
+                    stopPressed = true;
+                    break;
+                case slowKey:
+                    slowPressed = true;
+                    break;
+                case 'm':
+                    for (String ss : board.nameToParticle.keySet())
+                        System.err.println(ss);
+                    break;
+                case '`':
+                    if(statusPanel.isVisible()) {
+                        statusPanel.setVisible(false);
+                        toolBoxPanel.setVisible(false);
+                    }
+                    else {
+                        statusPanel.setVisible(true);
+                        toolBoxPanel.setVisible(true);
+                    }
+                    zooGasFrame.pack();
+                    break;
             }
         }
     }
