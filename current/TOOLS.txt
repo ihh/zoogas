@@ -1,7 +1,7 @@
 TOOL n=cement k=s d=2.0 p=15.0 r=600 f=2.625 w=1
 TOOL n=lava k=l d=2.0 p=15.0 r=600 f=2.625 w=1
 TOOL n=acid k=d d=2.0 p=15.0 r=200 f=2.8125 w=.8
-TOOL n=high_pressure_acid k=e d=20 p=5 r=400 f=10 w=.8
+TOOL n=high_pressure_acid k=e d=40 p=20 r=3200 f=80 w=.8
 TOOL n=perfume k=f d=2.0 p=15.0 r=80 f=1.875 w=.5
 TOOL n=mutator k=g d=2.0 p=15.0 r=40 f=0.11249999999999999 w=.2
 TOOL n=stimulant k=h d=2.0 p=15.0 r=40 f=0.11249999999999999 w=.2

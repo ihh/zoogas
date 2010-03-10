@@ -59,8 +59,7 @@ VERB s=photon/$F t=[^_].* S=photon/$++R T=$T p=.05 v=reflect
 VERB s=photon/$B t=.* S=_ T=$T p=.001 v=scatter
 
 # Initial conditions
-VERB s=/INIT.* S=beacon v=/start
-#VERB s=/INIT.* S=_ v=/start
+VERB s=INIT/.* S=_ v=/start
 
 # Initial animals
 NOUN n=animal c=0000ff
@@ -206,7 +205,7 @@ VERB s=cage_builder/len:(\d+)/walls:(\d)/steps:([^0].*)/dir:$F t=_ S=wall/5 T=ca
 VERB s=cage_builder/len:(\d+)/walls:([^0])/steps:0/dir:$F t=.* S=cage_builder/len:$1/walls:$-2/steps:$1/dir:$+R T=$T p=1 v=build_next_wall
 VERB s=cage_builder/len:(\d+)/walls:0/steps:[01]/dir:.* t=.* S=wall/5 T=$T p=1 v=finish
 # Handle collisions gracefully:
-VERB s=cage_builder/.*dir:$F t=(wall/.*|cage_builder.*) S=wall/5 T=$T p=1 v=join_wall
+VERB s=cage_builder/.*dir:$F t=(wall/.*|cage_builder.*) S=wall/3 T=$T p=1 v=join_wall
 # Plant an animal every now and then (not near corners):
 VERB s=cage_builder/.*/steps:([^012].*)/dir:$+L t=_ T=animal v=seed p=.1
 
