@@ -9,7 +9,7 @@ public class SprayTool {
     protected Particle particle = null;
 
     // constructor
-    static RuleSyntax toolSyntax = new RuleSyntax("TOOL W! n= k= d=1 p=1 r=1 f=1 w=.1");
+    static RuleSyntax toolSyntax = new RuleSyntax("TOOL n= k= d=1 p=1 r=1 f=1 w=.1");
     static SprayTool fromString (String toolString, Board board) {
 	SprayTool stat = null;
         if(RuleSet.isRule(toolString)) {

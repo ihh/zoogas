@@ -17,12 +17,12 @@ public class RulePattern {
 	A = a;
 	B = b;
     }
-    
-    public String getSourceName() {
-        return A + prefix;
+
+    public final String getSourceName() {
+        return A;
     }
     
-    public String getTargetName() {
+    public final String getTargetName() {
         return B;
     }
 }

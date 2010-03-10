@@ -11,7 +11,7 @@ public class Particle implements Comparable{
     // appearance
     public static final int maxNameLength = 256;  // maximum length of a Particle name. Introduced to stop runaway regex rules from crashing the engine
     public String name = null;  // noun uniquely identifying this Particle (no whitespace)
-    public String prefix = null; // String representing the set of rules that this particle belongs to (W=... in rules files)
+    public String prefix = null; // String representing the set of rules that this particle belongs to
     public Color color = null;
     public double energy = 0;
 

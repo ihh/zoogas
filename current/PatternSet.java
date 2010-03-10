@@ -37,10 +37,31 @@ public class PatternSet extends RuleSet{
     // energy rules
     private HashMap<String,Vector<EnergyRuleMatch>> energyRuleMatch = new HashMap<String,Vector<EnergyRuleMatch>>();
 
+    // getPrefix and getSuffix
+    static Pattern prefixPattern = Pattern.compile("([^/]+)/.*");
+    static Pattern suffixPattern = Pattern.compile("([^/]+)/(.*)");
+
+    String getPrefix(String noun) {
+	Matcher prefixMatcher = prefixPattern.matcher(noun);
+	if (prefixMatcher.matches()) {
+	    return prefixMatcher.group(1);
+	}
+	return noun;
+    }
+
+    String getSuffix(String noun) {
+	Matcher suffixMatcher = suffixPattern.matcher(noun);
+	if (suffixMatcher.matches()) {
+	    return suffixMatcher.group(2);
+	}
+	return "";
+    }
+
     // method to lay down a template for a Particle
     void addParticlePattern (RuleSyntax s) {
         try {
-            particlePattern.add(new ParticlePattern(s.getValue("W"), s.getValue("n"),s.getValue("c"),s.getValue("e")));
+	    String noun = s.getValue("n");
+            particlePattern.add(new ParticlePattern(getPrefix(noun), noun,s.getValue("c"),s.getValue("e")));
         }
         catch (RuntimeException e) {
             e.printStackTrace();
@@ -49,7 +70,8 @@ public class PatternSet extends RuleSet{
 
     // method to lay down a template for a transformation rule
     void addTransformRule (RuleSyntax s) {
-	TransformRulePattern p = new TransformRulePattern(s.getValue("W"),s.getValue("d"),s.getValue("s"),s.getValue("t"),s.getValue("S"),s.getValue("T"),
+	String subject = s.getValue("s");
+	TransformRulePattern p = new TransformRulePattern(getPrefix(subject), s.getValue("d"),subject,s.getValue("t"),s.getValue("S"),s.getValue("T"),
 							  Double.parseDouble(s.getValue("p")),s.getValue("v"));
 	if (s.hasValue("b"))
 	    p.addOptionalLhsBonds(s.getValue("b").split(" "));
@@ -82,7 +104,8 @@ public class PatternSet extends RuleSet{
 
     // method to lay down a template for an energy rule
     void addEnergyRule (RuleSyntax s) {
-	EnergyRulePattern p = new EnergyRulePattern(s.getValue("W"), s.getValue("s"),s.getValue("t"),s.getValue("n"),Double.parseDouble(s.getValue("e")),
+	String source = s.getValue("s");
+	EnergyRulePattern p = new EnergyRulePattern(getPrefix(source), source,s.getValue("t"),s.getValue("n"),Double.parseDouble(s.getValue("e")),
 						    Double.parseDouble(s.getValue("l")),Double.parseDouble(s.getValue("L")),Double.parseDouble(s.getValue("m")),
 						    Double.parseDouble(s.getValue("a")),Double.parseDouble(s.getValue("A")),Double.parseDouble(s.getValue("b")));
 	energyRulePattern.add(p);
@@ -136,9 +159,9 @@ public class PatternSet extends RuleSet{
 
     // i/o patterns and syntax parsers
     final static Pattern endRegex = Pattern.compile("END.*");
-    static RuleSyntax nounSyntax = new RuleSyntax("NOUN W! n! c=ffffff e=0");
-    static RuleSyntax verbSyntax = new RuleSyntax("VERB W! s= t=.* S=$S T=$T d= p=1 v=_ b* c* x* B* k* K*");
-    static RuleSyntax bondSyntax = new RuleSyntax("BOND W! n= e= s=.* t=.* l=1 L=1.5 m=1 a=-1 A=1 b=1");
+    static RuleSyntax nounSyntax = new RuleSyntax("NOUN n= c=ffffff e=0");
+    static RuleSyntax verbSyntax = new RuleSyntax("VERB s= t=.* S=$S T=$T d= p=1 v=_ b* c* x* B* k* K*");
+    static RuleSyntax bondSyntax = new RuleSyntax("BOND n= e= s=.* t=.* l=1 L=1.5 m=1 a=-1 A=1 b=1");
 
     // i/o methods
     static PatternSet fromStream (InputStream in, Topology topology) {

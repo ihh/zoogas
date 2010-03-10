@@ -60,7 +60,7 @@ public class ZooGas implements KeyListener {
     String initImageFilename = null;
     //    String initImageFilename = "TheZoo.bmp";  // if non-null, initialization loads a seed image from this filename
     String initParticleFilename = "TheZooParticles.txt";
-    String initParticlePrefix = "/INIT.";
+    String initParticlePrefix = "INIT";
 
     // tools and cheats
     String toolboxFilename = defaultToolboxFilename;
@@ -248,7 +248,7 @@ public class ZooGas implements KeyListener {
             }
         } else {
             board.fill(spaceParticle);
-            String initParticleName = initParticlePrefix + RuleMatch.int2string(size / 2);
+            String initParticleName = initParticlePrefix + '/' + RuleMatch.int2string(size / 2);
             Particle initParticle = board.getOrCreateParticle(initParticleName);
             if (initParticle == null)
                 throw new RuntimeException("Initialization particle " + initParticleName + " not found");
