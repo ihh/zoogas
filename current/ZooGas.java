@@ -95,7 +95,7 @@ public class ZooGas implements KeyListener {
     BoardRenderer renderer;
     int boardSize; // width & height of board in pixels
     int belowBoardHeight = 0; // size in pixels of whatever appears below the board -- currently unused but left as a placeholder
-    int toolBarWidth = 100, toolLabelWidth = 200, toolHeight = 30; // size in pixels of various parts of the tool bar (right of the board)
+    int toolBarWidth = 128, toolLabelWidth = 200, toolHeight = 32; // size in pixels of various parts of the tool bar (right of the board)
     int textBarWidth = 400, textHeight = 30;
 
     // verb history / subtitle track

@@ -11,7 +11,7 @@ public class ToolBox {
     SprayTool currentTool = null;  // current spray tool
 
     // dimensions
-    int toolHeight = 30, toolReserveBarWidth = 100, toolTextWidth = 100;
+    int toolHeight = 32, toolReserveBarWidth = 100, toolTextWidth = 100;
 
     // constructors
     static ToolBox fromStream (InputStream in, Board board) {

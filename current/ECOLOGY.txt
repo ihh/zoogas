@@ -40,7 +40,7 @@ NOUN n=cement c=ffffff i=aa55aa55aa55aa55
 NOUN n=acid c=404040 e=-20
 NOUN n=high_pressure_acid c=707070 e=-40
 NOUN n=perfume c=804054
-NOUN n=mutator c=ff80a8
+NOUN n=mutator c=ff80a8 i=0038547c28385400
 NOUN n=lava c=ff6060
 NOUN n=lava/.* c=e06060
 NOUN n=wall/basalt c=ffc800

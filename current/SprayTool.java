@@ -98,13 +98,12 @@ public class SprayTool {
 		    for (int col = 0; col < columns; ++col)
 			if (!particle.icon.mask[row % iconSize][col % iconSize])
 			    g.fillRect (barXpos + w - (col+1) * pixelsPerIconPixel,
-					barYpos + bh - (row+1) * pixelsPerIconPixel,
+					barYpos + row * pixelsPerIconPixel,
 					pixelsPerIconPixel, pixelsPerIconPixel);
 	    }
 
 	// draw border if selected
-	if(selected)
-	{
+	if(selected) {
 	    g.setColor (Color.white);
 	    g.drawRect (2, yMid - toolHeight/2 + 2, toolBarWidth - 4, toolHeight - 4);
 	}
