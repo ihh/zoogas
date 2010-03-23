@@ -313,7 +313,6 @@ public class ZooGas implements KeyListener {
 	hints.add ("Use cage-builders to get your zoo started.");
 	hints.add ("Next to each tool is a bar showing the reserve.");
 	hints.add ("If you mouseover a pixel on the board, its name appears.");
-	hints.add ("At bottom right, you can also see a list of recent events.");
 	hints.add ("When you build a cage, it contains a few animals.");
 	hints.add (specialKeys);
 	hints.add ("The \""+cheatKey+"\" key reveals the hidden state of a pixel.");
