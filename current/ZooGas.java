@@ -97,13 +97,18 @@ public class ZooGas implements KeyListener {
     int belowBoardHeight = 0; // size in pixels of whatever appears below the board -- currently unused but left as a placeholder
     int toolBarWidth = 100, toolLabelWidth = 200, toolHeight = 30; // size in pixels of various parts of the tool bar (right of the board)
     int textBarWidth = 400, textHeight = 30;
+
+    // verb history / subtitle track
     int verbHistoryLength = 10, verbHistoryPos = 0, verbHistoryRefreshPeriod = 20, verbHistoryRefreshCounter = 0, verbsSinceLastRefresh = 0;
     String[] verbHistory = new String[verbHistoryLength];
     Particle[] nounHistory = new Particle[verbHistoryLength];
+    Point[] placeHistory = new Point[verbHistoryLength];
+    int[] verbHistoryAge = new int[verbHistoryLength];
+
     Vector<String> hints = new Vector<String>();
     int currentHint = 0;
     double hintBrightness = 0;
-    private final int updatesRow = 0, titleRow = 4, networkRow = 5, objectiveRow = 6, hintRow = 7, nounRow = 8, verbHistoryRow = 12;
+    private final int updatesRow = 0, titleRow = 4, networkRow = 5, objectiveRow = 6, hintRow = 7, nounRow = 8;
 
     // helper objects
     Point cursorPos = new Point(); // co-ordinates of cell beneath current mouse position
@@ -323,6 +328,7 @@ public class ZooGas implements KeyListener {
                         drawBonds(g);
                         drawEnclosures(g);
                     }
+		    drawVerbs(g);
                 }
             };
         toolBoxPanel = new JPanel() {
@@ -610,22 +616,61 @@ public class ZooGas implements KeyListener {
         printOrHide(g, "Heap: current " + kmg(runtime.totalMemory()) + ", max " + kmg(runtime.maxMemory()) + ", free " + kmg(runtime.freeMemory()),
                     updatesRow + 1, true, new Color(48, 48, 0));
         printOrHide(g, formatter.format("Updates/sec: %.2f", updatesPerSecond).toString(), updatesRow + 2, true, new Color(64, 64, 0));
+    }
 
-        // recent verbs
-        printOrHide(g, "Recent events:", verbHistoryRow, true, Color.white);
+    protected void drawVerbs(Graphics g) {
+	// display params
+	int maxAge = 100;
+	boolean writeNouns = false;
+	int balloonBorder = 2;
+
+	// font
+        FontMetrics fm = g.getFontMetrics();
+
+	// loop over verb history
         for (int vpos = 0; vpos < verbHistoryLength; ++vpos) {
             int v = (verbHistoryPos + verbHistoryLength - vpos) % verbHistoryLength;
-            String verbText = null;
-            Color verbColor = null;
+
             if (verbHistory[v] != null) {
-                String noun = cheatPressed ? nounHistory[v].name : nounHistory[v].visibleName();
-                String nounInBrackets = noun.length() > 0 ? (" (" + noun + ")") : "";
-                // uncomment to always print noun:
-                //              verbText = (cheatPressed ? verbHistory[v] : Particle.visibleText(verbHistory[v])) + nounInBrackets;
-                verbText = cheatPressed ? (verbHistory[v] + nounInBrackets) : Particle.visibleText(verbHistory[v]);
-                verbColor = nounHistory[v].color;
-            }
-            printOrHide(g, verbText, verbHistoryRow + vpos + 1, true, verbColor);
+		if (verbHistoryAge[v]++ >= maxAge)
+		    verbHistory[v] = null;
+		else {
+		    String nounText = cheatPressed ? nounHistory[v].name : nounHistory[v].visibleName();
+		    String verbText = cheatPressed ? verbHistory[v] : Particle.visibleText(verbHistory[v]);
+		    Color verbColor = nounHistory[v].color;
+
+		    int xSize = fm.stringWidth(verbText),
+			ySize = fm.getHeight();
+
+		    java.awt.Point cellGraphicsCoords = renderer.getGraphicsCoords(placeHistory[v]);
+
+		    int xPos = cellGraphicsCoords.x - xSize/2,
+			yPos = cellGraphicsCoords.y - ySize;
+
+		    // draw speech balloon
+		    int yTextSize = ySize * (writeNouns ? 2 : 1);
+
+		    g.setColor(verbColor);
+		    g.drawLine(xPos, yPos, cellGraphicsCoords.x, cellGraphicsCoords.y);
+
+		    g.setColor(Color.black);
+		    g.fillRect(xPos - balloonBorder,
+			       yPos - yTextSize - balloonBorder,
+			       xSize + 2*balloonBorder,
+			       yTextSize + 2*balloonBorder);
+
+		    g.setColor(verbColor);
+		    g.drawRect(xPos - balloonBorder,
+			       yPos - yTextSize - balloonBorder,
+			       xSize + 2*balloonBorder,
+			       yTextSize + 2*balloonBorder);
+
+		    g.drawString(verbText, xPos, yPos);
+		    if (writeNouns)
+			g.drawString(nounText.length() > 0 ? ("[" + nounText + "]") : "", xPos, yPos - ySize);
+		}
+	    }
+
             if (++verbHistoryRefreshCounter >= verbHistoryRefreshPeriod)
                 verbsSinceLastRefresh = verbHistoryRefreshCounter = 0;
         }

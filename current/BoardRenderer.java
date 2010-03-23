@@ -3,7 +3,7 @@ import java.awt.image.BufferedImage;
 
 public abstract class BoardRenderer {
     public abstract void drawCell(Point p);
-    public abstract void showVerb(Point p, Point n, Particle oldSource, Particle oldTarget, UpdateEvent newPair);
+    public abstract void showVerb(UpdateEvent updateEvent);
 
     public int pixelsPerCell = 4; // width & height of each cell in pixels
     public BufferedImage image;

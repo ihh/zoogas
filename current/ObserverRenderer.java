@@ -61,7 +61,7 @@ public class ObserverRenderer extends BoardRenderer {
         image = new BufferedImage(pixelsPerSide, pixelsPerSide, BufferedImage.TYPE_4BYTE_ABGR); // TODO: can this be replaced with 3BYTE_BGR?
     }
     
-    public void showVerb(Point p, Point n, Particle oldSource, Particle oldTarget, UpdateEvent newPair) {
+    public void showVerb(UpdateEvent updateEvent) {
         return;
     }
 }

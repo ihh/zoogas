@@ -39,20 +39,23 @@ public class PlayerRenderer extends BoardRenderer{
      * @param oldTarget
      * @param newPair
      */
-    public void showVerb(Point p, Point n, Particle oldSource, Particle oldTarget, UpdateEvent newPair) {
+    public void showVerb(UpdateEvent updateEvent) {
+	double balloonRate = .0005;
         if (gas.verbsSinceLastRefresh == 0) {
-            if (gas.cheatPressed || newPair.visibleVerb().length() > 0) {
+            if (gas.cheatPressed || updateEvent.visibleVerb().length() > 0) {
                 // check for duplicates
                 boolean foundDuplicate = false;
                 for (int v = 0; v < gas.verbHistoryLength; ++v)
-                    if (newPair.verb.equals(gas.verbHistory[v]) && oldSource.color.equals(gas.nounHistory[v].color)) {
+                    if (updateEvent.verb.equals(gas.verbHistory[v]) && updateEvent.oldSource.color.equals(gas.nounHistory[v].color)) {
                         foundDuplicate = true;
                         break;
                     }
-                if (!foundDuplicate) {
+                if (!foundDuplicate && Math.random() < balloonRate / updateEvent.pattern.P) {
                     gas.verbHistoryPos = (gas.verbHistoryPos + 1) % gas.verbHistoryLength;
-                    gas.verbHistory[gas.verbHistoryPos] = newPair.verb;
-                    gas.nounHistory[gas.verbHistoryPos] = oldSource;
+                    gas.verbHistory[gas.verbHistoryPos] = updateEvent.verb;
+                    gas.nounHistory[gas.verbHistoryPos] = updateEvent.oldSource;
+                    gas.placeHistory[gas.verbHistoryPos] = updateEvent.sourceCoords;
+                    gas.verbHistoryAge[gas.verbHistoryPos] = 0;
                     ++gas.verbsSinceLastRefresh;
                 }
             }
