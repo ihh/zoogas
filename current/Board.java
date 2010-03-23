@@ -120,7 +120,7 @@ public class Board extends MooreTopology {
 	return quad.topQuadRate() > 0;
     }
 
-    // getTimeToNextEvent samples wait time to next event
+    // getWaitTime: returns wait time to next event
     public final double getWaitTime() {
 	return -Math.log(Math.random()) / quad.topQuadRate();
     }
@@ -276,10 +276,13 @@ public class Board extends MooreTopology {
     }
 
     // update()
-    public final void update(double boardUpdates, BoardRenderer renderer) {
+    public final void update(double maxTime, BoardRenderer renderer) {
 	double t = 0;
-	while (gotUpdates() && t < boardUpdates) {
+	while (gotUpdates()) {
 	    t += getWaitTime();
+	    if (t >= maxTime)
+		break;
+
             Point p = new Point(), n = new Point(); // Must stay inside the loop; Points are stored (as Particles)
             int dir = getRandomPair(p, n);
             Particle oldSource = readCell(p);

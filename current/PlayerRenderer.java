@@ -42,6 +42,7 @@ public class PlayerRenderer extends BoardRenderer{
      * @param newPair
      */
     public void showVerb(UpdateEvent updateEvent) {
+	double showBalloonProbability = balloonRate / updateEvent.pattern.P;
         if (gas.verbsSinceLastRefresh == 0) {
             if (gas.cheatPressed || updateEvent.visibleVerb().length() > 0) {
                 // check for duplicates
@@ -51,7 +52,7 @@ public class PlayerRenderer extends BoardRenderer{
                         foundDuplicate = true;
                         break;
                     }
-                if (!foundDuplicate && Math.random() < balloonRate / updateEvent.pattern.P) {
+                if (!foundDuplicate && Math.random() < showBalloonProbability) {
                     gas.verbHistoryPos = (gas.verbHistoryPos + 1) % gas.verbHistoryLength;
                     gas.verbHistory[gas.verbHistoryPos] = updateEvent.verb;
                     gas.nounHistory[gas.verbHistoryPos] = updateEvent.oldSource;

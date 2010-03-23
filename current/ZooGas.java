@@ -108,7 +108,7 @@ public class ZooGas implements KeyListener {
     Vector<String> hints = new Vector<String>();
     int currentHint = 0;
     double hintBrightness = 0;
-    private final int updatesRow = 0, titleRow = 4, networkRow = 5, objectiveRow = 6, hintRow = 7, nounRow = 8;
+    private final int updatesRow = 0, titleRow = 4, networkRow = 5, objectiveRow = 6;
 
     // helper objects
     Point cursorPos = new Point(); // co-ordinates of cell beneath current mouse position
@@ -329,6 +329,7 @@ public class ZooGas implements KeyListener {
                         drawEnclosures(g);
                     }
 		    drawVerbs(g);
+		    drawCursorNoun(g);
                 }
             };
         toolBoxPanel = new JPanel() {
@@ -593,21 +594,6 @@ public class ZooGas implements KeyListener {
             printOrHide(g, popString + divString, objectiveRow + 1, true, Color.green);
 	}
 
-        // identify particle that cursor is currently over
-        if (board.onBoard(cursorPos)) {
-            Particle cursorParticle = board.readCell(cursorPos);
-            boolean isSpace = cursorParticle == spaceParticle;
-            printOrHide(g, cursorParticle == null ? "Mouseover board to identify pixels" : "Under cursor:", nounRow, true, Color.white);
-            String nameToShow =
-                cheatPressed ? cursorParticle.name + " (" + cursorParticle.getReferenceCount() + ")" + board.singleNeighborhoodDescription(cursorPos, false) :
-                cursorParticle.visibleName();
-            Color fgCurs = cursorParticle == null ? Color.white : cursorParticle.color;
-            Color bgCurs = cheatPressed ? new Color(255 - fgCurs.getRed(), 255 - fgCurs.getGreen(), 255 - fgCurs.getBlue()) : Color.black;
-            printOrHide(g, nameToShow, nounRow + 1, true, fgCurs, bgCurs);
-        } else {
-            printOrHide(g, "", nounRow + 1, false, Color.white);
-        }
-
         // update rate and other stats
         StringBuilder sb = new StringBuilder();
         Formatter formatter = new Formatter(sb, Locale.US);
@@ -622,7 +608,8 @@ public class ZooGas implements KeyListener {
 	// display params
 	int maxAge = 100;
 	boolean writeNouns = false;
-	int balloonBorder = 2;
+	int verbBalloonBorder = 2;
+	int bubbleLines = writeNouns ? 2 : 1;
 
 	// font
         FontMetrics fm = g.getFontMetrics();
@@ -639,41 +626,94 @@ public class ZooGas implements KeyListener {
 		    String verbText = cheatPressed ? verbHistory[v] : Particle.visibleText(verbHistory[v]);
 		    Color verbColor = nounHistory[v].color;
 
-		    int xSize = fm.stringWidth(verbText),
-			ySize = fm.getHeight();
+		    String[] text = new String[bubbleLines];
+		    Color[] textColor = new Color[bubbleLines];
 
-		    java.awt.Point cellGraphicsCoords = renderer.getGraphicsCoords(placeHistory[v]);
+		    text[0] = verbText;
+		    textColor[0] = verbColor;
 
-		    int xPos = cellGraphicsCoords.x - xSize/2,
-			yPos = cellGraphicsCoords.y - ySize;
+		    if (writeNouns) {
+			text[1] = nounText;
+			textColor[1] = verbColor;
+		    }
 
-		    // draw speech balloon
-		    int yTextSize = ySize * (writeNouns ? 2 : 1);
-
-		    g.setColor(verbColor);
-		    g.drawLine(xPos, yPos, cellGraphicsCoords.x, cellGraphicsCoords.y);
-
-		    g.setColor(Color.black);
-		    g.fillRect(xPos - balloonBorder,
-			       yPos - yTextSize - balloonBorder,
-			       xSize + 2*balloonBorder,
-			       yTextSize + 2*balloonBorder);
-
-		    g.setColor(verbColor);
-		    g.drawRect(xPos - balloonBorder,
-			       yPos - yTextSize - balloonBorder,
-			       xSize + 2*balloonBorder,
-			       yTextSize + 2*balloonBorder);
-
-		    g.drawString(verbText, xPos, yPos);
-		    if (writeNouns)
-			g.drawString(nounText.length() > 0 ? ("[" + nounText + "]") : "", xPos, yPos - ySize);
+		    drawSpeechBalloon (g, placeHistory[v], 0., -1., verbBalloonBorder, text, textColor, verbColor, Color.black);
 		}
 	    }
+	}
 
-            if (++verbHistoryRefreshCounter >= verbHistoryRefreshPeriod)
-                verbsSinceLastRefresh = verbHistoryRefreshCounter = 0;
-        }
+	if (++verbHistoryRefreshCounter >= verbHistoryRefreshPeriod)
+	    verbsSinceLastRefresh = verbHistoryRefreshCounter = 0;
+    }
+
+    protected void drawCursorNoun(Graphics g) {
+	int nounBalloonBorder = 2;
+        if (board.onBoard(cursorPos)) {
+            Particle cursorParticle = board.readCell(cursorPos);
+            boolean isSpace = cursorParticle == spaceParticle;
+
+            String nameToShow =
+                cheatPressed ? cursorParticle.name + " (" + cursorParticle.getReferenceCount() + ")" + board.singleNeighborhoodDescription(cursorPos, false) :
+                cursorParticle.visibleName();
+
+	    if (nameToShow.length() > 0) {
+		Color fgCurs = cursorParticle == null ? Color.white : cursorParticle.color;
+		Color bgCurs = cheatPressed ? new Color(255 - fgCurs.getRed(), 255 - fgCurs.getGreen(), 255 - fgCurs.getBlue()) : Color.black;
+
+		String[] text = new String[1];
+		Color[] textColor = new Color[1];
+
+		text[0] = nameToShow;
+		textColor[0] = bgCurs;
+
+		drawSpeechBalloon (g, cursorPos, 0., +3., nounBalloonBorder, text, textColor, null, fgCurs);
+	    }
+	}
+    }
+
+    // TODO: drawSpeechBalloon should detect cases where the speech balloon is out of the Panel's paintable area, and adjust its position accordingly
+    protected void drawSpeechBalloon (Graphics g, Point cell, double xOffset, double yOffset, int balloonBorder, String[] text, Color[] textColor, Color balloonColor, Color bgColor) {
+        FontMetrics fm = g.getFontMetrics();
+
+	int xSize = 0,
+	    ySize = fm.getHeight();
+
+	for (int n = 0; n < text.length; ++n) {
+	    xSize = Math.max (xSize, fm.stringWidth(text[n]));
+	}
+
+	java.awt.Point cellGraphicsCoords = renderer.getGraphicsCoords(cell);
+
+	int xPos = cellGraphicsCoords.x + (int) (xSize * (xOffset - 0.5)),
+	    yPos = cellGraphicsCoords.y + (int) (ySize * yOffset);
+
+	// draw speech balloon
+	int yTextSize = ySize * text.length;
+
+	if (balloonColor != null) {
+	    g.setColor(balloonColor);
+	    g.drawLine(xPos, yPos, cellGraphicsCoords.x, cellGraphicsCoords.y);
+	}
+
+	g.setColor(bgColor);
+	g.fillRect(xPos - balloonBorder,
+		   yPos - yTextSize - balloonBorder,
+		   xSize + 2*balloonBorder,
+		   yTextSize + 2*balloonBorder);
+
+	for (int n = 0; n < text.length; ++n) {
+	    g.setColor(textColor[n]);
+	    g.drawString(text[n], xPos, yPos - ySize*n);
+	}
+
+	if (balloonColor != null) {
+	    g.setColor(balloonColor);
+	    g.drawRect(xPos - balloonBorder,
+		       yPos - yTextSize - balloonBorder,
+		       xSize + 2*balloonBorder,
+		       yTextSize + 2*balloonBorder);
+	}
+
     }
 
     // tool bars
