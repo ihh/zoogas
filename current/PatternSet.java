@@ -51,7 +51,12 @@ public class PatternSet extends RuleSet{
     void addParticlePattern (RuleSyntax s) {
         try {
 	    String noun = s.getValue("n");
-            particlePattern.add(new ParticlePattern(getPrefix(noun), noun,s.getValue("c"),s.getValue("e")));
+            ParticlePattern pp = new ParticlePattern(getPrefix(noun), noun,s.getValue("c"), s.getValue("e"));
+	    // get optional icon
+	    if (s.hasValue("i"))
+		pp.icon = new Icon(s.getValue("i"));
+	    // store
+            particlePattern.add(pp);
         }
         catch (RuntimeException e) {
             e.printStackTrace();
@@ -60,9 +65,14 @@ public class PatternSet extends RuleSet{
 
     // method to lay down a template for a transformation rule
     void addTransformRule (RuleSyntax s) {
+	// subject
 	String subject = s.getValue("s");
+
+	// create the basic object
 	TransformRulePattern p = new TransformRulePattern(getPrefix(subject), s.getValue("d"),subject,s.getValue("t"),s.getValue("S"),s.getValue("T"),
 							  Double.parseDouble(s.getValue("p")),s.getValue("v"));
+
+	// get optional bond attributes
 	if (s.hasValue("b"))
 	    p.addOptionalLhsBonds(s.getValue("b").split(" "));
 
@@ -87,6 +97,7 @@ public class PatternSet extends RuleSet{
 	    p.addRhsBonds(k);
 	}
 
+	// add the pattern, and add pre-initialized matches for each neighborhood direction
 	transformRulePattern.add (p);
 	for (int d = 0; d < topology.neighborhoodSize(); ++d)
 	    transformRuleMatch.get(d).add (new TransformRuleMatch(p, topology, d));
@@ -149,7 +160,7 @@ public class PatternSet extends RuleSet{
 
     // i/o patterns and syntax parsers
     final static Pattern endRegex = Pattern.compile("END.*");
-    static RuleSyntax nounSyntax = new RuleSyntax("NOUN n= c=ffffff e=0");
+    static RuleSyntax nounSyntax = new RuleSyntax("NOUN n= c=ffffff e=0 i*");
     static RuleSyntax verbSyntax = new RuleSyntax("VERB s= t=.* S=$S T=$T d= p=1 v=_ b* c* x* B* k* K*");
     static RuleSyntax bondSyntax = new RuleSyntax("BOND n= e= s=.* t=.* l=1 L=1.5 m=1 a=-1 A=1 b=1");
 

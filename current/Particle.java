@@ -14,6 +14,7 @@ public class Particle implements Comparable{
     public String prefix = null; // String representing the set of rules that this particle belongs to
     public Color color = null;
     public double energy = 0;
+    public Icon icon = null;
 
     // the PatternSet, i.e. the authority for all transformation and color rules about this Particle
     PatternSet patternSet = null;

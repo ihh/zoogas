@@ -39,7 +39,7 @@ public class ZooGas implements KeyListener {
     static int defaultPort = 4444;
     static String defaultPatternSetFilename = "ECOLOGY.txt", defaultToolboxFilename = "TOOLS.txt";
     static int defaultBoardSize = 128;
-    static int defaultTargetUpdateRate = 100;
+    static int defaultTargetUpdateRate = 50;  // reduced to run on my 2yr-old Macbook Air - IH, 3/23/2010
 
     // size of board in cells
     int size = defaultBoardSize;
@@ -116,7 +116,7 @@ public class ZooGas implements KeyListener {
     boolean cheatPressed = false; // true if cheatKey is pressed (allows player to see hidden parts of state names)
     boolean stopPressed = false; // true if stopKey is pressed (stops updates on this board)
     boolean slowPressed = false; // true if slowKey is pressed (slows updates on this board)
-    int targetUpdateRate = 100;
+    int targetUpdateRate = defaultTargetUpdateRate;
     double updatesPerSecond = 0;
     long timeCheckPeriod = 20; // board refreshes between recalculations of updatesPerSecond
     String lastDumpStats = ""; // hacky way to avoid concurrency issues

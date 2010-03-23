@@ -12,6 +12,7 @@ public class ParticlePattern {
     Color color = null;
     double energy = 0;
     String prefix = null; // The set of rules this pattern belongs to
+    Icon icon = null;
     
     // constructors
     static Pattern catchAllPattern = Pattern.compile(".*");
@@ -36,8 +37,10 @@ public class ParticlePattern {
 	//	System.err.println("Matching "+name+" to "+namePattern.pattern());
 	Particle p = null;
 	Matcher m = namePattern.matcher(name);
-	if (m.matches())
+	if (m.matches()) {
 	    p = new Particle(name, prefix, color, energy, board, ps);
+	    p.icon = icon;
+	}
 	return p;
     }
 

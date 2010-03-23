@@ -81,9 +81,28 @@ public class SprayTool {
 	if (w > toolReserveBarWidth)
 	    w = toolReserveBarWidth;
 
+	// draw bar in spray color
 	int bh = toolHeight * 3 / 4;
-	g.fillRect (toolReserveBarWidth - w, yMid - bh/2, w, bh);
-        
+	int barXpos = toolReserveBarWidth - w, barYpos = yMid - bh/2;
+	g.fillRect (barXpos, barYpos, w, bh);
+
+	// if there's an icon, hollow out the bar
+	if (particle.icon != null)
+	    if (particle.icon.size > 0) {
+		int iconSize = particle.icon.size;
+		int pixelsPerIconPixel = bh / iconSize;
+		int rows = (bh / pixelsPerIconPixel) + (bh % pixelsPerIconPixel == 0 ? 0 : 1);
+		int columns = (int) (w / pixelsPerIconPixel) + 1;
+		g.setColor(Color.black);
+		for (int row = 0; row < rows; ++row)
+		    for (int col = 0; col < columns; ++col)
+			if (!particle.icon.mask[row % iconSize][col % iconSize])
+			    g.fillRect (barXpos + w - (col+1) * pixelsPerIconPixel,
+					barYpos + bh - (row+1) * pixelsPerIconPixel,
+					pixelsPerIconPixel, pixelsPerIconPixel);
+	    }
+
+	// draw border if selected
 	if(selected)
 	{
 	    g.setColor (Color.white);

@@ -6,7 +6,12 @@ public class TransformRulePattern extends RulePattern {
     double P = 0;
     Vector<BondPattern> optionalLhsBond = null, requiredLhsBond = null, excludedLhsBond = null, rhsBond = null;
 
-    // constructors
+    // constructor
+    // w: subject prefix
+    // dir: direction
+    // a, b: LHS regexes to be matched (source & target patterns)
+    // c, d: RHS back-referenced substitutions to be generated (source & target updates)
+    // p, v: probability & verb attributes
     public TransformRulePattern (String w, String dir, String a, String b, String c, String d, double p, String v) {
 	super(w,a,b);
 	if (dir != null && dir.length() > 0)

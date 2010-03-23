@@ -36,7 +36,7 @@ NOUN n=wall/2 c=555555
 NOUN n=wall/3 c=808080
 NOUN n=wall/4 c=aaaaaa
 NOUN n=wall/5 c=d5d5d5
-NOUN n=cement c=ffffff
+NOUN n=cement c=ffffff i=aa55aa55aa55aa55
 NOUN n=acid c=404040 e=-20
 NOUN n=high_pressure_acid c=707070 e=-40
 NOUN n=perfume c=804054
@@ -556,7 +556,7 @@ VERB s=RNA_sequence/([acgu]*)([acgu])(2)([^\d].*|) t=.* S=RNA_sequence/$1$2$2$-3
 VERB s=RNA_sequence/([acgu]*)([acgu])(2)([^\d].*|) t=.* S=RNA_sequence/$1$2$2$4 T=$T p=1 v=/expand_run_length_encoding
 
 # randomly generate one of several preset RNA sequences
-NOUN n=RNA_sequence c=7f0000 e=-10
+NOUN n=RNA_sequence c=7f0000 e=-10 i=aa55aa55aa55aa55
 VERB s=RNA_sequence S=$S/a5u5
 VERB s=RNA_sequence S=$S/ccacucc
 VERB s=RNA_sequence S=$S/ggaggugg
