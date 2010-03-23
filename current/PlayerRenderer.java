@@ -32,14 +32,8 @@ public class PlayerRenderer extends BoardRenderer{
     }
 
     /**
-     * Draw the verbs in the status panel
-     * This method should be implemented differently
-     * @Deprecated
-     * @param p
-     * @param n
-     * @param oldSource
-     * @param oldTarget
-     * @param newPair
+     * Store the verbs in the verb history
+     * @param updateEvent
      */
     public void showVerb(UpdateEvent updateEvent) {
 	double showBalloonProbability = balloonRate / updateEvent.pattern.P;
