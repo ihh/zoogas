@@ -107,8 +107,8 @@ public class ZooGas implements KeyListener {
 
     Vector<String> hints = new Vector<String>();
     int currentHint = 0;
-    double hintBrightness = 0;
-    private final int updatesRow = 0, titleRow = 4, networkRow = 5, objectiveRow = 6;
+    double hintBrightness = 0, initialHintBrightness = 240, hintDecayRate = .2;
+    private final int updatesRow = 0, titleRow = 4, networkRow = 5, hintRow = 6, objectiveRow = 8;
 
     // helper objects
     Point cursorPos = new Point(); // co-ordinates of cell beneath current mouse position
@@ -266,7 +266,7 @@ public class ZooGas implements KeyListener {
 
         // init objective
 
-	// TODO: create the following challenge sequence
+	// TODO: create the following challenge sequence:
 	// - place 5 animals
 	// - place 5 guests
 	// - create an enclosure
@@ -274,8 +274,19 @@ public class ZooGas implements KeyListener {
 	//  - (once only) get animal population over 100
 	//  - (for at least 30 seconds) maintain species diversity at ~2.9 species or better, i.e. keep entropy of species distribution above log(2.9)
 	//  - (for at least 30 seconds) maintain species diversity at ~3.9 species or better, i.e. keep entropy of species distribution above log(3.9)
+	// - keep at least 5 guests alive, and species diversity at ~3.9 or better, while the computer makes your life hell by...
+	//  - spraying a random burst of animals around a random location in the zoo every 10 seconds
+	//  - spraying a low-intensity acid storm all over the zoo
+	//  - a volcano erupts at a random location in the zoo, pouring lava everywhere
+	//  - one of your zoo guests starts spraying perfume everywhere
+	//  - one of your zoo guests turns into a terrorist, throwing bombs all over the place
 
-        // hackish test cases
+
+	// TODO: challenges should be able provide challenge-specific scores, feedback and rewards;
+	// e.g. (at a minimum) the diversity scores and particle counts that are currently displayed.
+
+
+        // hackish test cases (kept here for reference)
         // place 5 guests anywhere
         // objective = new Challenge(board, new Challenge.EncloseParticles(5, "zoo_guest", board));
         // create 4 separated enclosures
@@ -391,7 +402,7 @@ public class ZooGas implements KeyListener {
          
         MouseListener statusMouse = new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
-                hintBrightness = 240;
+                hintBrightness = initialHintBrightness;
                 currentHint = (currentHint + 1) % hints.size();
             }
         };
@@ -551,7 +562,19 @@ public class ZooGas implements KeyListener {
         if (objective != null)
             printOrHide(g, "Goal: " + objective.getDescription(), objectiveRow, true, Color.white);
 	else {
-	    // quick, hacky feedback scores on population stats - to be replaced by more generic challenges (although these scores ARE nice)
+	    // until we get challenges working properly, just display an auto-rotating hint and a few feedback scores
+
+	    // current hint
+	    hintBrightness -= hintDecayRate;
+	    if (hintBrightness < 0) {
+		hintBrightness = initialHintBrightness;
+		currentHint = (currentHint + 1) % hints.size();
+	    }
+	    
+	    Color hintColor = new Color ((int) hintBrightness, (int) hintBrightness, 0);
+	    printOrHide(g, hints.elementAt(currentHint), hintRow, true, hintColor);
+
+	    // quick, hacky feedback scores on population stats - to be replaced by more generic challenges (which may incorporate these scores)
 	    String guestName = "zoo_guest";
 	    String critterPrefix = "critter";
 	    int targetGuests = 10;
