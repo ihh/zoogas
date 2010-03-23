@@ -2,6 +2,8 @@ import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
 public class PlayerRenderer extends BoardRenderer{
+    static double balloonRate = .0001;
+
     PlayerRenderer (Board board, int size) {
         this.board = board;
         int pixelsPerSide = getBoardSize(size);
@@ -40,7 +42,6 @@ public class PlayerRenderer extends BoardRenderer{
      * @param newPair
      */
     public void showVerb(UpdateEvent updateEvent) {
-	double balloonRate = .0005;
         if (gas.verbsSinceLastRefresh == 0) {
             if (gas.cheatPressed || updateEvent.visibleVerb().length() > 0) {
                 // check for duplicates
