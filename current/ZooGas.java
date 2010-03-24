@@ -95,7 +95,7 @@ public class ZooGas implements KeyListener {
     BoardRenderer renderer;
     int boardSize; // width & height of board in pixels
     int belowBoardHeight = 0; // size in pixels of whatever appears below the board -- currently unused but left as a placeholder
-    int toolBarWidth = 140, toolLabelWidth = 200, toolHeight = 35; // size in pixels of various parts of the tool bar (right of the board)
+    int toolBarWidth = 140, toolLabelWidth = 200, toolHeight = 22; // size in pixels of various parts of the tool bar (right of the board)
     int textBarWidth = 400, textHeight = 30;
 
     // verb history / subtitle track
@@ -366,7 +366,7 @@ public class ZooGas implements KeyListener {
 
         // set size
         boardPanel.setPreferredSize(new Dimension(boardSize, boardSize));
-        toolBoxPanel.setPreferredSize(new Dimension(toolBarWidth + toolLabelWidth, toolBox.tool.size() * toolHeight));
+        toolBoxPanel.setPreferredSize(new Dimension(toolBarWidth + toolLabelWidth, Math.max (boardSize, toolBox.tool.size() * toolHeight)));
         statusPanel.setPreferredSize(new Dimension(textBarWidth, boardSize));
 
         boardPanel.setBorder(new LineBorder(Color.white, 1));

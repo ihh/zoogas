@@ -82,7 +82,7 @@ public class SprayTool {
 	    w = tw;
 
 	// draw bar in spray color
-	int bh = toolHeight - 1;
+	int bh = toolHeight - td;
 	int barXpos = toolReserveBarWidth - w,
 	    barYpos = yMid - bh/2;
 	g.fillRect (barXpos, barYpos, w, bh);
