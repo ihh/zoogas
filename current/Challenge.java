@@ -17,14 +17,16 @@ import java.util.TreeSet;
 
 public class Challenge
 {
-    public Challenge(Board b) {
-        this(b, null);
+    public Challenge(ZooGas g) {
+        this(g, null);
     }
-    public Challenge(Board b, Condition c) {
-	board = b;
+    public Challenge(ZooGas g, Condition c) {
+	gas = g;
+	board = g.board;
         cond = c;
     }
 
+    ZooGas gas;
     Board board;
     private String desc = "";
     Condition cond;
@@ -242,7 +244,7 @@ public class Challenge
         Condition parent = null; // null establishes that this is the root Condition
         String desc = "";
 
-	public abstract boolean check();
+	public abstract boolean check();   // returns true if the condition is satisfied
 
         public Set<Point> getArea() {
             if(parent != null)
@@ -308,8 +310,8 @@ public class Challenge
     
     // Returns true if there are count enclosures that meet a condition
     public static class EnclosuresCondition extends Condition {
-        public EnclosuresCondition(Board b, Condition p, Condition condition, int n){
-            board = b;
+        public EnclosuresCondition(ZooGas g, Condition p, Condition condition, int n){
+            board = g.board;
             cond = new AreaCondition(this, condition, null);
             if(condition != null)
                 condition.setParentCondition(cond);
@@ -385,7 +387,7 @@ public class Challenge
     }
     
     public static class EncloseParticles extends Condition {
-	// TODO: particleName should be a regular expression so it can match multiple Particle names
+	// TODO: particleName should be a regular expression (so it can match multiple Particle names), or a set of Particles (or prefixes)
         public EncloseParticles(int count, String particleName, Board b) {
             c = count;
             board = b;
@@ -441,7 +443,7 @@ public class Challenge
             cond = condition;
             count = n;
             
-            desc = "for at least " + 20 * count + " updates, " + cond.getDescription();
+            desc = "for at least " + count + " turns, " + cond.getDescription();
         }
 
         Condition cond;

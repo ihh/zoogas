@@ -95,7 +95,7 @@ public class ZooGas implements KeyListener {
     BoardRenderer renderer;
     int boardSize; // width & height of board in pixels
     int belowBoardHeight = 0; // size in pixels of whatever appears below the board -- currently unused but left as a placeholder
-    int toolBarWidth = 128, toolLabelWidth = 200, toolHeight = 32; // size in pixels of various parts of the tool bar (right of the board)
+    int toolBarWidth = 140, toolLabelWidth = 200, toolHeight = 35; // size in pixels of various parts of the tool bar (right of the board)
     int textBarWidth = 400, textHeight = 30;
 
     // verb history / subtitle track
@@ -288,15 +288,15 @@ public class ZooGas implements KeyListener {
 
         // hackish test cases (kept here for reference)
         // place 5 guests anywhere
-        // objective = new Challenge(board, new Challenge.EncloseParticles(5, "zoo_guest", board));
+        // objective = new Challenge(this, new Challenge.EncloseParticles(5, "zoo_guest", board));
         // create 4 separated enclosures
-        // objective = new Challenge(board, new Challenge.EnclosuresCondition(board, null, null, 4));
+        // objective = new Challenge(this, new Challenge.EnclosuresCondition(board, null, null, 4));
         // create 3 separated enclosures with 4 zoo_guests in each
-        //objective = new Challenge(board, new Challenge.EnclosuresCondition(board, null, new Challenge.EncloseParticles(4, "zoo_guest", board), 3));
+        //objective = new Challenge(this, new Challenge.EnclosuresCondition(board, null, new Challenge.EncloseParticles(4, "zoo_guest", board), 3));
         // place a zoo_guest, then wait 50 updates
-        //objective = new Challenge(board, new Challenge.SucceedNTimes(null, new Challenge.EncloseParticles(1, "zoo_guest", board), 50));
+        //objective = new Challenge(this, new Challenge.SucceedNTimes(null, new Challenge.EncloseParticles(1, "zoo_guest", board), 50));
         // place 5 animals anywhere
-        // objective = new Challenge(board, new Challenge.EncloseParticles(5, "critter/.*", board));
+        // objective = new Challenge(this, new Challenge.EncloseParticles(5, "critter/.*", board));
 
 	// init hints
 	String specialKeys = "Special keys: "+cheatKey+" (reveal state) "+slowKey+" (reveal bonds) "+stopKey+" (freeze)";
@@ -359,13 +359,14 @@ public class ZooGas implements KeyListener {
         toolBoxPanel.setDoubleBuffered(false);
         statusPanel.setDoubleBuffered(false);
 
+        contentPane.setBackground(Color.BLACK);
         boardPanel.setBackground(Color.BLACK);
         toolBoxPanel.setBackground(Color.BLACK);
         statusPanel.setBackground(Color.BLACK);
 
         // set size
         boardPanel.setPreferredSize(new Dimension(boardSize, boardSize));
-        toolBoxPanel.setPreferredSize(new Dimension(toolBarWidth + toolLabelWidth, boardSize));
+        toolBoxPanel.setPreferredSize(new Dimension(toolBarWidth + toolLabelWidth, toolBox.tool.size() * toolHeight));
         statusPanel.setPreferredSize(new Dimension(textBarWidth, boardSize));
 
         boardPanel.setBorder(new LineBorder(Color.white, 1));

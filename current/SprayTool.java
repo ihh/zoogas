@@ -78,34 +78,37 @@ public class SprayTool {
 	int td = 4;
 	int tw = toolReserveBarWidth - td;
 	int w = (int) (barWidth * (double) (tw * reserve / maxReserve));
-	if (w > toolReserveBarWidth)
-	    w = toolReserveBarWidth;
+	if (w > tw)
+	    w = tw;
 
 	// draw bar in spray color
-	int bh = toolHeight * 3 / 4;
-	int barXpos = toolReserveBarWidth - w, barYpos = yMid - bh/2;
+	int bh = toolHeight - 1;
+	int barXpos = toolReserveBarWidth - w,
+	    barYpos = yMid - bh/2;
 	g.fillRect (barXpos, barYpos, w, bh);
 
 	// if there's an icon, hollow out the bar
 	if (particle.icon != null)
 	    if (particle.icon.size > 0) {
 		int iconSize = particle.icon.size;
-		int pixelsPerIconPixel = bh / iconSize;
-		int rows = (bh / pixelsPerIconPixel) + (bh % pixelsPerIconPixel == 0 ? 0 : 1);
-		int columns = (int) (w / pixelsPerIconPixel) + 1;
+		int pixelsPerIconPixel = Math.max (1, bh / iconSize);
+		int columns = (int) ((w - 2) / pixelsPerIconPixel);
+		int columnsWhenFull = (int) ((tw - 2) / pixelsPerIconPixel);
+		int xBleed = (tw - columnsWhenFull * pixelsPerIconPixel) / 2,
+		    yBleed = (bh - iconSize * pixelsPerIconPixel) / 2;
 		g.setColor(Color.black);
-		for (int row = 0; row < rows; ++row)
+		for (int row = 0; row < iconSize; ++row)
 		    for (int col = 0; col < columns; ++col)
 			if (!particle.icon.mask[row % iconSize][col % iconSize])
-			    g.fillRect (barXpos + w - (col+1) * pixelsPerIconPixel,
-					barYpos + row * pixelsPerIconPixel,
+			    g.fillRect (barXpos + xBleed + col * pixelsPerIconPixel,
+					barYpos + yBleed + row * pixelsPerIconPixel,
 					pixelsPerIconPixel, pixelsPerIconPixel);
 	    }
 
 	// draw border if selected
 	if(selected) {
 	    g.setColor (Color.white);
-	    g.drawRect (2, yMid - toolHeight/2 + 2, toolBarWidth - 4, toolHeight - 4);
+	    g.drawRect (2, yMid - toolHeight/2, toolBarWidth - 4, toolHeight - 1);
 	}
     }
 

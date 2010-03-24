@@ -230,13 +230,13 @@ VERB s=acid t=.* S=_ T=$T p=.005 v=drain
 VERB s=high_pressure_acid S=acid T=acid
 
 # Perfume
-VERB s=perfume t=critter/.*/s:\d+ S=$T T=$T p=1.0 v=encourage
+VERB s=perfume t=critter/.*/s:\d+ S=$T T=$T p=1.0 v=uh_huh
 VERB s=perfume t=_ S=_ T=$T p=0.1 v=disperse
 VERB s=perfume t=_ S=$S T=$S p=0.09 v=billow
 VERB s=perfume t=_ S=$T T=$S p=0.81 v=drift
 
 # Stimulant gas: makes animals fast
-NOUN n=stimulant c=80ffa8
+NOUN n=stimulant c=80ffa8 i=aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555
 VERB s=stimulant t=(critter/'.*')(/s:(\d+)) S=_ T=$1/fast$2 p=1.0 v=stimulate
 VERB s=stimulant t=_ S=_ T=_ p=0.1 v=disperse
 VERB s=stimulant t=_ S=$T T=$S p=0.9 v=drift
@@ -313,6 +313,10 @@ VERB s=lava t=.* S=_ T=$T p=.00001 v=drain
 
 # zoo guests do bugger all except stroll around the place and get mauled
 VERB s=zoo_guest.* t=_ S=$T T=$S p=0.01 v=perambulate d=.
+
+# however, mutator gas can turn zoo guests into bomb-throwing anarchists
+VERB s=zoo_guest t=mutator S=$S/anarchist p=.1 v=i_see_the_light d=.
+VERB s=zoo_guest/anarchist t=_ S=$S T=bomb p=0.0001 v=death_to_the_state d=.
 
 
 # conga line
@@ -556,7 +560,7 @@ VERB s=RNA_sequence/([acgu]*)([acgu])(2)([^\d].*|) t=.* S=RNA_sequence/$1$2$2$-3
 VERB s=RNA_sequence/([acgu]*)([acgu])(2)([^\d].*|) t=.* S=RNA_sequence/$1$2$2$4 T=$T p=1 v=/expand_run_length_encoding
 
 # randomly generate one of several preset RNA sequences
-NOUN n=RNA_sequence c=7f0000 e=-10 i=aa55aa55aa55aa55
+NOUN n=RNA_sequence c=7f0000 e=-10 i=1214242848484424
 VERB s=RNA_sequence S=$S/a5u5
 VERB s=RNA_sequence S=$S/ccacucc
 VERB s=RNA_sequence S=$S/ggaggugg

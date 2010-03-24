@@ -12,4 +12,4 @@ TOOL n=conga k=x
 TOOL n=cage_builder k=c
 TOOL n=cell_builder k=v
 TOOL n=bomb k=n
-TOOL n=RNA_sequence k=q
+TOOL n=RNA_sequence k=q w=.2
