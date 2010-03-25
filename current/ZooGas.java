@@ -536,7 +536,7 @@ public class ZooGas implements KeyListener {
     protected void drawEnclosures(Graphics g) {
         Image image = new BufferedImage(boardSize, boardSize, BufferedImage.TYPE_INT_ARGB);
         Graphics ig = image.getGraphics();
-        for (List<Point> enclosure : Challenge.getEnclosures(board,"wall")) {
+        for (List<Point> enclosure : Challenge.getEnclosures(board,"wall",false)) {
             ig.setColor(new Color ((float)Math.random(), (float)Math.random(), (float)Math.random()));
             for (Point p : enclosure) {
                 Point q = renderer.getGraphicsCoords(p);

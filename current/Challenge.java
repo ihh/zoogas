@@ -34,13 +34,13 @@ public class Challenge
     // TODO: add another String member variable to give feedback on how close the player is to satisfing the Condition (named "feedback" ?)
     Condition cond;
 
-    public static List<List<Point>> getEnclosures (Board b, String wallPrefix) {
+    public static List<List<Point>> getEnclosures (Board b, String wallPrefix, boolean allowDiagonalConnections) {
 	Set<String> wallPrefixes = new TreeSet<String>();
 	wallPrefixes.add(wallPrefix);
-	return getEnclosures(b,wallPrefixes);
+	return getEnclosures(b,wallPrefixes,allowDiagonalConnections);
     }
 
-    public static List<List<Point>> getEnclosures (Board b, Set<String> wallPrefixes) {
+    public static List<List<Point>> getEnclosures (Board b, Set<String> wallPrefixes, boolean allowDiagonalConnections) {
 
 	// create an array of enclosure indices
 	int size = b.size;
@@ -58,6 +58,13 @@ public class Challenge
 
 	// loop over the board, starting a breadth-first search from every unvisited cell
 	int dirs = b.neighborhoodSize();
+	int minDir = 0, dirStep = 1;
+	if (!allowDiagonalConnections) {
+	    // hardwire the fact that in the MooreTopology, the diagonal directions are even-numbered
+	    // TODO: make this robust to changes in the implementation of MooreTopology
+	    minDir = 1;
+	    dirStep = 2;
+	}
 	Stack<Point> toVisit = new Stack<Point>();
 	Point p = new Point(), n = new Point();
 	int currentMark = 0;
@@ -72,7 +79,7 @@ public class Challenge
 
 		    BreadthFirstSearch:
 		    while (true) {
-			for (int d = 0; d < dirs; ++d) {
+			for (int d = minDir; d < dirs; d += dirStep) {
 			    b.getNeighbor(p,n,d);
 			    if (b.onBoard(n) && mark[n.x][n.y] == 0)
 				toVisit.push(new Point(n));
@@ -185,8 +192,11 @@ public class Challenge
     // Returns true if there are requiredEnclosures enclosures of area minArea<=A<=maxArea that meet a condition
     public static class EnclosuresCondition extends Condition {
 
+	static int defaultMinEnclosureSize = 30;
+	static String defaultWallPrefix = "wall";
+
 	// set maxArea=0 for no max area
-        public EnclosuresCondition(ZooGas g, Condition condition, int requiredEnclosures, int minArea, int maxArea) {
+        public EnclosuresCondition(ZooGas g, Condition condition, int requiredEnclosures, int minArea, int maxArea, boolean allowDiagonalConnections) {
             board = g.board;
             cond = new AreaCondition(this, condition, null);
             if(condition != null)
@@ -201,26 +211,29 @@ public class Challenge
 
 	    this.minArea = minArea;
 	    this.maxArea = maxArea;
+	    this.allowDiagonalConnections = allowDiagonalConnections;
 
 	    wallPrefixSet = new TreeSet<String>();
         }
 
-        public EnclosuresCondition(ZooGas g, Condition condition, int requiredEnclosures, int minArea, int maxArea, String wallPrefix) {
+        public EnclosuresCondition(ZooGas g, Condition condition, int requiredEnclosures, int minArea, int maxArea, boolean allowDiagonalConnections, String wallPrefix) {
 	    wallPrefixSet.add (wallPrefix);
 	}
 
+	// default constructor
         public EnclosuresCondition(ZooGas g, Condition condition) {
-	    this(g,condition,2,30,0,"wall");
+	    this(g,condition,2,defaultMinEnclosureSize,0,false,defaultWallPrefix);
 	}
 
 	Set<String> wallPrefixSet;
+	boolean allowDiagonalConnections;
         Board board;
         AreaCondition cond;
         private int count, minArea, maxArea;
 
         public boolean check() {
             int n = 0;
-	    for(List<Point> areaList : getEnclosures(board,wallPrefixSet)) {
+	    for(List<Point> areaList : getEnclosures(board,wallPrefixSet,allowDiagonalConnections)) {
 		int areaSize = areaList.size();
 		if (areaSize > minArea && (maxArea == 0 || areaSize < maxArea)) {
 		    TreeSet<Point> area = new TreeSet<Point> (areaList);
