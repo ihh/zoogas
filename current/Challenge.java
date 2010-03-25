@@ -56,43 +56,33 @@ public class Challenge
 	// create list-of-lists
 	LinkedList<List<Point>> enclosures = new LinkedList<List<Point>>();
 
-	// loop over the board, starting a depth-first search from every unvisited cell
+	// loop over the board, starting a breadth-first search from every unvisited cell
 	int dirs = b.neighborhoodSize();
-	Stack<Point> parent = new Stack<Point>();
-	Stack<Integer> childDir = new Stack<Integer>();
+	Stack<Point> toVisit = new Stack<Point>();
 	Point p = new Point(), n = new Point();
 	int currentMark = 0;
 	for (int x = 0; x < size; ++x)
 	    for (int y = 0; y < size; ++y)
 		if (mark[x][y] == 0) {
 		    ++currentMark;
-		    mark[x][y] = currentMark;
+		    LinkedList<Point> newList = new LinkedList<Point>();
 
 		    p.x = x;
 		    p.y = y;
-		    int d = 0;
 
-		    LinkedList<Point> newList = new LinkedList<Point>();
-		    newList.addFirst (new Point(p));
-
+		    BreadthFirstSearch:
 		    while (true) {
-			if (d < dirs) {
+			for (int d = 0; d < dirs; ++d) {
 			    b.getNeighbor(p,n,d);
-			    ++d;
-			    if (b.onBoard(n) && mark[n.x][n.y] == 0) {
-				mark[n.x][n.y] = currentMark;
-				newList.addFirst (new Point(n));
-				parent.push(new Point(p));
-				childDir.push(new Integer(d));
-				p.x = n.x;
-				p.y = n.y;
-				d = 0;
-			    }
-			} else if (parent.empty()) {
-			    break;
-			} else {
-			    p = parent.pop();
-			    d = childDir.pop().intValue();
+			    if (b.onBoard(n) && mark[n.x][n.y] == 0)
+				toVisit.push(new Point(n));
+			}
+			mark[p.x][p.y] = currentMark;
+			newList.addFirst (new Point(p));
+			while (mark[p.x][p.y] != 0) {
+			    if (toVisit.empty())
+				break BreadthFirstSearch;
+			    p = toVisit.pop();
 			}
 		    }
 		    enclosures.addLast(newList);
