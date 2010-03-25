@@ -19,6 +19,9 @@ public class Board extends MooreTopology {
     // main board data
     private Cell[][] cell = null;
 
+    // default off-board "void" value
+    Particle spaceParticle = null;
+
     // cellular automata rule/particle generator
     private PatternSet patternSet = null;
 
@@ -315,7 +318,9 @@ public class Board extends MooreTopology {
         } else {
             // request remote evolveLocalTargetForRemoteSource
             RemoteCellCoord remoteCoords = remoteCell.get(targetCoords);
-            if (remoteCoords != null)
+            if (remoteCoords == null)
+                pp = evolveLocalSourceAndDummyTarget(sourceCoords, targetCoords, dir);
+	    else
                 evolveLocalSourceAndRemoteTarget(sourceCoords, remoteCoords, dir);
         }
         return pp;
@@ -327,8 +332,8 @@ public class Board extends MooreTopology {
 
         if (oldSourceState.isActive(dir)) {
 
-            if (oldSourceState.name.equals("_")) {
-                System.err.println("Oops, this can't be good: empty space (_) is active. Rules:");
+            if (oldSourceState.name.equals(spaceParticle.name)) {
+                System.err.println("Oops, this can't be good: empty space ("+spaceParticle.name+") is active. Rules:");
                 Set<Particle> actives = oldSourceState.transform.get(dir).keySet();
                 for (Particle a : actives)
                     System.err.println("_ " + a.name);
@@ -340,29 +345,33 @@ public class Board extends MooreTopology {
         }
     }
 
-    // SYNCHRONIZED : this is one of two synchronized methods in this class
+    // SYNCHRONIZED : this is one of three synchronized methods in this class
     // evolveLocalSourceAndLocalTarget : handle entirely local updates. Strictly in the family, folks
     // returns a UpdateEvent
     synchronized public final UpdateEvent evolveLocalSourceAndLocalTarget(Point sourceCoords, Point targetCoords, int dir) {
-        return evolveTargetForSource(sourceCoords, targetCoords, readCell(sourceCoords), dir, 0);
+        return evolveTargetForSource(sourceCoords, targetCoords, readCell(sourceCoords), readCell(targetCoords), dir, 0);
     }
 
-    // SYNCHRONIZED : this is one of two synchronized methods in this class
+    // SYNCHRONIZED : this is one of three synchronized methods in this class
     // evolveLocalTargetForRemoteSource : handle a remote request for update.
     // Return the new source state (the caller of this method will send this returned state back over the network as a RETURN datagram).
     synchronized public final Particle evolveLocalTargetForRemoteSource(Point targetCoords, Particle oldSourceState, int dir, double energyBarrier) {
-        UpdateEvent pp = evolveTargetForSource(null, targetCoords, oldSourceState, dir, energyBarrier);
+        UpdateEvent pp = evolveTargetForSource(null, targetCoords, oldSourceState, readCell(targetCoords), dir, energyBarrier);
         return pp == null ? oldSourceState : pp.source;
+    }
+
+    // SYNCHRONIZED : this is one of three synchronized methods in this class
+    // evolveLocalSourceAndNonexistentTarget : handle the case where a source-target pair straddles the edge of the board, and there is no remote connection.
+    // in this case, the dummy target particle is spaceParticle
+    synchronized public final UpdateEvent evolveLocalSourceAndDummyTarget(Point sourceCoords, Point targetCoords, int dir) {
+        return evolveTargetForSource(sourceCoords, targetCoords, readCell(sourceCoords), spaceParticle, dir, 0);
     }
 
     // evolveTargetForSource : given a source state, and the co-ords of a target cell,
     // sample the new (source,target) state configuration,
     // write the updated target, and return the updated (source,target) pair.
     // The source cell coords are provided, but may be null if the source cell is off-board.
-    public final UpdateEvent evolveTargetForSource(Point sourceCoords, Point targetCoords, Particle oldSourceState, int dir, double energyBarrier) {
-        // get old state-pair
-        Particle oldTargetState = readCell(targetCoords);
-
+    public final UpdateEvent evolveTargetForSource(Point sourceCoords, Point targetCoords, Particle oldSourceState, Particle oldTargetState, int dir, double energyBarrier) {
         // sample new state-pair
         UpdateEvent proposedUpdate = oldSourceState.samplePair(dir, oldTargetState);
         UpdateEvent acceptedUpdate = null;
@@ -620,6 +629,12 @@ public class Board extends MooreTopology {
 
         if (toWorldServer != null)
             toWorldServer.sendAllClientRules(patternSet, patternSet.getByteSize());
+    }
+
+    // method to init space particle
+    public final Particle initSpaceParticle (String spaceParticleName) {
+	spaceParticle = getOrCreateParticle(spaceParticleName);
+	return spaceParticle;
     }
 
     // network helpers

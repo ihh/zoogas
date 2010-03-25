@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.Stack;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.Vector;
 
@@ -30,15 +31,14 @@ public class Challenge
     ZooGas gas;
     Board board;
     private String desc = "";
+    // TODO: add another String member variable to give feedback on how close the player is to satisfing the Condition (named "feedback" ?)
     Condition cond;
-
 
     public static List<List<Point>> getEnclosures (Board b, String wallPrefix) {
 	Set<String> wallPrefixes = new TreeSet<String>();
 	wallPrefixes.add(wallPrefix);
 	return getEnclosures(b,wallPrefixes);
     }
-
 
     public static List<List<Point>> getEnclosures (Board b, Set<String> wallPrefixes) {
 
@@ -141,12 +141,15 @@ public class Challenge
         public AreaCondition(Condition c){
             this(null, c, null);
         }
+
         public AreaCondition(Condition p, Condition c){
             this(p, c, null);
         }
+
         public AreaCondition(Condition c, Set<Point> a){
             this(null, c, a);
         }
+
         public AreaCondition(Condition p, Condition c, Set<Point> a){
             parent = p;
             cond = c;
@@ -179,41 +182,88 @@ public class Challenge
         }
     }
     
-    // Returns true if there are count enclosures that meet a condition
+    // Returns true if there are requiredEnclosures enclosures of area minArea<=A<=maxArea that meet a condition
     public static class EnclosuresCondition extends Condition {
-        public EnclosuresCondition(ZooGas g, Condition p, Condition condition, int n){
+
+	// set maxArea=0 for no max area
+        public EnclosuresCondition(ZooGas g, Condition condition, int requiredEnclosures, int minArea, int maxArea) {
             board = g.board;
             cond = new AreaCondition(this, condition, null);
             if(condition != null)
                 condition.setParentCondition(cond);
             
-            count = n;
+            count = requiredEnclosures;
             
             if(condition != null)
                 desc = "in " + count + " enclosures, " + cond.getDescription();
             else
                 desc = "make " + count + " enclosures ";
+
+	    this.minArea = minArea;
+	    this.maxArea = maxArea;
+
+	    wallPrefixSet = new TreeSet<String>();
         }
 
+        public EnclosuresCondition(ZooGas g, Condition condition, int requiredEnclosures, int minArea, int maxArea, String wallPrefix) {
+	    wallPrefixSet.add (wallPrefix);
+	}
+
+        public EnclosuresCondition(ZooGas g, Condition condition) {
+	    this(g,condition,2,30,0,"wall");
+	}
+
+	Set<String> wallPrefixSet;
         Board board;
         AreaCondition cond;
-        private int count = 1;
+        private int count, minArea, maxArea;
 
         public boolean check() {
             int n = 0;
-            for(List<Point> areaList : getEnclosures(board,"wall")) {
-		TreeSet<Point> area = new TreeSet<Point> (areaList);
-                cond.setArea(area);
-
-                if(cond.check()) {
-                    ++n;
-                    if(n >= count)
-                        return true;
-                }
+	    for(List<Point> areaList : getEnclosures(board,wallPrefixSet)) {
+		int areaSize = areaList.size();
+		if (areaSize > minArea && (maxArea == 0 || areaSize < maxArea)) {
+		    TreeSet<Point> area = new TreeSet<Point> (areaList);
+		    cond.setArea(area);
+		    if(cond.check()) {
+			++n;
+			if(n >= count)
+			    return true;
+		    }
+		}
             }
             
             return false;
         }
+    }
+
+    public static class ThenCondition extends Condition {
+        public ThenCondition(Condition c1, Condition c2){
+            cond1 = c1;
+            cond2 = c2;
+            cond1.setParentCondition(this);
+            cond2.setParentCondition(this);
+
+	    passed1 = passed2 = false;
+            
+            desc = cond1.getDescription() + "then " + cond2.getDescription() + " ";
+        }
+
+        public ThenCondition(Condition p, Condition c1, Condition c2){
+            this(c1, c2);
+            parent = p;
+        }
+
+        Condition cond1, cond2;
+	boolean passed1, passed2;
+
+	public boolean check() {
+	    if (!passed1)
+		passed1 = cond1.check();
+	    if (passed1 && !passed2)
+		passed2 = cond2.check();
+	    return passed1 && passed2;
+	}
     }
 
     public static class AndCondition extends Condition {
@@ -225,6 +275,7 @@ public class Challenge
             
             desc = cond1.getDescription() + "and " + cond2.getDescription() + " ";
         }
+
         public AndCondition(Condition p, Condition c1, Condition c2){
             this(c1, c2);
             parent = p;
@@ -254,68 +305,89 @@ public class Challenge
         Condition cond1, cond2;
 
         public boolean check() {
-            return cond1.check() || cond2.check();
+	    return cond1.check() || cond2.check();
         }
+    }
+
+    // TrueCondition may seem trivial, but in combination with e.g. SucceedNTimes, ThenCondition and SprayCondition,
+    // it can be used to introduce delays, delayed conditions, and delayed spray events
+    public static class TrueCondition extends Condition {
+	public boolean check() {
+	    return true;
+	}
     }
     
     public static class EncloseParticles extends Condition {
-	// TODO: particleName should be a regular expression (so it can match multiple Particle names), or a set of Particles (or prefixes)
-        public EncloseParticles(int count, String particleName, Board b) {
+        public EncloseParticles(int count, String prefix, Board b) {
             c = count;
             board = b;
-            this.particleName = particleName;
-            
-            if(!setParticle(particleName))
-                desc = "???"; // TODO: fix this hack for allowing particles that are not initialized in the particle names set
+            this.particlePrefix = prefix;
+	    desc = "place " + c + " " + prefix + (c > 1? "s" : "") + " ";
         }
-        public EncloseParticles(Condition p, int count, String particleName, Board b) {
-            this(count, particleName, b);
+
+        public EncloseParticles(Condition p, int count, String prefix, Board b) {
+            this(count, prefix, b);
             parent = p;
         }
         
         private int c = 1;
-        Particle particle;
-        String particleName;
+        String particlePrefix;
         Board board;
-        
-        private boolean setParticle(String particleName) {
-            particle = board.getParticleByName(particleName);
-            if(particle == null)
-                return false;
-            
-            if(getArea() != null)
-                desc = "enclose " + c + " " + particle.visibleName() + (c > 1? "s " : " ");
-            else
-                desc = "place " + c + " " + particle.visibleName() + (c > 1? "s " : " ");
-                //desc = "place " + c + " " + particle.visibleName() + (c > 1? "s " : " ") + "anywhere";
-            
-            return true;
+
+	// member variables set by check()
+	int totalParticles;
+	Map<Particle,Set<Point>> particleLocations;
+                
+        public boolean check() {
+	    Set<Point> area = getArea();
+	    Set<Particle> particles = board.getParticlesByPrefix(particlePrefix);
+
+	    particleLocations = new TreeMap<Particle,Set<Point>>();
+	    totalParticles = 0;
+	    for (Particle particle : particles) {
+		Set<Point> pArea = particle.getOccupiedPoints();
+		if (area != null)
+		    pArea.retainAll(area);
+
+		particleLocations.put (particle, pArea);
+		totalParticles += pArea.size();
+	    }
+
+            return totalParticles >= c;
+        }
+    }
+
+    public static class EnclosedParticleEntropy extends EncloseParticles {
+        public EnclosedParticleEntropy(int count, String prefix, Board b, double minEntropy) {
+	    super(count,prefix,b);
+	    this.minEntropy = minEntropy;
+	    desc = desc + " with diversity score " + Math.exp(minEntropy);
+        }
+
+        public EnclosedParticleEntropy(Condition p, int count, String prefix, Board b, double minEntropy) {
+            this(count, prefix, b, minEntropy);
+            parent = p;
         }
         
+	double minEntropy;
+
         public boolean check() {
-            // TODO: throw an exception?
-            if(particle == null) {
-                if(!setParticle(particleName))
-                    return false;
-            }
-
-            Set<Point> area = getArea();
-
-            if(area == null) {
-                return particle.getReferenceCount() >= c;
-            }
-
-            area.retainAll(particle.getOccupiedPoints());
-            return area.size() >= c;
+	    super.check();
+	    double entropy = 0;
+	    for (Set<Point> locations : particleLocations.values()) {
+		double p = (double) locations.size() / (double) totalParticles;
+		entropy -= p * Math.log(p);
+	    }
+	    return entropy >= minEntropy;
         }
     }
     
     public static class SucceedNTimes extends Condition {
-        public SucceedNTimes(Condition p, Condition condition, int n){
+        public SucceedNTimes(ZooGas gas, Condition p, Condition condition, int n){
             cond = condition;
             count = n;
             
-            desc = "for at least " + count + " turns, " + cond.getDescription();
+            desc = "for at least " + ((double) count / (double) gas.targetUpdateRate) + " seconds, " + cond.getDescription();
         }
 
         Condition cond;
@@ -323,6 +395,7 @@ public class Challenge
         private int successes = 0;
 
         public boolean check() {
+
             if(cond == null || cond.check()) {
                 if(++successes >= count)
                     return true;
@@ -332,5 +405,33 @@ public class Challenge
             successes = 0;
             return false;
         }
+    }
+
+    // SprayEvent can be hooked up to a parent AreaCondition or EnclosuresCondition, otherwise it will spray anywhere on the board
+    public static class SprayEvent extends Condition {
+
+        public SprayEvent(Board board,SprayTool tool){
+	    this.board = board;
+	    this.tool = tool;
+        }
+
+	Board board;
+	SprayTool tool;
+
+	public boolean check() {
+	    Set<Point> areaSet = getArea();
+	    Point sprayPoint;
+	    if (areaSet != null) {
+		Vector<Point> area = new Vector<Point> (areaSet);
+		int n = (int) (Math.random() * area.size());
+		sprayPoint = area.elementAt(n);
+	    } else {  // no parent area
+		sprayPoint = new Point();
+		sprayPoint.x = (int) (Math.random() * board.size);
+		sprayPoint.y = (int) (Math.random() * board.size);
+	    }
+	    tool.spray (sprayPoint, board, null, board.spaceParticle);
+	    return true;
+	}
     }
 }

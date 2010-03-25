@@ -36,6 +36,10 @@ import javax.swing.event.MouseInputAdapter;
 
 public class ZooGas implements KeyListener {
 
+    // constants
+    final static String spaceParticleName = "_";
+    Particle spaceParticle = null;
+
     // command-line argument defaults
     static int defaultPort = 4444;
     static String defaultPatternSetFilename = "ECOLOGY.txt", defaultToolboxFilename = "TOOLS.txt";
@@ -77,8 +81,6 @@ public class ZooGas implements KeyListener {
     Challenge objective;
 
     // constant helper vars
-    final static String spaceParticleName = "_";
-    Particle spaceParticle;
     double patternMatchesPerRefresh = 1;
 
     // Swing
@@ -227,6 +229,7 @@ public class ZooGas implements KeyListener {
 	}
         
         gas.board.loadPatternSetFromFile(gas.patternSetFilename);
+	gas.spaceParticle = gas.board.initSpaceParticle(spaceParticleName);
         gas.start(serverAddr);
     }
 
@@ -239,8 +242,6 @@ public class ZooGas implements KeyListener {
     {
 	// set helpers, etc.
 	boardSize = board.getBoardSize(size,renderer.pixelsPerCell);
-
-        spaceParticle = board.getOrCreateParticle(spaceParticleName);
 
         // init board
         if (initImageFilename != null) {

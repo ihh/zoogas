@@ -179,18 +179,22 @@ public class UpdateEvent {
     }
 
     public void write(Board board) {
-	if (!keepsTargetBonds())
+	boolean sourceOnBoard = sourceCoords != null && board.onBoard(sourceCoords);
+	boolean targetOnBoard = targetCoords != null && board.onBoard(targetCoords);
+	if (targetOnBoard && !keepsTargetBonds())
 	    board.removeBonds(targetCoords);
-	if (sourceCoords != null && board.onBoard(sourceCoords)) {
+	if (sourceOnBoard) {
 	    if (!keepsSourceBonds())
 		board.removeBonds(sourceCoords);
 	    board.writeCell(sourceCoords,source);
 	    board.addIncoming(sourceCoords,sIncoming);
 	    board.addOutgoing(sourceCoords,sOutgoing);
 	}
-	board.writeCell(targetCoords,target);
-	board.addIncoming(targetCoords,tIncoming);
-	board.addOutgoing(targetCoords,tOutgoing);
+	if (targetOnBoard) {
+	    board.writeCell(targetCoords,target);
+	    board.addIncoming(targetCoords,tIncoming);
+	    board.addOutgoing(targetCoords,tOutgoing);
+	}
     }
 
     public String writeAndLog(Board board) {
