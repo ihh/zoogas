@@ -237,6 +237,7 @@ public class Challenge
         }
     }
 
+    // ThenCondition is like AndCondition, but guarantees to evaluate each Condition only once, and not to evaluate condition #2 until condition #1 is true
     public static class ThenCondition extends Condition {
         public ThenCondition(Condition c1, Condition c2){
             cond1 = c1;
@@ -266,6 +267,7 @@ public class Challenge
 	}
     }
 
+    // AndCondition does not check condition #2 unless condition #1 is true
     public static class AndCondition extends Condition {
         public AndCondition(Condition c1, Condition c2){
             cond1 = c1;
@@ -288,6 +290,7 @@ public class Challenge
 	}
     }
     
+    // OrCondition does not check condition #2 if condition #1 is true
     public static class OrCondition extends Condition {
         public OrCondition(Condition c1, Condition c2){
             cond1 = c1;
@@ -317,6 +320,7 @@ public class Challenge
 	}
     }
     
+    // EncloseParticles is a base Condition that can be used to place tests on Particles with a given prefix word and minimum population
     public static class EncloseParticles extends Condition {
         public EncloseParticles(int count, String prefix, Board b) {
             c = count;
@@ -357,6 +361,7 @@ public class Challenge
         }
     }
 
+    // EnclosedParticleEntropy can be used to test the diversity of a population
     public static class EnclosedParticleEntropy extends EncloseParticles {
         public EnclosedParticleEntropy(int count, String prefix, Board b, double minEntropy) {
 	    super(count,prefix,b);
@@ -382,6 +387,8 @@ public class Challenge
         }
     }
     
+    // SucceedNTimes can be used to test for a condition holding true over a continuous period of time.
+    // The time period resets as soon as the condition stops being true.
     public static class SucceedNTimes extends Condition {
         public SucceedNTimes(ZooGas gas, Condition p, Condition condition, int n){
             cond = condition;
@@ -425,7 +432,7 @@ public class Challenge
 		Vector<Point> area = new Vector<Point> (areaSet);
 		int n = (int) (Math.random() * area.size());
 		sprayPoint = area.elementAt(n);
-	    } else {  // no parent area
+	    } else {  // no parent area; spray anywhere on the board
 		sprayPoint = new Point();
 		sprayPoint.x = (int) (Math.random() * board.size);
 		sprayPoint.y = (int) (Math.random() * board.size);
