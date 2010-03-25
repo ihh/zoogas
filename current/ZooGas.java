@@ -21,6 +21,7 @@ import java.net.InetSocketAddress;
 
 import java.util.Formatter;
 import java.util.Locale;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
@@ -534,12 +535,11 @@ public class ZooGas implements KeyListener {
     protected void drawEnclosures(Graphics g) {
         Image image = new BufferedImage(boardSize, boardSize, BufferedImage.TYPE_INT_ARGB);
         Graphics ig = image.getGraphics();
-        for (Set<Point> enclosure : Challenge.getEnclosures(board)) {
-            //ig.setColor(new Color ((float)Math.random(), (float)Math.random(), (float)Math.random()));
-            ig.setColor(new Color(100, 0, 0, 150));
+        for (List<Point> enclosure : Challenge.getEnclosures(board,"wall")) {
+            ig.setColor(new Color ((float)Math.random(), (float)Math.random(), (float)Math.random()));
             for (Point p : enclosure) {
                 Point q = renderer.getGraphicsCoords(p);
-                ig.fillRect(q.x, q.y, renderer.pixelsPerCell, renderer.pixelsPerCell);
+		ig.fillRect(q.x, q.y, renderer.pixelsPerCell, renderer.pixelsPerCell);
             }
         }
 

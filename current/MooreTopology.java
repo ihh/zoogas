@@ -1,7 +1,7 @@
 import java.util.*;
 
 public class MooreTopology extends Topology{
-    // method to sample a random neighbor of a given cell, returning the directional index
+    // method to get a given neighbor of a given cell, returning the directional index
     final public int getNeighbor (Point p, Point n, int ni) {
 	n.x = p.x;
 	n.y = p.y;

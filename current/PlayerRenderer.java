@@ -2,7 +2,7 @@ import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
 public class PlayerRenderer extends BoardRenderer{
-    static double balloonRate = .0001;
+    static double balloonRate = .0001;  // probability that any given update verb will be printed in a speech balloon (TODO: make this a rule-specific parameter)
 
     PlayerRenderer (Board board, int size) {
         this.board = board;

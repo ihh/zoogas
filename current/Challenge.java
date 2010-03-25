@@ -1,5 +1,3 @@
-import java.awt.Polygon;
-
 import java.awt.Rectangle;
 
 import java.lang.reflect.Method;
@@ -10,10 +8,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.Stack;
 import java.util.TreeSet;
+import java.util.Vector;
 
 public class Challenge
 {
@@ -31,193 +32,73 @@ public class Challenge
     private String desc = "";
     Condition cond;
 
-    public static Set<Set<Point>> getEnclosures(Board b) {
-	SortedSet<Point> allWalls = getWallParticles(b);
-	SortedSet<Point> walls = Collections.synchronizedSortedSet(new TreeSet<Point>(allWalls));
-	HashSet<Set<Point>> enclosures = new HashSet<Set<Point>>();
 
-	// Check if there are walls, then see if those walls make cages
-	if(walls.size() > 3)
-	{
-	    // Consider only walls can form a side of a cage
-	    SortedSet<Point> tempSet = new TreeSet<Point>(walls);
-	    List<Point> neighbors;
-	    {
-		Point p = null;
-		while(!tempSet.isEmpty()){
-		    if(p == null)
-			p = tempSet.first();
+    public static List<List<Point>> getEnclosures (Board b, String wallPrefix) {
+	Set<String> wallPrefixes = new TreeSet<String>();
+	wallPrefixes.add(wallPrefix);
+	return getEnclosures(b,wallPrefixes);
+    }
 
-		    neighbors = getNeighbors(walls, p);
-		    tempSet.remove(p);
 
-		    if(neighbors.size() < 2)
-		    {
-			walls.remove(p);
-			if(neighbors.size() == 1)
-			{
-			    p = neighbors.get(0);
-			    continue;
+    public static List<List<Point>> getEnclosures (Board b, Set<String> wallPrefixes) {
+
+	// create an array of enclosure indices
+	int size = b.size;
+	int[][] mark = new int[size][size];
+
+	// mark the walls as -1
+	for (String wallPrefix : wallPrefixes)
+	    if (b.gotPrefix(wallPrefix))
+		for(Particle p : b.getParticlesByPrefix(wallPrefix))
+		    for (Point q : p.getOccupiedPoints())
+			mark[q.x][q.y] = -1;
+
+	// create list-of-lists
+	LinkedList<List<Point>> enclosures = new LinkedList<List<Point>>();
+
+	// loop over the board, starting a depth-first search from every unvisited cell
+	int dirs = b.neighborhoodSize();
+	Stack<Point> parent = new Stack<Point>();
+	Stack<Integer> childDir = new Stack<Integer>();
+	Point p = new Point(), n = new Point();
+	int currentMark = 0;
+	for (int x = 0; x < size; ++x)
+	    for (int y = 0; y < size; ++y)
+		if (mark[x][y] == 0) {
+		    ++currentMark;
+		    mark[x][y] = currentMark;
+
+		    p.x = x;
+		    p.y = y;
+		    int d = 0;
+
+		    LinkedList<Point> newList = new LinkedList<Point>();
+		    newList.addFirst (new Point(p));
+
+		    while (true) {
+			if (d < dirs) {
+			    b.getNeighbor(p,n,d);
+			    ++d;
+			    if (b.onBoard(n) && mark[n.x][n.y] == 0) {
+				mark[n.x][n.y] = currentMark;
+				newList.addFirst (new Point(n));
+				parent.push(new Point(p));
+				childDir.push(new Integer(d));
+				p.x = n.x;
+				p.y = n.y;
+				d = 0;
+			    }
+			} else if (parent.empty()) {
+			    break;
+			} else {
+			    p = parent.pop();
+			    d = childDir.pop().intValue();
 			}
 		    }
-
-		    p = null;
+		    enclosures.addLast(newList);
 		}
-	    }
 
-	    // Remove walls that don't touch a non-wall cell
-	    Point[] tempArr = new Point[walls.size()];
-	    walls.toArray(tempArr);
-	    for(Point p : tempArr) {
-		if(getNeighbors(walls, p).size() + getNeighbors(tempSet, p).size() + getDiagNeighbors(walls, p).size() + getDiagNeighbors(tempSet, p).size() == 8)
-		{
-		    walls.remove(p);
-		    tempSet.add(p);
-		}
-	    }
-
-	    Point start;
-	    while(!walls.isEmpty()) {
-		// Make a polygon
-		start = walls.first();
-		tempSet.clear();
-
-		Polygon poly = tracePolygon(walls, tempSet, new HashSet<Point>(), start, start, null);
-		if(poly == null) {
-		    walls.remove(start);
-		}
-		else {
-		    walls.removeAll(tempSet);
-
-		    TreeSet<Point> tempSet2 = new TreeSet<Point>();
-		    Rectangle bounds = poly.getBounds();
-		    for(int x = (int)bounds.getX(); x < bounds.getX() + bounds.getWidth(); ++x) {
-			for(int y = (int)bounds.getY(); y < bounds.getY() + bounds.getHeight(); ++y) {
-			    Point q = new Point(x, y);
-			    if(!allWalls.contains(q) && poly.contains(q))
-				tempSet2.add(new Point(x, y));
-			}
-		    }
-		    enclosures.add(tempSet2);
-		}
-	    }
-	}
 	return enclosures;
-    }
-    private static Polygon tracePolygon(Set<Point> walls, Set<Point> added, Set<Point> eliminated, Point start, Point current, Point last) {
-	boolean finished = false;
-	added.add(current);
-	List<Point> neighbors = getNeighbors(walls, current);
-	if(neighbors.size() < 2)
-	    return null;
-
-	int i;
-	int temp;
-	if(last != null) {
-	    temp = neighbors.indexOf(last) % neighbors.size();
-	    i = (temp + 1) % neighbors.size();
-	}
-	else {
-	    temp = neighbors.size() - 1;
-	    i = 0;
-	}
-	for(; i != temp; i = (i + 1) % neighbors.size()) {
-	    Point p = neighbors.get(i % neighbors.size());
-	    if(!(added.contains(p) || eliminated.contains(current))) {
-		Polygon poly = tracePolygon(walls, added, eliminated, start, p, current);
-		if(poly != null) {
-		    poly.addPoint(current.x, current.y);
-		    return poly;
-		}
-	    }
-	    else if(p.equals(start))
-		finished = true;
-	}
-	if(!finished)
-	{
-	    added.remove(current);
-	    eliminated.add(current);
-	    return null;
-	}
-	else {
-	    Polygon poly = new Polygon();
-	    poly.addPoint(current.x, current.y);
-	    return poly;
-	}
-    }
-
-    static String wallPrefix = "wall";
-    public static TreeSet<Point> getWallParticles(Board b) {
-	TreeSet<Point> walls = new TreeSet<Point>();
-
-	if (b.gotPrefix(wallPrefix))
-	    for(Particle p : b.getParticlesByPrefix(wallPrefix)) {
-		Set<Point> wallSet = p.getOccupiedPoints();
-		synchronized(wallSet) {
-		    walls.addAll(wallSet);
-		}
-	    }
-
-	return walls;
-    }
-
-    // Adds all neighboring walls inside the set to a SortedSet
-    // Neighbors MUST be added in order: left, up, right, then down
-    public static List<Point> getNeighbors(Set<Point> walls, Point p) {
-	ArrayList<Point> neighbors = new ArrayList<Point>();
-	Point q;
-	for(int dir = 0; dir < 4; ++dir) {
-	    q = new Point(p);
-	    switch(dir)
-	    {
-		case 0:
-		    q.x--;
-		    break;
-		case 1:
-		    q.y--;
-		    break;
-		case 2:
-		    q.x++;
-		    break;
-		case 3:
-		    q.y++;
-		    break;
-	    }
-	    if(walls.contains(q))
-		neighbors.add(q);
-	}
-
-	return neighbors;
-    }
-    public static Set<Point> getDiagNeighbors(Set<Point> walls, Point p) {
-	HashSet<Point> neighbors = new HashSet<Point>();
-	Point q;
-	for(int dir = 0; dir < 4; ++dir) {
-	    q = new Point(p);
-	    switch(dir)
-	    {
-		case 0:
-		    q.x--;
-		    q.y--;
-		    break;
-		case 1:
-		    q.x++;
-		    q.y--;
-		    break;
-		case 2:
-		    q.x--;
-		    q.y++;
-		    break;
-		case 3:
-		    q.x++;
-		    q.y++;
-		    break;
-	    }
-	    if(walls.contains(q))
-		neighbors.add(q);
-	}
-
-	return neighbors;
     }
 
     public boolean check() {
@@ -330,7 +211,8 @@ public class Challenge
 
         public boolean check() {
             int n = 0;
-            for(Set<Point> area : getEnclosures(board)) {
+            for(List<Point> areaList : getEnclosures(board,"wall")) {
+		TreeSet<Point> area = new TreeSet<Point> (areaList);
                 cond.setArea(area);
 
                 if(cond.check()) {
