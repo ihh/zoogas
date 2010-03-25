@@ -482,7 +482,7 @@ public class ZooGas implements KeyListener {
 
             // do spray
             if (mouseDown && toolBox.currentTool != null) {
-                toolBox.currentTool.spray(cursorPos, board, renderer, spaceParticle);
+                toolBox.currentTool.spray(cursorPos, board, renderer, spaceParticleName);
                 return;
             }
         } else
@@ -532,17 +532,20 @@ public class ZooGas implements KeyListener {
         g.drawLine(pg.x + k, pg.y + k, qg.x + k, qg.y + k);
     }
 
-    // highlight enclosures
+    // highlight enclosures of size >= 10
     protected void drawEnclosures(Graphics g) {
+	String wallPrefix = "wall";
+	int minSize = 10;
         Image image = new BufferedImage(boardSize, boardSize, BufferedImage.TYPE_INT_ARGB);
         Graphics ig = image.getGraphics();
-        for (List<Point> enclosure : Challenge.getEnclosures(board,"wall",false)) {
-            ig.setColor(new Color ((float)Math.random(), (float)Math.random(), (float)Math.random()));
-            for (Point p : enclosure) {
-                Point q = renderer.getGraphicsCoords(p);
-		ig.fillRect(q.x, q.y, renderer.pixelsPerCell, renderer.pixelsPerCell);
-            }
-        }
+        for (List<Point> enclosure : Challenge.getEnclosures(board,wallPrefix,false))
+	    if (enclosure.size() >= minSize) {
+		ig.setColor(new Color ((float)Math.random(), (float)Math.random(), (float)Math.random()));
+		for (Point p : enclosure) {
+		    Point q = renderer.getGraphicsCoords(p);
+		    ig.fillRect(q.x, q.y, renderer.pixelsPerCell, renderer.pixelsPerCell);
+		}
+	    }
 
         g.drawImage(image, 0, 0, null);
     }

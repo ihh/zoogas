@@ -325,8 +325,10 @@ public class Challenge
         }
     }
 
-    // TrueCondition may seem trivial, but in combination with e.g. SucceedNTimes, ThenCondition and SprayCondition,
-    // it can be used to introduce delays, delayed conditions, and delayed spray events
+    // TrueCondition may seem trivial,
+    //  but in combination with e.g. SucceedNTimes, ThenCondition and SprayCondition,
+    //  it can be used to introduce delays, delayed conditions, and delayed spray events.
+    // Of course, there might be a better way to do this (e.g. an explicit DelayedCondition class).
     public static class TrueCondition extends Condition {
 	public boolean check() {
 	    return true;
@@ -427,16 +429,23 @@ public class Challenge
         }
     }
 
-    // SprayEvent can be hooked up to a parent AreaCondition or EnclosuresCondition, otherwise it will spray anywhere on the board
+    // SprayEvent can be hooked up to a parent AreaCondition or EnclosuresCondition, otherwise it will spray anywhere on the board.
+    // It succeeds if at least one particle was sprayed.
     public static class SprayEvent extends Condition {
 
-        public SprayEvent(Board board,SprayTool tool){
+        public SprayEvent(Board board,SprayTool tool,String oldPrefix){
 	    this.board = board;
 	    this.tool = tool;
+	    this.oldPrefix = oldPrefix;
         }
+
+        public SprayEvent(Board board,SprayTool tool){
+	    this (board, tool, board.spaceParticle.prefix);
+	}
 
 	Board board;
 	SprayTool tool;
+	String oldPrefix;
 
 	public boolean check() {
 	    Set<Point> areaSet = getArea();
@@ -450,8 +459,7 @@ public class Challenge
 		sprayPoint.x = (int) (Math.random() * board.size);
 		sprayPoint.y = (int) (Math.random() * board.size);
 	    }
-	    tool.spray (sprayPoint, board, null, board.spaceParticle);
-	    return true;
+	    return tool.spray (sprayPoint, board, null, oldPrefix);
 	}
     }
 }

@@ -45,7 +45,9 @@ public class SprayTool {
 	}
     }
 
-    void spray(Point cursorPos,Board board,BoardRenderer renderer,Particle spaceParticle) {
+    // spray(...) returns true if at least one particle was sprayed. (This is used by Challenge.SprayCondition)
+    boolean spray(Point cursorPos,Board board,BoardRenderer renderer,String spacePrefix) {
+	boolean succeeded = false;
 	Point sprayCell = new Point();
 	for (int n = 0; reserve >= 1 && n < sprayPower; ++n) {
 
@@ -54,13 +56,15 @@ public class SprayTool {
 
 	    if (board.onBoard(sprayCell)) {
 		Particle oldCell = board.readCell (sprayCell);
-		if (spaceParticle == null || oldCell == spaceParticle) {
+		if (spacePrefix == null || oldCell.prefix.equals(spacePrefix)) {
 		    board.writeCell (sprayCell, particle);
 		    reserve -= 1;
 		    renderer.drawCell (sprayCell);
+		    succeeded = true;
 		}
 	    }
 	}
+	return succeeded;
     }
 
     void plotReserve (Graphics g, int yTop, int toolHeight, int toolReserveBarWidth, int toolTextWidth, boolean selected) {
