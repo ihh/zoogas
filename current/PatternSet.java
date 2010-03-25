@@ -160,9 +160,9 @@ public class PatternSet extends RuleSet{
 
     // i/o patterns and syntax parsers
     final static Pattern endRegex = Pattern.compile("END.*");
-    static RuleSyntax nounSyntax = new RuleSyntax("NOUN n= c=ffffff e=0 i*");
-    static RuleSyntax verbSyntax = new RuleSyntax("VERB s= t=.* S=$S T=$T d= p=1 v=_ b* c* x* B* k* K*");
-    static RuleSyntax bondSyntax = new RuleSyntax("BOND n= e= s=.* t=.* l=1 L=1.5 m=1 a=-1 A=1 b=1");
+    static RuleSyntax nounSyntax = new RuleSyntax("NOUN n= c=ffffff e=0 i*", "n=Name c=Color e=Energy i=Icon");
+    static RuleSyntax verbSyntax = new RuleSyntax("VERB s= t=.* S=$S T=$T d= p=1 v=_ b* c* x* B* k* K*", "s=OldSource t=OldTarget S=NewSource T=NewTarget d=Dir p=Prob v=Say b=OptionalBond c=DeleteBond x=ExcludeBond B=NewBond k=KeepOptionalBond K=KeepRequiredBond");
+    static RuleSyntax bondSyntax = new RuleSyntax("BOND n= e= s=.* t=.* l=1 L=1.5 m=1 a=-1 A=1 b=1", "n=Name e=Energy s=Source t=Target l=MinLen L=MaxLen a=LenTolerance a=MinAngle A=MaxAngle b=AngleTolerance");
 
     // i/o methods
     static PatternSet fromStream (InputStream in, Topology topology) {
