@@ -162,8 +162,7 @@ public class RuleSyntax {
 	for (String arg : argOrder) {
 	    String tag = argXmlTag.containsKey(arg) ? argXmlTag.get(arg) : arg;
 	    element = element + (mySubs++ > 0 ? ", " : "") + tag;
-	    String attribute = "";
-	    String subElement = "  <!ELEMENT " + tag + " (#PCDATA)>";
+	    String attribute = "", defaultValueComment = "";
 	    String type = argType.get(arg);
 	    if (type.equals("!")) {
 		// Uncomment to make mandatory arguments into REQUIRED attributes.
@@ -174,7 +173,7 @@ public class RuleSyntax {
 		element = element + "?";
 		String defaultVal = defaultArg.get(arg);
 		attribute = '"' + defaultVal + '"';
-		subElement = subElement + "    <!-- Default value is \"" + defaultVal + "\" -->";
+		defaultValueComment = "    <!-- Default value of " + firstWord + "." + tag + " is \"" + defaultVal + "\" -->";
 	    } else if (type.equals("*")) {
 		element = element + "*";
 		attribute = '"' + defaultArg.get(arg) + '"';
@@ -188,17 +187,17 @@ public class RuleSyntax {
 
 	    if (element.length() > 0) {
 		if (seenTag)
-		    subElements.addElement("  <!-- Element " + tag + " already defined -->");
+		    subElements.addElement("  <!-- Element " + tag + " already defined -->" + defaultValueComment);
 		else
-		    subElements.addElement(subElement);
+		    subElements.addElement("  <!ELEMENT " + tag + " (#PCDATA)>" + defaultValueComment);
 	    }
 	}
 	element = element + ")>";
 
 	elements.addElement(element);
-	elements.addAll(attributes);
-	elements.add("<!-- Attributes may, alternatively, be specified as sub-elements -->");
 	elements.addAll(subElements);
+	elements.add("<!-- Optional child elements may, alternatively, be specified as attributes -->");
+	elements.addAll(attributes);
 	elements.add("<!-- End of top-level element " + firstWord + " -->\n");
     }
 
