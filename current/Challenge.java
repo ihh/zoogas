@@ -31,7 +31,7 @@ public class Challenge
     ZooGas gas;
     Board board;
     private String desc = "";
-    // TODO: add another String member variable to give feedback on how close the player is to satisfing the Condition (named "feedback" ?)
+    // TODO: add another String-returning method for feedback on how close the player is to satisfing the Condition
     Condition cond;
 
     public static List<List<Point>> getEnclosures (Board b, String wallPrefix, boolean allowDiagonalConnections) {

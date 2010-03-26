@@ -290,7 +290,7 @@ public class ZooGas implements KeyListener {
 
         // hackish test cases (kept here for reference)
         // place 5 guests anywhere
-        // objective = new Challenge(this, new Challenge.EncloseParticles(5, "zoo_guest", board));
+	objective = new Challenge(this, new Challenge.EncloseParticles(5, "zoo_guest", board));
         // create 4 separated enclosures
         // objective = new Challenge(this, new Challenge.EnclosuresCondition(board, null, null, 4));
         // create 3 separated enclosures with 4 zoo_guests in each
@@ -546,7 +546,9 @@ public class ZooGas implements KeyListener {
 		ig.setColor(new Color ((float)Math.random(), (float)Math.random(), (float)Math.random()));
 		for (Point p : enclosure) {
 		    Point q = renderer.getGraphicsCoords(p);
-		    ig.fillRect(q.x, q.y, renderer.pixelsPerCell, renderer.pixelsPerCell);
+		    ig.fillRect((int) (q.x + Math.random() * renderer.pixelsPerCell),
+				(int) (q.y + Math.random() * renderer.pixelsPerCell),
+				1, 1);
 		}
 	    }
 

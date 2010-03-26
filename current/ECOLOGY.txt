@@ -36,19 +36,19 @@ NOUN n=wall/2 c=555555
 NOUN n=wall/3 c=808080
 NOUN n=wall/4 c=aaaaaa
 NOUN n=wall/5 c=d5d5d5
-NOUN n=cement c=ffffff i=aa55aa55aa55aa55
-NOUN n=acid c=404040 e=-20
-NOUN n=high_pressure_acid c=707070 e=-40
-NOUN n=perfume c=804054
+NOUN n=cement c=ffffff i=a5a5
+NOUN n=acid c=404040 e=-20 i=aa55aa55aa55aa55
+NOUN n=high_pressure_acid c=707070 e=-40 i=55aa55aa55aa55aa
+NOUN n=perfume c=804054 i=aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555
 NOUN n=mutator c=ff80a8 i=0038547c28385400
-NOUN n=lava c=ff6060
+NOUN n=lava c=ff6060 i=2001001e7bed7bde
 NOUN n=lava/.* c=e06060
 NOUN n=wall/basalt c=ffc800
-NOUN n=zoo_guest.* c=fefefe
+NOUN n=zoo_guest.* c=fefefe i=003c7e7e7e7e3c00
 
 # Beacon: an example directional particle
 NOUN n=photon.* c=c0c000
-NOUN n=beacon.* c=c0c000
+NOUN n=beacon.* c=c0c000 i=183c7effff7e3c18
 VERB s=beacon t=_ S=beacon T=photon/$F p=.5 v=shine
 VERB s=beacon t=_ S=_ T=_ p=.01 v=extinguish
 VERB s=photon/$F t=_ S=$T T=$S p=10 v=beam
@@ -62,7 +62,7 @@ VERB s=photon/$B t=.* S=_ T=$T p=.001 v=scatter
 VERB s=INIT/.* S=_ v=/start
 
 # Initial animals
-NOUN n=animal c=0000ff
+NOUN n=animal c=0000ff i=003c7e7e7e7e3c00
 VERB s=animal S=critter/'rock_imp'/s:0
 VERB s=animal S=critter/'blade_beetle'/s:6
 VERB s=animal S=critter/'paper_bird'/s:12
@@ -191,7 +191,7 @@ VERB s=cement t=.* S=_ T=$T p=.01 v=drain
 
 
 # Cage builders: a simple geometric program with nested loops (bricks/walls).
-NOUN n=cage_builder.* c=8080c0
+NOUN n=cage_builder.* c=8080c0 i=303030303f3f0000
 # Choose size and orientation:
 VERB s=cage_builder t=.* S=cage_builder/len:5 T=$T p=.3 v=plan_small_cage
 VERB s=cage_builder t=.* S=cage_builder/len:11 T=$T p=.3 v=plan_medium_cage
@@ -236,7 +236,7 @@ VERB s=perfume t=_ S=$S T=$S p=0.09 v=billow
 VERB s=perfume t=_ S=$T T=$S p=0.81 v=drift
 
 # Stimulant gas: makes animals fast
-NOUN n=stimulant c=80ffa8 i=aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555
+NOUN n=stimulant c=80ffa8 i=6
 VERB s=stimulant t=(critter/'.*')(/s:(\d+)) S=_ T=$1/fast$2 p=1.0 v=stimulate
 VERB s=stimulant t=_ S=_ T=_ p=0.1 v=disperse
 VERB s=stimulant t=_ S=$T T=$S p=0.9 v=drift
@@ -322,7 +322,7 @@ VERB s=zoo_guest/anarchist t=_ S=$S T=bomb p=0.0001 v=death_to_the_state d=.
 # conga line
 # this models a simple polymer (e.g. a hydrocarbon) by creating energetically favored adjacencies between consecutive monomers
 # the builder is directional to avoid intractable tangles (the polymer is initially stretched in a straight line, but quickly relaxes)
-NOUN n=conga c=80c0c0 e=-10
+NOUN n=conga c=80c0c0 e=-10 i=183c7e00183c7e00
 NOUN n=conga_head/.* c=80c0c0 e=-10
 NOUN n=conga_dude/ c=80c0c0 e=-10
 NOUN n=conga_dude/'crazy_conga_dude'/ c=ffc0c0 e=-10
@@ -368,7 +368,7 @@ VERB s=conga_dude/.* t=.*conga_dude S=$S T=_ v=conga_death K=(x,handsToHips,s) c
 
 # Cell walls
 NOUN n=anchored_cell_wall.* c=103010 e=-10
-NOUN n=cell_builder.* c=103010 e=-10
+NOUN n=cell_builder.* c=103010 e=-10 i=1818303b3f1e0000
 NOUN n=cell_wall c=204020 e=-10
 BOND s=cell_wall t=cell_(wall|builder.*) n=cellWall e=+10 L=1
 BOND s=anchored_cell_wall t=cell_(wall|builder.*) n=cellWall e=+10 L=1
@@ -393,7 +393,7 @@ VERB s=cell_builder/.*dir:$F t=anchored_cell_wall S=cell_wall T=cell_wall p=1 v=
 VERB s=cell_builder/.*/dir:$+R t=_ T=animal v=seed p=.04
 
 # Bombs throw off shrapnel...
-NOUN n=bomb.* c=00c080
+NOUN n=bomb.* c=00c080 i=00183c7e3c180000
 NOUN n=shrapnel.* c=00c080
 VERB s=bomb S=bomb/r:4/n:6
 VERB s=bomb/r:(\d)/n:([1-9]|\d\d+) S=bomb/r:$1/n:$-2 T=shrapnel/d:$F/v:$1 v=explode
