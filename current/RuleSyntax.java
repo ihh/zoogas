@@ -23,11 +23,7 @@ public class RuleSyntax {
 
     private boolean match = false;  // set to true after a successful match
 
-    private static class ArgValPair {
-	ArgValPair(String a,String v) { arg = a; val = v; }
-	String arg, val;
-    }
-    private LinkedList<ArgValPair> parsedArgValPairs = new LinkedList<ArgValPair>();  // populated after a successful match
+    private LinkedList<String> suppliedArgs = new LinkedList<String>();  // populated after a successful match
     private Map<String,String> parsedArg = new HashMap<String,String>();  // populated after a successful match
 
     // regexes
@@ -67,7 +63,7 @@ public class RuleSyntax {
     public boolean matches(String s) {
 	match = false;
 	parsedArg.clear();
-	parsedArgValPairs.clear();
+	suppliedArgs.clear();
 	Matcher m = firstWordPattern.matcher(s);
 	if (m.find() && m.group(1).equals(firstWord)) {
 	    match = true;
@@ -75,7 +71,6 @@ public class RuleSyntax {
 	    while (m.find()) {
 		String arg = m.group(1);
 		String val = m.group(2);
-		parsedArgValPairs.add (new ArgValPair(arg, val));
 		String type = argType.get(arg);
 		if (type == null)
 		    System.err.println("RuleSyntax: unrecognized argument "+arg+" in "+firstWord+" line");
@@ -88,6 +83,7 @@ public class RuleSyntax {
 			    System.err.println("RuleSyntax: duplicate argument "+arg+" in "+firstWord+" line");
                     } else {
 			parsedArg.put(arg,val);
+			suppliedArgs.addLast(arg);
                     }
 		}
 	    }
@@ -128,11 +124,11 @@ public class RuleSyntax {
 	String xml = null;
 	if (match) {
 	    xml = "<" + firstWord + ">";
-	    for (ArgValPair argval : parsedArgValPairs) {
-		String tag = argXmlTag.containsKey(argval.arg) ? argXmlTag.get(argval.arg) : argval.arg;
+	    for (String arg : suppliedArgs) {
+		String tag = argXmlTag.containsKey(arg) ? argXmlTag.get(arg) : arg;
 		xml = xml
 		    + " <" + tag + ">"
-		    + argval.val
+		    + parsedArg.get(arg)
 		    + "</" + tag + ">";
 	    }
 	    xml = xml + " </" + firstWord + ">";
