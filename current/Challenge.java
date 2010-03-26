@@ -31,7 +31,6 @@ public class Challenge
     ZooGas gas;
     Board board;
     private String desc = "";
-    // TODO: add another String-returning method for feedback on how close the player is to satisfing the Condition
     Condition cond;
 
     public static List<List<Point>> getEnclosures (Board b, String wallPrefix, boolean allowDiagonalConnections) {
@@ -118,9 +117,13 @@ public class Challenge
         return desc;
     }
 
+    public String getFeedback() {
+	return cond.feedback;
+    }
+
     public static abstract class Condition {
         Condition parent = null; // null establishes that this is the root Condition
-        String desc = "";
+        String desc = "", feedback = "";
 
 	public abstract boolean check();   // returns true if the condition is satisfied
 
@@ -195,7 +198,7 @@ public class Challenge
 	static int defaultMinEnclosureSize = 30;
 	static String defaultWallPrefix = "wall";
 
-	// set maxArea=0 for no max area
+	// set maxArea=0 for unlimited area
         public EnclosuresCondition(ZooGas g, Condition condition, int requiredEnclosures, int minArea, int maxArea, boolean allowDiagonalConnections) {
             board = g.board;
             cond = new AreaCondition(this, condition, null);
@@ -217,6 +220,7 @@ public class Challenge
         }
 
         public EnclosuresCondition(ZooGas g, Condition condition, int requiredEnclosures, int minArea, int maxArea, boolean allowDiagonalConnections, String wallPrefix) {
+	    this (g, condition, requiredEnclosures, minArea, maxArea, allowDiagonalConnections);
 	    wallPrefixSet.add (wallPrefix);
 	}
 
@@ -232,12 +236,13 @@ public class Challenge
         private int count, minArea, maxArea;
 
         public boolean check() {
-            int n = 0;
+            int n = 0, total = 0;
 	    for(List<Point> areaList : getEnclosures(board,wallPrefixSet,allowDiagonalConnections)) {
 		int areaSize = areaList.size();
 		if (areaSize > minArea && (maxArea == 0 || areaSize < maxArea)) {
 		    TreeSet<Point> area = new TreeSet<Point> (areaList);
 		    cond.setArea(area);
+		    ++total;
 		    if(cond.check()) {
 			++n;
 			if(n >= count)
@@ -245,6 +250,8 @@ public class Challenge
 		    }
 		}
             }
+	    if (n > 0)
+		feedback = "Passed " + n + " times so far";
             
             return false;
         }
@@ -387,13 +394,15 @@ public class Challenge
 	    totalParticles = 0;
 	    for (Particle particle : particles) {
 		Set<Point> pArea = particle.getOccupiedPoints();
+
 		if (area != null)
 		    pArea.retainAll(area);
 
 		particleLocations.put (particle, pArea);
 		totalParticles += pArea.size();
 	    }
-
+	    if (totalParticles > 1)
+		feedback = "There are " + totalParticles + " so far";
             return totalParticles >= c;
         }
     }

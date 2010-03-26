@@ -19,12 +19,7 @@ import java.io.IOException;
 
 import java.net.InetSocketAddress;
 
-import java.util.Formatter;
-import java.util.Locale;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Vector;
+import java.util.*;
 
 import javax.imageio.ImageIO;
 
@@ -78,7 +73,16 @@ public class ZooGas implements KeyListener {
     long boardUpdateCount = 0;
     long[] timeFirstTrue = new long[100]; // indexed by row: tracks the first time when various conditions are true, so that the messages flash at first
 
-    Challenge objective;
+    private LinkedList<Challenge> objectives = new LinkedList<Challenge>();
+    public Challenge objective() {
+	if (objectives != null && objectives.size() > 0)
+	    return objectives.get(0);
+	return null;
+    }
+    public void addObjective(Challenge c) {
+	objectives.add(c);
+    }
+
 
     // constant helper vars
     double patternMatchesPerRefresh = 1;
@@ -290,15 +294,20 @@ public class ZooGas implements KeyListener {
 
         // hackish test cases (kept here for reference)
         // place 5 guests anywhere
-	objective = new Challenge(this, new Challenge.EncloseParticles(5, "zoo_guest", board));
+	addObjective (new Challenge(this, new Challenge.EncloseParticles(5, "zoo_guest", board)));
         // create 4 separated enclosures
-        // objective = new Challenge(this, new Challenge.EnclosuresCondition(board, null, null, 4));
+	int minEncSize = 20, maxEncSize = board.size * board.size / 2;
+	addObjective (new Challenge(this, new Challenge.EnclosuresCondition(this,
+									    null,
+									    4, minEncSize, maxEncSize, false, "wall")));
         // create 3 separated enclosures with 4 zoo_guests in each
-        //objective = new Challenge(this, new Challenge.EnclosuresCondition(board, null, new Challenge.EncloseParticles(4, "zoo_guest", board), 3));
+        addObjective (new Challenge(this, new Challenge.EnclosuresCondition(this,
+									    new Challenge.EncloseParticles(4, "zoo_guest", board),
+									    3, minEncSize, maxEncSize, false, "wall")));
         // place a zoo_guest, then wait 50 updates
-        //objective = new Challenge(this, new Challenge.SucceedNTimes(null, new Challenge.EncloseParticles(1, "zoo_guest", board), 50));
+        //addObjective (new Challenge(this, new Challenge.SucceedNTimes(null, new Challenge.EncloseParticles(1, "zoo_guest", board), 50)));
         // place 5 animals anywhere
-        // objective = new Challenge(this, new Challenge.EncloseParticles(5, "critter/.*", board));
+        // addObjective (new Challenge(this, new Challenge.EncloseParticles(5, "critter/.*", board)));
 
 	// init hints
 	String specialKeys = "Special keys: "+cheatKey+" (reveal state) "+slowKey+" (reveal bonds) "+stopKey+" (freeze)";
@@ -451,8 +460,9 @@ public class ZooGas implements KeyListener {
                     updatesPerSecond = ((double)1000 * timeCheckPeriod) / ((double)(currentTimeCheck - lastTimeCheck));
                     lastTimeCheck = currentTimeCheck;
 
-                    if (objective != null)
-                        objective.check();
+                    if (objective() != null)
+                        if (objective().check())
+			    objectives.removeFirst();
                 }
                 zooGasFrame.repaint();
 
@@ -568,9 +578,10 @@ public class ZooGas implements KeyListener {
         flashOrHide(g, "Connected", networkRow + 1, board.connected(), 0, -1, false, Color.cyan);
 
         // current objective
-        if (objective != null)
-            printOrHide(g, "Goal: " + objective.getDescription(), objectiveRow, true, Color.white);
-	else {
+        if (objective() != null) {
+            printOrHide(g, "Goal: " + objective().getDescription(), objectiveRow, true, Color.white);
+            printOrHide(g, objective().getFeedback(), objectiveRow + 1, true, Color.green);
+	} else {
 	    // until we get challenges working properly, just display an auto-rotating hint and a few feedback scores
 
 	    // current hint

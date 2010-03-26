@@ -106,7 +106,7 @@ public class Particle implements Comparable{
     }
 
     public Set<Point> getOccupiedPoints() {
-	return references;
+	return new TreeSet<Point> (references);
     }
 
     // part of name visible to player
