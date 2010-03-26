@@ -16,10 +16,15 @@ import java.util.regex.*;
 // where <ArgumentMapping> is as follows:
 //  B=xyz  means "argument B maps to XML tag xyz, i.e. <xyz>...</xyz>"
 public class RuleSyntax {
+    // static constants
+    static String documentType = "ZOOGAS";  // DTD Document Type
+
+    // private
     private String firstWord = null;
     private Map<String,String> argType = new HashMap<String,String>();   // argType values are "=", "!" or "*"
     private Map<String,String> defaultArg = new HashMap<String,String>();
     private Map<String,String> argXmlTag = new HashMap<String,String>();
+    private LinkedList<String> argOrder = new LinkedList<String>();
 
     private boolean match = false;  // set to true after a successful match
 
@@ -33,12 +38,25 @@ public class RuleSyntax {
 
     // constructors
     RuleSyntax (String init) {
+	initialize(init);
+	makeDTDElements();
+    }
+
+    RuleSyntax (String init, String xmlMapping) {
+	initialize(init);
+	initializeXmlMapping(xmlMapping);
+	makeDTDElements();
+    }
+
+    // init method
+    private void initialize (String init) {
 	Matcher m = firstWordPattern.matcher(init);
 	if (m.find()) {
 	    firstWord = m.group(1);
 	    m = defaultArgPattern.matcher(init);
 	    while (m.find()) {
 		String attr = m.group(1), type = m.group(2), val = m.group(3);
+		argOrder.addLast(attr);
 		argType.put(attr,type);
                 if (type.equals("=")) {
 		    defaultArg.put(attr,val);
@@ -50,8 +68,7 @@ public class RuleSyntax {
 	}
     }
 
-    RuleSyntax (String init, String xmlMapping) {
-	this(init);
+    private void initializeXmlMapping(String xmlMapping) {
 	Matcher m = parsedArgPattern.matcher(xmlMapping);
 	while (m.find()) {
 	    String attr = m.group(1), tag = m.group(2);
@@ -118,8 +135,75 @@ public class RuleSyntax {
 	return val;
     }
 
-    // XML mapping
-    // TODO: makeDTD() method?
+    // mapping of a RuleSyntax to a set of XML DTD elements
+    private static Vector<String> elements = new Vector<String>();
+    private static Map<String,String> elemDtd = new TreeMap<String,String>();
+    private void makeDTDElements() {
+	String element = "<!ELEMENT " + firstWord + " (";
+	Vector<String> attributes = new Vector<String>();
+	Vector<String> subElements = new Vector<String>();
+	int mySubs = 0;
+	for (String arg : argOrder) {
+	    String tag = argXmlTag.containsKey(arg) ? argXmlTag.get(arg) : arg;
+	    element = element + (mySubs++ > 0 ? ", " : "") + tag;
+	    String attribute = "";
+	    String type = argType.get(arg);
+	    if (type.equals("!")) {
+		// Uncomment to make mandatory arguments into REQUIRED attributes.
+		// The current behavior is that they are required sub-elements, and may not be specified as attributes.
+		//		element = "";
+		//		attribute = "#REQUIRED";
+	    } else if (type.equals("=")) {
+		element = element + "?";
+		String defaultVal = defaultArg.get(arg);
+		// Uncomment the next line, and comment the one after, to flag attributes with zero-length defaults as IMPLIED instead.
+		//		attribute = defaultVal.length() > 0 ? ('"' + defaultVal + '"') : "#IMPLIED";
+		attribute = '"' + defaultVal + '"';
+	    } else if (type.equals("*")) {
+		element = element + "*";
+		attribute = '"' + defaultArg.get(arg) + '"';
+	    }
+
+	    boolean seenTag = elemDtd.containsKey(tag);
+	    if (seenTag) {
+		String prevAttr = elemDtd.get(tag);
+		if (!prevAttr.equals(attribute)) {
+		    throw new RuntimeException ("Duplicate, conflicting definitions for attribute '" + tag + "':\n"
+						+ "First definition:\n" + prevAttr + "\n"
+						+ "Conflicting definition:\n" + attribute + "\n");
+		}
+	    }
+	    elemDtd.put(tag,attribute);
+
+	    if (attribute.length() > 0)
+		attributes.addElement("  <!ATTLIST " + firstWord + " " + tag + " CDATA " + attribute + ">");
+
+	    if (element.length() > 0) {
+		if (seenTag)
+		    subElements.addElement("  <!-- Element " + tag + " already defined -->");
+		else
+		    subElements.addElement("  <!ELEMENT " + tag + " (#CDATA)>");
+	    }
+	}
+	element = element + ")>";
+
+	elements.addElement(element);
+	elements.addAll(attributes);
+	elements.add("<!-- Attributes may, alternatively, be specified as sub-elements -->");
+	elements.addAll(subElements);
+	elements.add("<!-- End of element " + firstWord + " -->\n");
+    }
+
+    static String makeDTD() {
+	String dtd = "<!DOCTYPE " + documentType + " [\n";
+	String tab = "    ";
+	for (String elem : elements)
+	    dtd = dtd + tab + elem + "\n";
+	dtd = dtd + "]>\n";
+	return dtd;
+    }
+
+    // XML encoding of a particular match
     String makeXML() {
 	String xml = null;
 	if (match) {

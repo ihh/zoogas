@@ -415,6 +415,9 @@ public class ZooGas implements KeyListener {
 	if (serverAddr != null)
 	    board.initClient(serverAddr);
 
+	// just before running the game, dump the DTD to stderr (TODO: remove this)
+	System.err.println(RuleSyntax.makeDTD());
+
 	// run
 	gameLoop();
     }
