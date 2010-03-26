@@ -15,13 +15,13 @@ public class SprayTool {
         if(RuleSet.isRule(toolString)) {
             if (toolSyntax.matches(toolString)) {
                 stat = new SprayTool();
-                stat.particleName = toolSyntax.getValue("n");
-                stat.hotKey = toolSyntax.getValue("k").charAt(0);
-                stat.sprayDiameter = Double.parseDouble(toolSyntax.getValue("d"));
-                stat.sprayPower = Double.parseDouble(toolSyntax.getValue("p"));
-                stat.maxReserve = Double.parseDouble(toolSyntax.getValue("r"));
-                stat.refillRate = Double.parseDouble(toolSyntax.getValue("f"));
-                stat.barWidth = Double.parseDouble(toolSyntax.getValue("w"));
+                stat.particleName = toolSyntax.getXmlTagValue("Particle");
+                stat.hotKey = toolSyntax.getXmlTagValue("Key").charAt(0);
+                stat.sprayDiameter = Double.parseDouble(toolSyntax.getXmlTagValue("Diameter"));
+                stat.sprayPower = Double.parseDouble(toolSyntax.getXmlTagValue("Power"));
+                stat.maxReserve = Double.parseDouble(toolSyntax.getXmlTagValue("Reserve"));
+                stat.refillRate = Double.parseDouble(toolSyntax.getXmlTagValue("RefillRate"));
+                stat.barWidth = Double.parseDouble(toolSyntax.getXmlTagValue("DisplayWidth"));
             }
             else {
                 System.err.println("Wrong no. of args in toolString '" + toolString + "'");

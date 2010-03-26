@@ -50,11 +50,11 @@ public class PatternSet extends RuleSet{
     // method to lay down a template for a Particle
     void addParticlePattern (RuleSyntax s) {
         try {
-	    String noun = s.getValue("n");
-            ParticlePattern pp = new ParticlePattern(getPrefix(noun), noun,s.getValue("c"), s.getValue("e"));
+	    String noun = s.getXmlTagValue("Name");
+            ParticlePattern pp = new ParticlePattern(getPrefix(noun), noun, s.getXmlTagValue("Color"), s.getXmlTagValue("Energy"));
 	    // get optional icon
-	    if (s.hasValue("i"))
-		pp.icon = new Icon(s.getValue("i"));
+	    if (s.hasXmlTagValue("Icon"))
+		pp.icon = new Icon(s.getXmlTagValue("Icon"));
 	    // store
             particlePattern.add(pp);
         }
@@ -66,33 +66,39 @@ public class PatternSet extends RuleSet{
     // method to lay down a template for a transformation rule
     void addTransformRule (RuleSyntax s) {
 	// subject
-	String subject = s.getValue("s");
+	String subject = s.getXmlTagValue("OldSource");
 
 	// create the basic object
-	TransformRulePattern p = new TransformRulePattern(getPrefix(subject), s.getValue("d"),subject,s.getValue("t"),s.getValue("S"),s.getValue("T"),
-							  Double.parseDouble(s.getValue("p")),s.getValue("v"));
+	TransformRulePattern p = new TransformRulePattern(getPrefix(subject),
+							  s.getXmlTagValue("Dir"),
+							  subject,
+							  s.getXmlTagValue("OldTarget"),
+							  s.getXmlTagValue("NewSource"),
+							  s.getXmlTagValue("NewTarget"),
+							  Double.parseDouble(s.getXmlTagValue("Prob")),
+							  s.getXmlTagValue("Say"));
 
 	// get optional bond attributes
-	if (s.hasValue("b"))
-	    p.addOptionalLhsBonds(s.getValue("b").split(" "));
+	if (s.hasXmlTagValue("OptionalBond"))
+	    p.addOptionalLhsBonds(s.getXmlTagValue("OptionalBond").split(" "));
 
-	if (s.hasValue("c"))
-	    p.addRequiredLhsBonds(s.getValue("c").split(" "));
+	if (s.hasXmlTagValue("DeleteBond"))
+	    p.addRequiredLhsBonds(s.getXmlTagValue("DeleteBond").split(" "));
 
-	if (s.hasValue("x"))
-	    p.addExcludedLhsBonds(s.getValue("x").split(" "));
+	if (s.hasXmlTagValue("ExcludeBond"))
+	    p.addExcludedLhsBonds(s.getXmlTagValue("ExcludeBond").split(" "));
 
-	if (s.hasValue("B"))
-	    p.addRhsBonds(s.getValue("B").split(" "));
+	if (s.hasXmlTagValue("NewBond"))
+	    p.addRhsBonds(s.getXmlTagValue("NewBond").split(" "));
 
-	if (s.hasValue("k")) {
-	    String[] k = s.getValue("k").split(" ");
+	if (s.hasXmlTagValue("KeepOptionalBond")) {
+	    String[] k = s.getXmlTagValue("KeepOptionalBond").split(" ");
 	    p.addOptionalLhsBonds(k);
 	    p.addRhsBonds(k);
 	}
 
-	if (s.hasValue("K")) {
-	    String[] k = s.getValue("K").split(" ");
+	if (s.hasXmlTagValue("KeepRequiredBond")) {
+	    String[] k = s.getXmlTagValue("KeepRequiredBond").split(" ");
 	    p.addRequiredLhsBonds(k);
 	    p.addRhsBonds(k);
 	}
@@ -105,10 +111,18 @@ public class PatternSet extends RuleSet{
 
     // method to lay down a template for an energy rule
     void addEnergyRule (RuleSyntax s) {
-	String source = s.getValue("s");
-	EnergyRulePattern p = new EnergyRulePattern(getPrefix(source), source,s.getValue("t"),s.getValue("n"),Double.parseDouble(s.getValue("e")),
-						    Double.parseDouble(s.getValue("l")),Double.parseDouble(s.getValue("L")),Double.parseDouble(s.getValue("m")),
-						    Double.parseDouble(s.getValue("a")),Double.parseDouble(s.getValue("A")),Double.parseDouble(s.getValue("b")));
+	String source = s.getXmlTagValue("Source");
+	EnergyRulePattern p = new EnergyRulePattern(getPrefix(source),
+						    source,
+						    s.getXmlTagValue("Target"),
+						    s.getXmlTagValue("Name"),
+						    Double.parseDouble(s.getXmlTagValue("Energy")),
+						    Double.parseDouble(s.getXmlTagValue("MinLen")),
+						    Double.parseDouble(s.getXmlTagValue("MaxLen")),
+						    Double.parseDouble(s.getXmlTagValue("LenTolerance")),
+						    Double.parseDouble(s.getXmlTagValue("MinAngle")),
+						    Double.parseDouble(s.getXmlTagValue("MaxAngle")),
+						    Double.parseDouble(s.getXmlTagValue("AngleTolerance")));
 	energyRulePattern.add(p);
 	if (!energyRuleMatch.containsKey(p.bondName))
 	    energyRuleMatch.put(p.bondName,new Vector<EnergyRuleMatch>());
@@ -160,9 +174,9 @@ public class PatternSet extends RuleSet{
 
     // i/o patterns and syntax parsers
     final static Pattern endRegex = Pattern.compile("END.*");
-    static RuleSyntax nounSyntax = new RuleSyntax("NOUN n! c=ffffff e=0 i*", "n=Name c=Color e=SelfEnergy i=Icon");
+    static RuleSyntax nounSyntax = new RuleSyntax("NOUN n! c=ffffff e=0 i*", "n=Name c=Color e=Energy i=Icon");
     static RuleSyntax verbSyntax = new RuleSyntax("VERB s! t=.* S=$S T=$T d= p=1 v=_ b* c* x* B* k* K*", "s=OldSource t=OldTarget S=NewSource T=NewTarget d=Dir p=Prob v=Say b=OptionalBond c=DeleteBond x=ExcludeBond B=NewBond k=KeepOptionalBond K=KeepRequiredBond");
-    static RuleSyntax bondSyntax = new RuleSyntax("BOND n! e= s=.* t=.* l=1 L=1.5 m=1 a=-1 A=1 b=1", "n=BondName e=BondEnergy s=Source t=Target l=MinLen L=MaxLen m=LenTolerance a=MinAngle A=MaxAngle b=AngleTolerance");
+    static RuleSyntax bondSyntax = new RuleSyntax("BOND n! e= s=.* t=.* l=1 L=1.5 m=1 a=-1 A=1 b=1", "n=Name e=Energy s=Source t=Target l=MinLen L=MaxLen m=LenTolerance a=MinAngle A=MaxAngle b=AngleTolerance");
 
     // i/o methods
     static PatternSet fromStream (InputStream in, Topology topology) {

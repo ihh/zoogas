@@ -24,11 +24,12 @@ public class RuleSyntax {
     private Map<String,String> argType = new HashMap<String,String>();   // argType values are "=", "!" or "*"
     private Map<String,String> defaultArg = new HashMap<String,String>();
     private Map<String,String> argXmlTag = new HashMap<String,String>();
+    private Map<String,String> tagArg = new HashMap<String,String>();
     private LinkedList<String> argOrder = new LinkedList<String>();
 
     private boolean match = false;  // set to true after a successful match
 
-    private LinkedList<String> suppliedArgs = new LinkedList<String>();  // populated after a successful match
+    private LinkedList<String> suppliedArgOrder = new LinkedList<String>();  // populated after a successful match
     private Map<String,String> parsedArg = new HashMap<String,String>();  // populated after a successful match
 
     // regexes
@@ -73,6 +74,7 @@ public class RuleSyntax {
 	while (m.find()) {
 	    String attr = m.group(1), tag = m.group(2);
 	    argXmlTag.put(attr,tag);
+	    tagArg.put(tag,attr);
 	}
     }
 
@@ -80,7 +82,7 @@ public class RuleSyntax {
     public boolean matches(String s) {
 	match = false;
 	parsedArg.clear();
-	suppliedArgs.clear();
+	suppliedArgOrder.clear();
 	Matcher m = firstWordPattern.matcher(s);
 	if (m.find() && m.group(1).equals(firstWord)) {
 	    match = true;
@@ -100,7 +102,7 @@ public class RuleSyntax {
 			    System.err.println("RuleSyntax: duplicate argument "+arg+" in "+firstWord+" line");
                     } else {
 			parsedArg.put(arg,val);
-			suppliedArgs.addLast(arg);
+			suppliedArgOrder.addLast(arg);
                     }
 		}
 	    }
@@ -120,8 +122,22 @@ public class RuleSyntax {
     }
 
     // arg accessors
-    boolean hasValue(String arg) {
+    public boolean hasXmlTagValue(String tag) {
+	String arg = tagArg.get(tag);
+	if (arg == null)
+	    throw new RuntimeException("Tag " + tag + " not found");
+	return hasValue(arg);
+    }
+
+    private boolean hasValue(String arg) {
 	return parsedArg.containsKey(arg) || argType.get(arg).equals("=");
+    }
+
+    String getXmlTagValue(String tag) {
+	String arg = tagArg.get(tag);
+	if (arg == null)
+	    throw new RuntimeException("Tag " + tag + " not found");
+	return getValue(arg);
     }
 
     String getValue(String arg) {
@@ -137,7 +153,7 @@ public class RuleSyntax {
 
     // mapping of a RuleSyntax to a set of XML DTD elements
     private static Vector<String> elements = new Vector<String>();
-    private static Map<String,String> elemDtd = new TreeMap<String,String>();
+    private static Set<String> tagsSeen = new TreeSet<String>();
     private void makeDTDElements() {
 	String element = "<!ELEMENT " + firstWord + " (";
 	Vector<String> attributes = new Vector<String>();
@@ -147,6 +163,7 @@ public class RuleSyntax {
 	    String tag = argXmlTag.containsKey(arg) ? argXmlTag.get(arg) : arg;
 	    element = element + (mySubs++ > 0 ? ", " : "") + tag;
 	    String attribute = "";
+	    String subElement = "  <!ELEMENT " + tag + " (#PCDATA)>";
 	    String type = argType.get(arg);
 	    if (type.equals("!")) {
 		// Uncomment to make mandatory arguments into REQUIRED attributes.
@@ -156,24 +173,15 @@ public class RuleSyntax {
 	    } else if (type.equals("=")) {
 		element = element + "?";
 		String defaultVal = defaultArg.get(arg);
-		// Uncomment the next line, and comment the one after, to flag attributes with zero-length defaults as IMPLIED instead.
-		//		attribute = defaultVal.length() > 0 ? ('"' + defaultVal + '"') : "#IMPLIED";
 		attribute = '"' + defaultVal + '"';
+		subElement = subElement + "    <!-- Default value is \"" + defaultVal + "\" -->";
 	    } else if (type.equals("*")) {
 		element = element + "*";
 		attribute = '"' + defaultArg.get(arg) + '"';
 	    }
 
-	    boolean seenTag = elemDtd.containsKey(tag);
-	    if (seenTag) {
-		String prevAttr = elemDtd.get(tag);
-		if (!prevAttr.equals(attribute)) {
-		    throw new RuntimeException ("Duplicate, conflicting definitions for attribute '" + tag + "':\n"
-						+ "First definition:\n" + prevAttr + "\n"
-						+ "Conflicting definition:\n" + attribute + "\n");
-		}
-	    }
-	    elemDtd.put(tag,attribute);
+	    boolean seenTag = tagsSeen.contains(tag);
+	    tagsSeen.add(tag);
 
 	    if (attribute.length() > 0)
 		attributes.addElement("  <!ATTLIST " + firstWord + " " + tag + " CDATA " + attribute + ">");
@@ -182,7 +190,7 @@ public class RuleSyntax {
 		if (seenTag)
 		    subElements.addElement("  <!-- Element " + tag + " already defined -->");
 		else
-		    subElements.addElement("  <!ELEMENT " + tag + " (#CDATA)>");
+		    subElements.addElement(subElement);
 	    }
 	}
 	element = element + ")>";
@@ -191,7 +199,7 @@ public class RuleSyntax {
 	elements.addAll(attributes);
 	elements.add("<!-- Attributes may, alternatively, be specified as sub-elements -->");
 	elements.addAll(subElements);
-	elements.add("<!-- End of element " + firstWord + " -->\n");
+	elements.add("<!-- End of top-level element " + firstWord + " -->\n");
     }
 
     static String makeDTD() {
@@ -208,7 +216,7 @@ public class RuleSyntax {
 	String xml = null;
 	if (match) {
 	    xml = "<" + firstWord + ">";
-	    for (String arg : suppliedArgs) {
+	    for (String arg : suppliedArgOrder) {
 		String tag = argXmlTag.containsKey(arg) ? argXmlTag.get(arg) : arg;
 		xml = xml
 		    + " <" + tag + ">"
