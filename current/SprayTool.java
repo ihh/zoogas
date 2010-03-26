@@ -9,7 +9,7 @@ public class SprayTool {
     protected Particle particle = null;
 
     // constructor
-    static RuleSyntax toolSyntax = new RuleSyntax("TOOL n! k= d=1 p=1 r=1 f=1 w=.1", "n=Particle k=Key d=Diameter p=Power r=Reserve f=RefillRate w=DisplayWidth");
+    static RuleSyntax toolSyntax = new RuleSyntax("TOOL n! k= d=1 p=1 r=1 f=1 w=1", "n=Particle k=Key d=Diameter p=Power r=Reserve f=RefillRate w=DisplayWidth");
     static SprayTool fromString (String toolString, Board board) {
 	SprayTool stat = null;
         if(RuleSet.isRule(toolString)) {
@@ -80,13 +80,12 @@ public class SprayTool {
 	g.drawString (hotKey + ": " + particle.visibleName(), toolReserveBarWidth, yMid + ch/2);
 
 	int td = 4;
+	int bh = toolHeight - td;
+
 	int tw = toolReserveBarWidth - td;
-	int w = (int) (barWidth * (double) (tw * reserve / maxReserve));
-	if (w > tw)
-	    w = tw;
+	int w = (int) Math.min (tw, barWidth * bh * reserve / maxReserve);
 
 	// draw bar in spray color
-	int bh = toolHeight - td;
 	int barXpos = toolReserveBarWidth - w,
 	    barYpos = yMid - bh/2;
 	g.fillRect (barXpos, barYpos, w, bh);
