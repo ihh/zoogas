@@ -335,6 +335,28 @@ public class Challenge
 	}
     }
     
+
+    // NotCondition
+    public static class NotCondition extends Condition {
+        public NotCondition(Condition c){
+            cond = c;
+            cond.setParentCondition(this);
+            
+            desc = "do not " + cond.getDescription();
+        }
+
+        public NotCondition(Condition p, Condition c){
+            this(c);
+            parent = p;
+        }
+
+        Condition cond;
+
+	public boolean check() {
+	    return !cond.check();
+	}
+    }
+
     // EncloseParticles is a base Condition that can be used to place tests on Particles with a given prefix word and minimum population
     public static class EncloseParticles extends Condition {
         public EncloseParticles(int count, String prefix, Board b) {
