@@ -167,8 +167,16 @@ VERB s=critter/.*/fast/s:15 t=critter/.*/fast/s:([0-6]|1[6-7]) S=$S T=$S p=.06 v
 VERB s=critter/.*/fast/s:16 t=critter/.*/fast/s:([0-7]|17) S=$S T=$S p=.06 v=kill
 VERB s=critter/.*/fast/s:17 t=critter/.*/fast/s:([0-8]) S=$S T=$S p=.06 v=kill
 
-# Breeding, overcrowding
-VERB s=critter/.*/fast/s:\d+ t=_ S=$S T=$S p=.007 v=spawn
+# Breeding
+# Slowly spawn stimulated progeny
+VERB s=critter/'[^_]*_(.*/)fast/(s:\d+) t=_ S=$S T=$S p=.001 v=spawn
+# Span non-stimulated progeny
+VERB s=critter/'[^_]*_(.*/)fast/(s:\d+) t=_ S=$S T=critter/'$1$2 p=.007 v=spawn
+
+# Stimulated animals soon slow down ("soon" relative to the fast spawn rate)
+VERB s=critter/'[^_]*_(.*')/fast(.*) S=critter/'$1$2 p=.002 v=relax
+
+# Overcrowding
 VERB s=critter/.*/fast/s:\d+ t=critter/.*/fast/s:\d+ S=_ T=$T p=0.015 v=choke
 
 # Movement is on von Neumann topology (so they can't escape through cracks)
@@ -235,12 +243,11 @@ VERB s=perfume t=_ S=_ T=$T p=0.1 v=disperse
 VERB s=perfume t=_ S=$S T=$S p=0.09 v=billow
 VERB s=perfume t=_ S=$T T=$S p=0.81 v=drift
 
-# Stimulant gas: makes animals fast
+# Stimulant gas: makes animals fast, temporarily
 NOUN n=stimulant c=80ffa8 i=6
-VERB s=stimulant t=(critter/'.*')(/s:(\d+)) S=_ T=$1/fast$2 p=1.0 v=stimulate
+VERB s=stimulant t=critter/'(.*')(/s:(\d+)) S=_ T=critter/'excited_$1/fast$2 p=1.0 v=stimulate
 VERB s=stimulant t=_ S=_ T=_ p=0.1 v=disperse
 VERB s=stimulant t=_ S=$T T=$S p=0.9 v=drift
-
 
 # Mutator gas: change the species number.
 VERB s=mutator t=critter/'.*'(.*)/s:(\d+) S=_ T=critter/'mutant'$1/s:$%18+1.2 p=1.0 v=mutate
@@ -324,13 +331,13 @@ VERB s=zoo_guest/anarchist t=_ S=$S T=bomb p=0.0001 v=death_to_the_state d=.
 # the builder is directional to avoid intractable tangles (the polymer is initially stretched in a straight line, but quickly relaxes)
 NOUN n=conga c=80c0c0 e=-10 i=183c7e00183c7e00
 NOUN n=conga_head/.* c=80c0c0 e=-10
-NOUN n=conga_dude/ c=80c0c0 e=-10
-NOUN n=conga_dude/'crazy_conga_dude'/ c=ffc0c0 e=-10
-NOUN n=conga_dude/'wild_conga_dude'/ c=80c0ff e=-10
+NOUN n=conga_guest/ c=80c0c0 e=-10
+NOUN n=conga_guest/.*_babe.* c=ffc0c0 e=-10
+NOUN n=conga_guest/.*_dude.* c=80c0ff e=-10
 
-# the energy terms that effectively create a covalent bond between consecutive monomers (conga_dude's)
-BOND s=conga_dude/.* t=.*conga.* n=handsToHips e=+10 l=0 L=6 b=0
-BOND s=conga_dude/.* t=.*conga.* n=handsToHips e=+5 l=0 L=6 b=0 m=0
+# the energy terms that effectively create a covalent bond between consecutive monomers (conga_guest's)
+BOND s=conga_guest/.* t=.*conga.* n=handsToHips e=+10 l=0 L=6 b=0
+BOND s=conga_guest/.* t=.*conga.* n=handsToHips e=+5 l=0 L=6 b=0 m=0
 BOND s=conga_head/.* t=.*conga.* n=handsToHips e=+10 l=0 L=6 b=0
 BOND s=conga_head/.* t=.*conga.* n=handsToHips e=+5 l=0 L=6 b=0 m=0
 
@@ -344,23 +351,37 @@ VERB s=conga t=.* S=conga_head/pos:30 T=$T p=.3 v=start_monsta_conga
 # its stateful form is  conga_head/pos:$POS/dir:$DIR  where $POS is an integer and $DIR a compass direction
 # the first rule randomly picks $DIR
 VERB s=conga_head/pos:(\d+) t=.* S=conga_head/dir:$F/pos:$1 T=$T p=1 v=line_em_up d=.
-VERB s=conga_head/dir:$F/pos:([2-9]|\d\d+) t=_ S=conga_dude/ T=conga_head/dir:$F/pos:$-1 p=1 v=partay B=(s,handsToHips,t) k=(x,handsToHips,s)
+VERB s=conga_head/dir:$F/pos:([2-9]|\d\d+) t=_ S=conga_guest/ T=conga_head/dir:$F/pos:$-1 p=1 v=partay B=(s,handsToHips,t) k=(x,handsToHips,s)
 VERB s=conga_head/.* t=_ S=$T T=$S p=.01 v=wobble k=(sT,handsToHips,x) k=(y,handsToHips,sT)
-VERB s=conga_head/dir:(.*)/pos:1 S=conga_dude/ p=1 v=lets_go k=(x,handsToHips,s)
+VERB s=conga_head/dir:(.*)/pos:1 S=conga_guest/ p=1 v=lets_go k=(x,handsToHips,s)
 
-# conga_dudes can be wild or crazy
-VERB s=conga_dude/ S=conga_dude/'wild_conga_dude'/ k=(x,handsToHips,s) k=(s,handsToHips,y)
-VERB s=conga_dude/ S=conga_dude/'crazy_conga_dude'/ k=(x,handsToHips,s) k=(s,handsToHips,y)
+# conga_guests can be male or female, wild/crazy/groovy/etc
+VERB s=conga_guest/ S=conga_guest/'conga_dude'/ k=(x,handsToHips,s) k=(s,handsToHips,y)
+VERB s=conga_guest/ S=conga_guest/'conga_babe'/ k=(x,handsToHips,s) k=(s,handsToHips,y)
+VERB s=conga_guest/'(conga.*) S=conga_guest/'crazy_$1 k=(x,handsToHips,s) k=(s,handsToHips,y) p=.1
+VERB s=conga_guest/'(conga.*) S=conga_guest/'wild_$1 k=(x,handsToHips,s) k=(s,handsToHips,y) p=.1
+VERB s=conga_guest/'(conga.*) S=conga_guest/'hip_$1 k=(x,handsToHips,s) k=(s,handsToHips,y) p=.1
+VERB s=conga_guest/'(conga.*) S=conga_guest/'groovy_$1 k=(x,handsToHips,s) k=(s,handsToHips,y)
+VERB s=conga_guest/'(conga.*) S=conga_guest/'sultry_$1 k=(x,handsToHips,s) k=(s,handsToHips,y)
+VERB s=conga_guest/'(conga.*) S=conga_guest/'smooth_$1 k=(x,handsToHips,s) k=(s,handsToHips,y)
+
+# crazy, wild and hip guests have a stimulating effect on animals
+VERB s=conga_guest/'(crazy|wild|hip).* t=_ T=stimulant k=(x,handsToHips,s) k=(s,handsToHips,y) p=.5
+
+# animals make groovy, sultry & smooth conga guests go hip, wild & crazy
+VERB s=conga_guest/'groovy(.*) t=critter/.* S=conga_guest/'hip_$1 k=(x,handsToHips,s) k=(s,handsToHips,y)
+VERB s=conga_guest/'sultry(.*) t=critter/.* S=conga_guest/'wild_$1 k=(x,handsToHips,s) k=(s,handsToHips,y)
+VERB s=conga_guest/'smooth(.*) t=critter/.* S=conga_guest/'crazy_$1 k=(x,handsToHips,s) k=(s,handsToHips,y)
 
 # jiggle the conga guests at max speed, since most of their random steps are rejected anyway
-VERB s=conga_dude/.* t=_ S=$T T=$S p=1 v=go_nuts k=(x,handsToHips,sT) k=(sT,handsToHips,y) d=.
+VERB s=conga_guest/.* t=_ S=$T T=$S p=1 v=go_nuts k=(x,handsToHips,sT) k=(sT,handsToHips,y) d=.
 
-VERB s=conga_dude/ S=_ p=.0001 v=expire
+VERB s=conga_guest/ S=_ p=.0001 v=expire
 VERB s=conga_head/.* S=_ p=.0001 v=expire
 
-# birth-death on conga_dudes
-VERB s=conga_dude/.* t=_ S=$S T=$S p=.0001 v=conga_birth k=(x,handsToHips,s) K=(sT,handsToHips,y) B=(s,handsToHips,t)
-VERB s=conga_dude/.* t=.*conga_dude S=$S T=_ v=conga_death K=(x,handsToHips,s) c=(s,handsToHips,t) K=(tS,handsToHips,y)
+# birth-death on conga_guest's
+VERB s=conga_guest/.* t=_ S=$S T=$S p=.0001 v=conga_birth k=(x,handsToHips,s) K=(sT,handsToHips,y) B=(s,handsToHips,t)
+VERB s=conga_guest/.* t=conga_guest/.* S=$S T=_ v=conga_death K=(x,handsToHips,s) c=(s,handsToHips,t) K=(tS,handsToHips,y)
 
 
 
