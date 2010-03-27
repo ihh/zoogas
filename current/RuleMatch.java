@@ -17,9 +17,9 @@ public class RuleMatch {
     protected Topology topology = null;
     private int dir = -1;
 
-    private Pattern aPattern = null, abPattern = null;
+    private Pattern aPattern = null, bPattern = null;
     protected String A = null, B = null;
-    protected Matcher am = null, abm = null;
+    protected Matcher am = null, bm = null;
     private boolean aMatched = false, abMatched = false;
 
     // classes
@@ -44,7 +44,7 @@ public class RuleMatch {
             topology = t;
             dir = d;
             aPattern = Pattern.compile(regexA());
-            abPattern = Pattern.compile(regexAB());
+            bPattern = Pattern.compile(regexB());
             return true;
         }
         throw new AlreadyBoundException();
@@ -63,8 +63,8 @@ public class RuleMatch {
     public final boolean bindTarget(String b) {
         if (aMatched && !targetBound()) {
             B = b;
-            abm = abPattern.matcher(A + ' ' + B);
-            abMatched = abm.matches();
+            bm = bPattern.matcher(B);
+            abMatched = bm.matches();
             return matches();
         }
         throw new AlreadyBoundException();
@@ -72,7 +72,7 @@ public class RuleMatch {
 
     // unbinding
     public final void unbindTarget() {
-        abm = null;
+        bm = null;
         B = null;
         abMatched = false;
     }
@@ -86,13 +86,13 @@ public class RuleMatch {
 
     public void unbind() {
         unbindSourceAndTarget();
-        aPattern = abPattern = null;
+        aPattern = bPattern = null;
         dir = -1;
     }
 
     // matches() returns true if the rule has matched *so far*
     public boolean matches() {
-        return am == null ? true : (aMatched && (abm == null ? true : abMatched));
+        return sourceBound() ? (aMatched && (targetBound() ? abMatched : true)) : true;
     }
 
     // versions of matches() that bind temporarily, then unbind
@@ -120,15 +120,17 @@ public class RuleMatch {
     }
 
     // expanded pattern methods
+    // keep regexB() independent of regexA() as it greatly simplifies optimization
+    //  (although it was nice to have backreference expressive capability for AB...)
     public final String regexA() { return expandDir(pattern.getSourceName()); }
-    public final String regexAB() { return expandDir(pattern.getSourceName() + ' ' + pattern.getTargetName()); }
+    public final String regexB() { return expandDir(pattern.getTargetName()); }
 
     // main expand() methods
     protected final String expand(String s) {
-        return expandTarget(expandMod(expandDec(expandInc(expandGroupOrSource(expandDir(s))))));
+        return expandSourceTargetIncDecModGroup(expandDir(s));
     }
 
-    // expansion of $F, $B, $L, $R
+    // expansion of direction macros: $F, $B, $L, $R, $+L, etc.
     private static Pattern dirPattern = Pattern.compile("\\$(F|B|L|R|\\+L|\\+\\+L|\\+R|\\+\\+R)");
     protected String expandDir(String s) {
         Matcher m = dirPattern.matcher(s);
@@ -157,18 +159,27 @@ public class RuleMatch {
         return sb.toString();
     }
 
-    // expansion of $1, $2, ... and $S
-    static Pattern groupPattern = Pattern.compile("\\$(S|[1-9]\\d*)");
-    protected final String expandGroupOrSource(String s) {
+    // expansion of $S, $T, groups ($1, $2...), increments ($+1.1 etc), decrements ($-1.1 etc) and modulo-increments ($+1%2.1 etc)
+    static Pattern macroPattern = Pattern.compile("\\$(S|T|\\d+|[\\+\\-]\\d*\\.?\\d+|%\\d+\\+\\d*\\.?\\d+)");
+    protected final String expandSourceTargetIncDecModGroup(String s) {
         StringBuffer sb = new StringBuffer();
         try {
-            Matcher m = groupPattern.matcher(s);
+            Matcher m = macroPattern.matcher(s);
             while (m.find()) {
                 String g = m.group(1);
-                if (g.equals("S"))
-                    m.appendReplacement(sb, A);
-                else
-                    m.appendReplacement(sb, getGroup(g));
+		if (g.length() > 0)
+		    if (g.equals("S"))
+			m.appendReplacement(sb, A);
+		    else if (g.equals("T")) {
+			m.appendReplacement(sb, B);
+		    } else if (g.charAt(0) == '+') {
+			m.appendReplacement(sb, expandInc(g));
+		    } else if (g.charAt(0) == '-') {
+			m.appendReplacement(sb, expandDec(g));
+		    } else if (g.charAt(0) == '%') {
+			m.appendReplacement(sb, expandMod(g));
+		    } else
+			m.appendReplacement(sb, getGroup(g));
             }
             m.appendTail(sb);
         } catch (Exception e) {
@@ -178,29 +189,13 @@ public class RuleMatch {
         return sb.toString();
     }
 
-    // expansion of $T
-    static Pattern targetPattern = Pattern.compile("\\$T");
-    protected final String expandTarget(String s) {
-        StringBuffer sb = new StringBuffer();
-        try {
-            Matcher m = targetPattern.matcher(s);
-            while (m.find())
-                m.appendReplacement(sb, B);
-            m.appendTail(sb);
-        } catch (Exception e) {
-            System.err.println("While expanding " + s);
-            e.printStackTrace();
-        }
-        return sb.toString();
-    }
-
     // expansion of $+1.n
-    static Pattern incGroupPattern = Pattern.compile("\\$\\+(\\d*)\\.?([1-9]\\d*)");
+    static Pattern incGroupPattern = Pattern.compile("\\+(\\d*)\\.?([1-9]\\d*)");
     protected final String expandInc(String s) {
         StringBuffer sb = new StringBuffer();
         try {
             Matcher m = incGroupPattern.matcher(s);
-            while (m.find()) {
+            if (m.find()) {
                 String inc = m.group(1), g = m.group(2);
                 int n = string2int(getGroup(g));
                 int delta = inc.length() > 0 ? string2int(inc) : 1;
@@ -215,12 +210,12 @@ public class RuleMatch {
     }
 
     // expansion of $-1.n
-    static Pattern decGroupPattern = Pattern.compile("\\$\\-(\\d*)\\.?([1-9]\\d*)");
+    static Pattern decGroupPattern = Pattern.compile("\\-(\\d*)\\.?([1-9]\\d*)");
     protected final String expandDec(String s) {
         StringBuffer sb = new StringBuffer();
         try {
             Matcher m = decGroupPattern.matcher(s);
-            while (m.find()) {
+            if (m.find()) {
                 String dec = m.group(1), g = m.group(2);
                 int n = string2int(getGroup(g));
                 int delta = dec.length() > 0 ? string2int(dec) : 1;
@@ -236,12 +231,12 @@ public class RuleMatch {
     }
 
     // expansion of $%3+1.n
-    static Pattern modGroupPattern = Pattern.compile("\\$%([1-9]\\d*)\\+(\\d*)\\.?([1-9]\\d*)");
+    static Pattern modGroupPattern = Pattern.compile("%([1-9]\\d*)\\+(\\d*)\\.?([1-9]\\d*)");
     protected final String expandMod(String s) {
         StringBuffer sb = new StringBuffer();
         try {
             Matcher m = modGroupPattern.matcher(s);
-            while (m.find()) {
+            if (m.find()) {
                 String mod = m.group(1), inc = m.group(2), g = m.group(3);
                 int n = string2int(getGroup(g));
                 int M = string2int(mod);
@@ -261,10 +256,12 @@ public class RuleMatch {
         String val = "";
         try {
             int n = new Integer(group).intValue();
-            if (n <= abm.groupCount())
-                val = abm.group(n);
+            if (n <= am.groupCount())
+                val = am.group(n);
+	    else if (n <= am.groupCount() + bm.groupCount())
+		val = bm.group(n - am.groupCount());
         } catch (Exception e) {
-            System.err.println("While trying to get group $" + group + " matching " + A + " " + B + " to " + abPattern.pattern());
+            System.err.println("While trying to get group $" + group + " matching " + A + " " + B + " to " + aPattern.pattern() + " " + bPattern.pattern());
             e.printStackTrace();
         }
         return val;
