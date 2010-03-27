@@ -1,4 +1,7 @@
 import java.awt.Rectangle;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics.*;
 
 import java.lang.reflect.Method;
 
@@ -21,11 +24,15 @@ public class Challenge
 {
     // Challenge.Giver
     public static class Giver {
-	static private int defaultTimeBetweenObjectives = 5;  // time in seconds between objectives
+	static private int defaultTimePeriod = 5;  // time in seconds between states
+
+	public enum State { GivingChallenge, Waiting, GivingHint, GivingReward, OutOfChallenges };
+	public State state = State.GivingChallenge;
+	public int timeInState = 0;
 
 	private ZooGas gas;
 	private LinkedList<Challenge> objectives = new LinkedList<Challenge>();
-	private int timeBetweenObjectives = defaultTimeBetweenObjectives;
+	private int speakingTime = defaultTimePeriod, rewardTime = defaultTimePeriod;
 
 	Giver (ZooGas g) {
 	    gas = g;
@@ -33,7 +40,7 @@ public class Challenge
 
 	Giver (ZooGas g, int t) {
 	    gas = g;
-	    timeBetweenObjectives = t;
+	    rewardTime = t;
 	}
 
 	public Challenge objective() {
@@ -52,32 +59,107 @@ public class Challenge
 	    return "";
 	}
 
+	private String lastFeedback = "";
 	public String getFeedback() {
 	    String f = "";
 	    if (objective() != null) {
 		f = objective().getFeedback();
-		if (objective().passed())
-		    f += " (updating in " + timeToNextObjective() + ")";
 	    }
+	    if (state == State.Waiting && !lastFeedback.equals(f))
+		setState(State.GivingHint);
+	    lastFeedback = f;
 	    return f;
 	}
 
-	public int timeToNextObjective() {
-	    return timeBetweenObjectives - objective().timesTrue;
+	private int avatarXoffset = 0, avatarYoffset = 0;
+	public boolean avatarSpeaking() { return state == State.GivingChallenge || state == State.GivingReward || state == State.GivingHint; }
+	public void drawAvatar(Graphics g,int x,int y,int w,int h) {
+	    int maxOffset = 2;
+	    if (Math.random() < .1) {
+		if (avatarSpeaking()) {
+		    if (Math.random() < .5) {
+			if (avatarXoffset < maxOffset) ++avatarXoffset;
+		    } else {
+			if (avatarXoffset > 0) --avatarXoffset;
+		    }
+		    if (Math.random() < .5) {
+			if (avatarYoffset < maxOffset) ++avatarYoffset;
+		    } else {
+			if (avatarYoffset > 0) --avatarYoffset;
+		    }
+		} else {
+		    if (avatarXoffset > 0) --avatarXoffset;
+		    if (avatarYoffset > 0) --avatarYoffset;
+		}
+	    }
+
+	    int i = avatarXoffset - maxOffset/2;
+	    int j = avatarYoffset - maxOffset/2;
+
+	    // face
+	    g.setColor(Color.cyan);
+	    g.drawRect(x+1,(int)(y+h*.4),w-3,h-2);
+
+	    // eyes
+	    g.setColor(Color.yellow);
+	    g.fillRect((int)(x+w*.2),j+(int)(y+h*.5),(int)(w*.25),(int)(h*.25));
+	    g.fillRect(-i+(int)(x+w*.55),(int)(y+h*.5),(int)(w*.25),(int)(h*.25));
+
+	    g.setColor(Color.black);
+	    g.fillRect((int)(x+w*.25),j+(int)(y+h*.7),(int)(w*.1),(int)(h*.1));
+	    g.fillRect(-i+(int)(x+w*.6),(int)(y+h*.7),(int)(w*.1),(int)(h*.1));
+
+	    // mouth
+	    g.setColor(Color.yellow);
+	    g.fillRect(-i+(int)(x+w*.3),-j+(int)(y+h*.9),2*i+(int)(w*.4),2*j+(int)(h*.4));
+
+	    // hat
+	    g.setColor(Color.green);
+	    g.fillRect(i+(int)(x-w*.3),(int)(y+h*.3),(int)(w*1.3),(int)(h*.1));
+	    g.fillRect(i+(int)(x),(int)(y),(int)(w*1),(int)(h*.4));
+
+	    // logo
+	    g.setColor(Color.black);
+	    g.drawString("z00g45",i+(int)(x+w*.1),(int)(y+ZooGas.charHeight(g)/2));
 	}
 
 	public void addObjective(Challenge c) {
 	    objectives.add(c);
 	}
 
+	public void setState(State s) {
+	    state = s;
+	    timeInState = 0;
+	}
+
 	public void check() {
-	    if (objective() != null)
-		if (objective().check() && objective().timesTrue > timeBetweenObjectives)
+	    switch (state) {
+	    case GivingChallenge:
+		if (++timeInState > speakingTime)
+		    setState(State.Waiting);
+		break;
+	    case GivingHint:
+		if (timeInState >= speakingTime)
+		    setState(State.Waiting);
+	    case Waiting:
+		++timeInState;
+		if (objective() != null && objective().check())
+		    setState(State.GivingReward);
+		break;
+	    case GivingReward:
+		if (++timeInState > rewardTime)
 		    nextObjective();
+	    default:
+		break;
+	    }
 	}
 
 	private void nextObjective() {
 	    objectives.removeFirst();
+	    if (objective() == null)
+		setState(State.OutOfChallenges);
+	    else
+		setState(State.GivingChallenge);
 	}
     }
 
@@ -96,7 +178,6 @@ public class Challenge
     Board board;
     private String desc = "";
     public String rewardText = "Done!";
-    public int timesTrue = 0;
     Condition cond;
 
     public static List<List<Point>> getEnclosures (Board b, String wallPrefix, boolean allowDiagonalConnections) {
@@ -165,11 +246,8 @@ public class Challenge
 
     // expect check() to be called once per turn
     public boolean check() {
-        if(cond == null) {
-	    ++timesTrue;
+        if(cond == null)
             return true;
-	} else
-	    timesTrue = 0;
 
         if(cond.check()) {
 	    desc = cond.getDescription();  // save description
@@ -325,7 +403,7 @@ public class Challenge
 		}
             }
 	    if (n > 0)
-		feedback = "Passed " + n + " times so far";
+		feedback = "That's " + n;
             
             return false;
         }

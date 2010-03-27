@@ -568,8 +568,23 @@ public class ZooGas implements KeyListener {
 
         // current objective
         if (challengeGiver.hasObjective()) {
-            printOrHide(g, challengeGiver.getDescription(), objectiveRow, true, Color.white);
-            printOrHide(g, challengeGiver.getFeedback(), objectiveRow + 1, true, Color.green);
+	    // draw avatar
+	    int avatarSize = 2*charHeight(g);
+	    challengeGiver.drawAvatar(g,textBarWidth-avatarSize,rowYpos(g,objectiveRow-2),avatarSize,avatarSize);
+	    // text
+	    String[] cgText = new String[2];
+	    cgText[0] = challengeGiver.getDescription();
+	    cgText[1] = challengeGiver.getFeedback();
+	    Color[] cgColor = new Color[2];
+	    cgColor[0] = Color.white;
+	    cgColor[1] = Color.green;
+	    drawSpeechBalloonAtGraphicsCoords (g, new java.awt.Point (textBarWidth - avatarSize, rowYpos(g,objectiveRow)),
+					       -.5,3,
+					       4,
+					       cgText, cgColor,
+					       challengeGiver.avatarSpeaking() ? Color.white : Color.gray,
+					       challengeGiver.avatarSpeaking() ? Color.white : Color.black,
+					       Color.black);
 	} else {
 	    // once all challenges are completed, revert to previous test display: an auto-rotating hint and a few feedback scores
 
@@ -705,6 +720,10 @@ public class ZooGas implements KeyListener {
 
     // TODO: drawSpeechBalloon should detect cases where the speech balloon is out of the Panel's paintable area, and adjust its position accordingly
     protected void drawSpeechBalloon (Graphics g, Point cell, double xOffset, double yOffset, int balloonBorder, String[] text, Color[] textColor, Color balloonColor, Color bgColor) {
+	drawSpeechBalloonAtGraphicsCoords (g, renderer.getGraphicsCoords(cell), xOffset, yOffset, balloonBorder, text, textColor, balloonColor, balloonColor, bgColor);
+    }
+
+    protected void drawSpeechBalloonAtGraphicsCoords (Graphics g, java.awt.Point cellGraphicsCoords, double xOffset, double yOffset, int balloonBorder, String[] text, Color[] textColor, Color balloonColor, Color stalkColor, Color bgColor) {
         FontMetrics fm = g.getFontMetrics();
 
 	int xSize = 0,
@@ -714,16 +733,14 @@ public class ZooGas implements KeyListener {
 	    xSize = Math.max (xSize, fm.stringWidth(text[n]));
 	}
 
-	java.awt.Point cellGraphicsCoords = renderer.getGraphicsCoords(cell);
-
 	int xPos = cellGraphicsCoords.x + (int) (xSize * (xOffset - 0.5)),
 	    yPos = cellGraphicsCoords.y + (int) (ySize * yOffset);
 
 	// draw speech balloon
 	int yTextSize = ySize * text.length;
 
-	if (balloonColor != null) {
-	    g.setColor(balloonColor);
+	if (stalkColor != null) {
+	    g.setColor(stalkColor);
 	    g.drawLine(xPos, yPos, cellGraphicsCoords.x, cellGraphicsCoords.y);
 	}
 
@@ -780,23 +797,32 @@ public class ZooGas implements KeyListener {
             printOrHide(g, text, row, reallyShow, color);
     }
 
-    private void printOrHide(Graphics g, String text, int row, boolean show, Color color) {
-        FontMetrics fm = g.getFontMetrics();
+    public static int charHeight(Graphics g) {
+        return g.getFontMetrics().getHeight();
+    }
 
-        int ch = fm.getHeight(), bleed = 6, yPos = row * (ch + bleed);
+    public static int stringWidth(Graphics g,String text) {
+	return g.getFontMetrics().stringWidth(text);
+    }
+
+    private static int bleed = 6;
+    private int rowYpos(Graphics g,int row) {
+	return row * (charHeight(g) + bleed);
+    }
+
+    private void printOrHide(Graphics g, String text, int row, boolean show, Color color) {
+        int yPos = rowYpos(g,row);
         if (show && text != null) {
-            int xSize = fm.stringWidth(text), xPos = textBarWidth - xSize;
+            int xSize = stringWidth(g,text), xPos = textBarWidth - xSize;
             g.setColor(color);
-            g.drawString(text, xPos, yPos + ch);
+            g.drawString(text, xPos, yPos + charHeight(g));
         }
     }
 
     private void printOrHide(Graphics g, String text, int row, boolean show, Color color, Color bgColor) {
-        FontMetrics fm = g.getFontMetrics();
-        int ch = fm.getHeight(), bleed = 6, yPos = row * (ch + bleed);
+        int yPos = rowYpos(g,row);
         g.setColor(bgColor);
-        g.fillRect(0, yPos, textBarWidth, ch + bleed);
-
+        g.fillRect(0, yPos, textBarWidth, charHeight(g) + bleed);
         printOrHide(g, text, row, show, color);
     }
 
