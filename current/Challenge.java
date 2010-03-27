@@ -19,6 +19,70 @@ import java.util.Vector;
 
 public class Challenge
 {
+    // Challenge.Giver
+    public static class Giver {
+	static private int defaultTimeBetweenObjectives = 5;  // time in seconds between objectives
+
+	private ZooGas gas;
+	private LinkedList<Challenge> objectives = new LinkedList<Challenge>();
+	private int timeBetweenObjectives = defaultTimeBetweenObjectives;
+
+	Giver (ZooGas g) {
+	    gas = g;
+	}
+
+	Giver (ZooGas g, int t) {
+	    gas = g;
+	    timeBetweenObjectives = t;
+	}
+
+	public Challenge objective() {
+	    if (objectives != null && objectives.size() > 0)
+		return objectives.get(0);
+	    return null;
+	}
+
+	public boolean hasObjective() {
+	    return objective() != null;
+	}
+
+	public String getDescription() {
+	    if (objective() != null)
+		return "Goal: " + objective().getDescription();
+	    return "";
+	}
+
+	public String getFeedback() {
+	    String f = "";
+	    if (objective() != null) {
+		f = objective().getFeedback();
+		if (objective().passed())
+		    f += " (updating in " + timeToNextObjective() + ")";
+	    }
+	    return f;
+	}
+
+	public int timeToNextObjective() {
+	    return timeBetweenObjectives - objective().timesTrue;
+	}
+
+	public void addObjective(Challenge c) {
+	    objectives.add(c);
+	}
+
+	public void check() {
+	    if (objective() != null)
+		if (objective().check() && objective().timesTrue > timeBetweenObjectives)
+		    nextObjective();
+	}
+
+	private void nextObjective() {
+	    objectives.removeFirst();
+	}
+    }
+
+
+    // Challenge
     public Challenge(ZooGas g) {
         this(g, null);
     }
@@ -31,6 +95,8 @@ public class Challenge
     ZooGas gas;
     Board board;
     private String desc = "";
+    public String rewardText = "Done!";
+    public int timesTrue = 0;
     Condition cond;
 
     public static List<List<Point>> getEnclosures (Board b, String wallPrefix, boolean allowDiagonalConnections) {
@@ -97,30 +163,38 @@ public class Challenge
 	return enclosures;
     }
 
+    // expect check() to be called once per turn
     public boolean check() {
-        if(cond == null)
+        if(cond == null) {
+	    ++timesTrue;
             return true;
+	} else
+	    timesTrue = 0;
 
         if(cond.check()) {
+	    desc = cond.getDescription();  // save description
             cond = null;
-            desc = "Done!";
             return true;
         }
         return false;
     }
 
+    public boolean passed() {
+	return cond == null;
+    }
+
     public String getDescription() {
-        // TODO: remove these two lines?
         if(desc.length() == 0)
-            return cond.getDescription();
+            return cond==null ? "" : cond.getDescription();
 
         return desc;
     }
 
     public String getFeedback() {
-	return cond.feedback;
+	return cond==null ? rewardText : cond.feedback;
     }
 
+    // Challenge.Condition
     public static abstract class Condition {
         Condition parent = null; // null establishes that this is the root Condition
         String desc = "", feedback = "";

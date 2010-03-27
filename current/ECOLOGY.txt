@@ -10,25 +10,25 @@ NOUN n=_ c=000000
 
 # The different colored species particles
 # The species follow a simple (unrealistic) cyclic ecology.
-# The species number is prefixed by "/s:".
-NOUN n=critter/'.*'.*/s:0 c=ff0000
-NOUN n=critter/'.*'.*/s:1 c=ff5100
-NOUN n=critter/'.*'.*/s:2 c=ffa100
-NOUN n=critter/'.*'.*/s:3 c=fff200
-NOUN n=critter/'.*'.*/s:4 c=bcff00
-NOUN n=critter/'.*'.*/s:5 c=6bff00
-NOUN n=critter/'.*'.*/s:6 c=1bff00
-NOUN n=critter/'.*'.*/s:7 c=00ff36
-NOUN n=critter/'.*'.*/s:8 c=00ff86
-NOUN n=critter/'.*'.*/s:9 c=00ffd7
-NOUN n=critter/'.*'.*/s:10 c=00d7ff
-NOUN n=critter/'.*'.*/s:11 c=0086ff
-NOUN n=critter/'.*'.*/s:12 c=0036ff
-NOUN n=critter/'.*'.*/s:13 c=1b00ff
-NOUN n=critter/'.*'.*/s:14 c=6b00ff
-NOUN n=critter/'.*'.*/s:15 c=bc00ff
-NOUN n=critter/'.*'.*/s:16 c=ff00f2
-NOUN n=critter/'.*'.*/s:17 c=ff00a1
+# The species number is prefixed by "/s=".
+NOUN n=critter/'.*'.*/s=0 c=ff0000
+NOUN n=critter/'.*'.*/s=1 c=ff5100
+NOUN n=critter/'.*'.*/s=2 c=ffa100
+NOUN n=critter/'.*'.*/s=3 c=fff200
+NOUN n=critter/'.*'.*/s=4 c=bcff00
+NOUN n=critter/'.*'.*/s=5 c=6bff00
+NOUN n=critter/'.*'.*/s=6 c=1bff00
+NOUN n=critter/'.*'.*/s=7 c=00ff36
+NOUN n=critter/'.*'.*/s=8 c=00ff86
+NOUN n=critter/'.*'.*/s=9 c=00ffd7
+NOUN n=critter/'.*'.*/s=10 c=00d7ff
+NOUN n=critter/'.*'.*/s=11 c=0086ff
+NOUN n=critter/'.*'.*/s=12 c=0036ff
+NOUN n=critter/'.*'.*/s=13 c=1b00ff
+NOUN n=critter/'.*'.*/s=14 c=6b00ff
+NOUN n=critter/'.*'.*/s=15 c=bc00ff
+NOUN n=critter/'.*'.*/s=16 c=ff00f2
+NOUN n=critter/'.*'.*/s=17 c=ff00a1
 
 # The tools and behavior accessible to the player
 NOUN n=wall/1 c=2b2b2b
@@ -63,63 +63,63 @@ VERB s=INIT/.* S=_ v=/start
 
 # Initial animals
 NOUN n=animal c=0000ff i=003c7e7e7e7e3c00
-VERB s=animal S=critter/'rock_imp'/s:0
-VERB s=animal S=critter/'blade_beetle'/s:6
-VERB s=animal S=critter/'paper_bird'/s:12
+VERB s=animal S=critter/'rock_imp'/s=0
+VERB s=animal S=critter/'blade_beetle'/s=6
+VERB s=animal S=critter/'paper_bird'/s=12
 
 # Animal rules. This is where the ecology actually happens.
 # Successful predation
-VERB s=critter/.*/s:0 t=critter/.*/s:([1-9]) S=$S T=$S p=.024 v=eat
-VERB s=critter/.*/s:1 t=critter/.*/s:([2-9]|10) S=$S T=$S p=.024 v=eat
-VERB s=critter/.*/s:2 t=critter/.*/s:([3-9]|1[0-1]) S=$S T=$S p=.024 v=eat
-VERB s=critter/.*/s:3 t=critter/.*/s:([4-9]|1[0-2]) S=$S T=$S p=.024 v=eat
-VERB s=critter/.*/s:4 t=critter/.*/s:([5-9]|1[0-3]) S=$S T=$S p=.024 v=eat
-VERB s=critter/.*/s:5 t=critter/.*/s:([6-9]|1[0-4]) S=$S T=$S p=.024 v=eat
-VERB s=critter/.*/s:6 t=critter/.*/s:([7-9]|1[0-5]) S=$S T=$S p=.024 v=eat
-VERB s=critter/.*/s:7 t=critter/.*/s:([8-9]|1[0-6]) S=$S T=$S p=.024 v=eat
-VERB s=critter/.*/s:8 t=critter/.*/s:(9|1[0-7]) S=$S T=$S p=.024 v=eat
-VERB s=critter/.*/s:9 t=critter/.*/s:(0|1[0-7]) S=$S T=$S p=.024 v=eat
-VERB s=critter/.*/s:10 t=critter/.*/s:([0-1]|1[1-7]) S=$S T=$S p=.024 v=eat
-VERB s=critter/.*/s:11 t=critter/.*/s:([0-2]|1[2-7]) S=$S T=$S p=.024 v=eat
-VERB s=critter/.*/s:12 t=critter/.*/s:([0-3]|1[3-7]) S=$S T=$S p=.024 v=eat
-VERB s=critter/.*/s:13 t=critter/.*/s:([0-4]|1[4-7]) S=$S T=$S p=.024 v=eat
-VERB s=critter/.*/s:14 t=critter/.*/s:([0-5]|1[5-7]) S=$S T=$S p=.024 v=eat
-VERB s=critter/.*/s:15 t=critter/.*/s:([0-6]|1[6-7]) S=$S T=$S p=.024 v=eat
-VERB s=critter/.*/s:16 t=critter/.*/s:([0-7]|17) S=$S T=$S p=.024 v=eat
-VERB s=critter/.*/s:17 t=critter/.*/s:([0-8]) S=$S T=$S p=.024 v=eat
+VERB s=critter/.*/s=0 t=critter/.*/s=([1-9]) S=$S T=$S p=.024 v=eat
+VERB s=critter/.*/s=1 t=critter/.*/s=([2-9]|10) S=$S T=$S p=.024 v=eat
+VERB s=critter/.*/s=2 t=critter/.*/s=([3-9]|1[0-1]) S=$S T=$S p=.024 v=eat
+VERB s=critter/.*/s=3 t=critter/.*/s=([4-9]|1[0-2]) S=$S T=$S p=.024 v=eat
+VERB s=critter/.*/s=4 t=critter/.*/s=([5-9]|1[0-3]) S=$S T=$S p=.024 v=eat
+VERB s=critter/.*/s=5 t=critter/.*/s=([6-9]|1[0-4]) S=$S T=$S p=.024 v=eat
+VERB s=critter/.*/s=6 t=critter/.*/s=([7-9]|1[0-5]) S=$S T=$S p=.024 v=eat
+VERB s=critter/.*/s=7 t=critter/.*/s=([8-9]|1[0-6]) S=$S T=$S p=.024 v=eat
+VERB s=critter/.*/s=8 t=critter/.*/s=(9|1[0-7]) S=$S T=$S p=.024 v=eat
+VERB s=critter/.*/s=9 t=critter/.*/s=(0|1[0-7]) S=$S T=$S p=.024 v=eat
+VERB s=critter/.*/s=10 t=critter/.*/s=([0-1]|1[1-7]) S=$S T=$S p=.024 v=eat
+VERB s=critter/.*/s=11 t=critter/.*/s=([0-2]|1[2-7]) S=$S T=$S p=.024 v=eat
+VERB s=critter/.*/s=12 t=critter/.*/s=([0-3]|1[3-7]) S=$S T=$S p=.024 v=eat
+VERB s=critter/.*/s=13 t=critter/.*/s=([0-4]|1[4-7]) S=$S T=$S p=.024 v=eat
+VERB s=critter/.*/s=14 t=critter/.*/s=([0-5]|1[5-7]) S=$S T=$S p=.024 v=eat
+VERB s=critter/.*/s=15 t=critter/.*/s=([0-6]|1[6-7]) S=$S T=$S p=.024 v=eat
+VERB s=critter/.*/s=16 t=critter/.*/s=([0-7]|17) S=$S T=$S p=.024 v=eat
+VERB s=critter/.*/s=17 t=critter/.*/s=([0-8]) S=$S T=$S p=.024 v=eat
 
 # Unsuccessful predation
-VERB s=critter/.*/s:0 t=critter/.*/s:([1-9]) S=$S T=$S p=.006 v=kill
-VERB s=critter/.*/s:1 t=critter/.*/s:([2-9]|10) S=$S T=$S p=.006 v=kill
-VERB s=critter/.*/s:2 t=critter/.*/s:([3-9]|1[0-1]) S=$S T=$S p=.006 v=kill
-VERB s=critter/.*/s:3 t=critter/.*/s:([4-9]|1[0-2]) S=$S T=$S p=.006 v=kill
-VERB s=critter/.*/s:4 t=critter/.*/s:([5-9]|1[0-3]) S=$S T=$S p=.006 v=kill
-VERB s=critter/.*/s:5 t=critter/.*/s:([6-9]|1[0-4]) S=$S T=$S p=.006 v=kill
-VERB s=critter/.*/s:6 t=critter/.*/s:([7-9]|1[0-5]) S=$S T=$S p=.006 v=kill
-VERB s=critter/.*/s:7 t=critter/.*/s:([8-9]|1[0-6]) S=$S T=$S p=.006 v=kill
-VERB s=critter/.*/s:8 t=critter/.*/s:(9|1[0-7]) S=$S T=$S p=.006 v=kill
-VERB s=critter/.*/s:9 t=critter/.*/s:(0|1[0-7]) S=$S T=$S p=.006 v=kill
-VERB s=critter/.*/s:10 t=critter/.*/s:([0-1]|1[1-7]) S=$S T=$S p=.006 v=kill
-VERB s=critter/.*/s:11 t=critter/.*/s:([0-2]|1[2-7]) S=$S T=$S p=.006 v=kill
-VERB s=critter/.*/s:12 t=critter/.*/s:([0-3]|1[3-7]) S=$S T=$S p=.006 v=kill
-VERB s=critter/.*/s:13 t=critter/.*/s:([0-4]|1[4-7]) S=$S T=$S p=.006 v=kill
-VERB s=critter/.*/s:14 t=critter/.*/s:([0-5]|1[5-7]) S=$S T=$S p=.006 v=kill
-VERB s=critter/.*/s:15 t=critter/.*/s:([0-6]|1[6-7]) S=$S T=$S p=.006 v=kill
-VERB s=critter/.*/s:16 t=critter/.*/s:([0-7]|17) S=$S T=$S p=.006 v=kill
-VERB s=critter/.*/s:17 t=critter/.*/s:([0-8]) S=$S T=$S p=.006 v=kill
+VERB s=critter/.*/s=0 t=critter/.*/s=([1-9]) S=$S T=$S p=.006 v=kill
+VERB s=critter/.*/s=1 t=critter/.*/s=([2-9]|10) S=$S T=$S p=.006 v=kill
+VERB s=critter/.*/s=2 t=critter/.*/s=([3-9]|1[0-1]) S=$S T=$S p=.006 v=kill
+VERB s=critter/.*/s=3 t=critter/.*/s=([4-9]|1[0-2]) S=$S T=$S p=.006 v=kill
+VERB s=critter/.*/s=4 t=critter/.*/s=([5-9]|1[0-3]) S=$S T=$S p=.006 v=kill
+VERB s=critter/.*/s=5 t=critter/.*/s=([6-9]|1[0-4]) S=$S T=$S p=.006 v=kill
+VERB s=critter/.*/s=6 t=critter/.*/s=([7-9]|1[0-5]) S=$S T=$S p=.006 v=kill
+VERB s=critter/.*/s=7 t=critter/.*/s=([8-9]|1[0-6]) S=$S T=$S p=.006 v=kill
+VERB s=critter/.*/s=8 t=critter/.*/s=(9|1[0-7]) S=$S T=$S p=.006 v=kill
+VERB s=critter/.*/s=9 t=critter/.*/s=(0|1[0-7]) S=$S T=$S p=.006 v=kill
+VERB s=critter/.*/s=10 t=critter/.*/s=([0-1]|1[1-7]) S=$S T=$S p=.006 v=kill
+VERB s=critter/.*/s=11 t=critter/.*/s=([0-2]|1[2-7]) S=$S T=$S p=.006 v=kill
+VERB s=critter/.*/s=12 t=critter/.*/s=([0-3]|1[3-7]) S=$S T=$S p=.006 v=kill
+VERB s=critter/.*/s=13 t=critter/.*/s=([0-4]|1[4-7]) S=$S T=$S p=.006 v=kill
+VERB s=critter/.*/s=14 t=critter/.*/s=([0-5]|1[5-7]) S=$S T=$S p=.006 v=kill
+VERB s=critter/.*/s=15 t=critter/.*/s=([0-6]|1[6-7]) S=$S T=$S p=.006 v=kill
+VERB s=critter/.*/s=16 t=critter/.*/s=([0-7]|17) S=$S T=$S p=.006 v=kill
+VERB s=critter/.*/s=17 t=critter/.*/s=([0-8]) S=$S T=$S p=.006 v=kill
 
 # Breeding, overcrowding
-VERB s=critter/.*/s:\d+ t=_ S=$S T=$S p=.0007 v=spawn
-VERB s=critter/.*/s:\d+ t=critter/.*/s:\d+ S=_ T=$T p=0.0015 v=choke
+VERB s=critter/.*/s=\d+ t=_ S=$S T=$S p=.0007 v=spawn
+VERB s=critter/.*/s=\d+ t=critter/.*/s=\d+ S=_ T=$T p=0.0015 v=choke
 
 # Movement is on von Neumann topology (so they can't escape through cracks)
-VERB s=critter/.*/s:\d+ t=_ S=$T T=$S p=0.02 v=step d=.
+VERB s=critter/.*/s=\d+ t=_ S=$T T=$S p=0.02 v=step d=.
 
 # Other behaviors of animals
 # Animals eat guests:
-VERB s=critter/.*/s:\d+ t=zoo_guest.* S=_ T=$S p=1.0 v=maul
+VERB s=critter/.*/s=\d+ t=zoo_guest.* S=_ T=$S p=1.0 v=maul
 # Imps feed on lava:
-VERB s=critter/'.*_imp'/s:\d+ t=lava.* S=$S T=$S p=.01 v=frolic
+VERB s=critter/'.*_imp'/s=\d+ t=lava.* S=$S T=$S p=.01 v=frolic
 
 
 
@@ -128,59 +128,59 @@ VERB s=critter/'.*_imp'/s:\d+ t=lava.* S=$S T=$S p=.01 v=frolic
 # Fast animals
 
 # Successful predation
-VERB s=critter/.*/fast/s:0 t=critter/.*/fast/s:([1-9]) S=$S T=$S p=.24 v=eat
-VERB s=critter/.*/fast/s:1 t=critter/.*/fast/s:([2-9]|10) S=$S T=$S p=.24 v=eat
-VERB s=critter/.*/fast/s:2 t=critter/.*/fast/s:([3-9]|1[0-1]) S=$S T=$S p=.24 v=eat
-VERB s=critter/.*/fast/s:3 t=critter/.*/fast/s:([4-9]|1[0-2]) S=$S T=$S p=.24 v=eat
-VERB s=critter/.*/fast/s:4 t=critter/.*/fast/s:([5-9]|1[0-3]) S=$S T=$S p=.24 v=eat
-VERB s=critter/.*/fast/s:5 t=critter/.*/fast/s:([6-9]|1[0-4]) S=$S T=$S p=.24 v=eat
-VERB s=critter/.*/fast/s:6 t=critter/.*/fast/s:([7-9]|1[0-5]) S=$S T=$S p=.24 v=eat
-VERB s=critter/.*/fast/s:7 t=critter/.*/fast/s:([8-9]|1[0-6]) S=$S T=$S p=.24 v=eat
-VERB s=critter/.*/fast/s:8 t=critter/.*/fast/s:(9|1[0-7]) S=$S T=$S p=.24 v=eat
-VERB s=critter/.*/fast/s:9 t=critter/.*/fast/s:(0|1[0-7]) S=$S T=$S p=.24 v=eat
-VERB s=critter/.*/fast/s:10 t=critter/.*/fast/s:([0-1]|1[1-7]) S=$S T=$S p=.24 v=eat
-VERB s=critter/.*/fast/s:11 t=critter/.*/fast/s:([0-2]|1[2-7]) S=$S T=$S p=.24 v=eat
-VERB s=critter/.*/fast/s:12 t=critter/.*/fast/s:([0-3]|1[3-7]) S=$S T=$S p=.24 v=eat
-VERB s=critter/.*/fast/s:13 t=critter/.*/fast/s:([0-4]|1[4-7]) S=$S T=$S p=.24 v=eat
-VERB s=critter/.*/fast/s:14 t=critter/.*/fast/s:([0-5]|1[5-7]) S=$S T=$S p=.24 v=eat
-VERB s=critter/.*/fast/s:15 t=critter/.*/fast/s:([0-6]|1[6-7]) S=$S T=$S p=.24 v=eat
-VERB s=critter/.*/fast/s:16 t=critter/.*/fast/s:([0-7]|17) S=$S T=$S p=.24 v=eat
-VERB s=critter/.*/fast/s:17 t=critter/.*/fast/s:([0-8]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s=0 t=critter/.*/fast/s=([1-9]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s=1 t=critter/.*/fast/s=([2-9]|10) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s=2 t=critter/.*/fast/s=([3-9]|1[0-1]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s=3 t=critter/.*/fast/s=([4-9]|1[0-2]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s=4 t=critter/.*/fast/s=([5-9]|1[0-3]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s=5 t=critter/.*/fast/s=([6-9]|1[0-4]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s=6 t=critter/.*/fast/s=([7-9]|1[0-5]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s=7 t=critter/.*/fast/s=([8-9]|1[0-6]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s=8 t=critter/.*/fast/s=(9|1[0-7]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s=9 t=critter/.*/fast/s=(0|1[0-7]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s=10 t=critter/.*/fast/s=([0-1]|1[1-7]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s=11 t=critter/.*/fast/s=([0-2]|1[2-7]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s=12 t=critter/.*/fast/s=([0-3]|1[3-7]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s=13 t=critter/.*/fast/s=([0-4]|1[4-7]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s=14 t=critter/.*/fast/s=([0-5]|1[5-7]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s=15 t=critter/.*/fast/s=([0-6]|1[6-7]) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s=16 t=critter/.*/fast/s=([0-7]|17) S=$S T=$S p=.24 v=eat
+VERB s=critter/.*/fast/s=17 t=critter/.*/fast/s=([0-8]) S=$S T=$S p=.24 v=eat
 
 # Unsuccessful predation
-VERB s=critter/.*/fast/s:0 t=critter/.*/fast/s:([1-9]) S=$S T=$S p=.06 v=kill
-VERB s=critter/.*/fast/s:1 t=critter/.*/fast/s:([2-9]|10) S=$S T=$S p=.06 v=kill
-VERB s=critter/.*/fast/s:2 t=critter/.*/fast/s:([3-9]|1[0-1]) S=$S T=$S p=.06 v=kill
-VERB s=critter/.*/fast/s:3 t=critter/.*/fast/s:([4-9]|1[0-2]) S=$S T=$S p=.06 v=kill
-VERB s=critter/.*/fast/s:4 t=critter/.*/fast/s:([5-9]|1[0-3]) S=$S T=$S p=.06 v=kill
-VERB s=critter/.*/fast/s:5 t=critter/.*/fast/s:([6-9]|1[0-4]) S=$S T=$S p=.06 v=kill
-VERB s=critter/.*/fast/s:6 t=critter/.*/fast/s:([7-9]|1[0-5]) S=$S T=$S p=.06 v=kill
-VERB s=critter/.*/fast/s:7 t=critter/.*/fast/s:([8-9]|1[0-6]) S=$S T=$S p=.06 v=kill
-VERB s=critter/.*/fast/s:8 t=critter/.*/fast/s:(9|1[0-7]) S=$S T=$S p=.06 v=kill
-VERB s=critter/.*/fast/s:9 t=critter/.*/fast/s:(0|1[0-7]) S=$S T=$S p=.06 v=kill
-VERB s=critter/.*/fast/s:10 t=critter/.*/fast/s:([0-1]|1[1-7]) S=$S T=$S p=.06 v=kill
-VERB s=critter/.*/fast/s:11 t=critter/.*/fast/s:([0-2]|1[2-7]) S=$S T=$S p=.06 v=kill
-VERB s=critter/.*/fast/s:12 t=critter/.*/fast/s:([0-3]|1[3-7]) S=$S T=$S p=.06 v=kill
-VERB s=critter/.*/fast/s:13 t=critter/.*/fast/s:([0-4]|1[4-7]) S=$S T=$S p=.06 v=kill
-VERB s=critter/.*/fast/s:14 t=critter/.*/fast/s:([0-5]|1[5-7]) S=$S T=$S p=.06 v=kill
-VERB s=critter/.*/fast/s:15 t=critter/.*/fast/s:([0-6]|1[6-7]) S=$S T=$S p=.06 v=kill
-VERB s=critter/.*/fast/s:16 t=critter/.*/fast/s:([0-7]|17) S=$S T=$S p=.06 v=kill
-VERB s=critter/.*/fast/s:17 t=critter/.*/fast/s:([0-8]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s=0 t=critter/.*/fast/s=([1-9]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s=1 t=critter/.*/fast/s=([2-9]|10) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s=2 t=critter/.*/fast/s=([3-9]|1[0-1]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s=3 t=critter/.*/fast/s=([4-9]|1[0-2]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s=4 t=critter/.*/fast/s=([5-9]|1[0-3]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s=5 t=critter/.*/fast/s=([6-9]|1[0-4]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s=6 t=critter/.*/fast/s=([7-9]|1[0-5]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s=7 t=critter/.*/fast/s=([8-9]|1[0-6]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s=8 t=critter/.*/fast/s=(9|1[0-7]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s=9 t=critter/.*/fast/s=(0|1[0-7]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s=10 t=critter/.*/fast/s=([0-1]|1[1-7]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s=11 t=critter/.*/fast/s=([0-2]|1[2-7]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s=12 t=critter/.*/fast/s=([0-3]|1[3-7]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s=13 t=critter/.*/fast/s=([0-4]|1[4-7]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s=14 t=critter/.*/fast/s=([0-5]|1[5-7]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s=15 t=critter/.*/fast/s=([0-6]|1[6-7]) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s=16 t=critter/.*/fast/s=([0-7]|17) S=$S T=$S p=.06 v=kill
+VERB s=critter/.*/fast/s=17 t=critter/.*/fast/s=([0-8]) S=$S T=$S p=.06 v=kill
 
 # Breeding
 # Slowly spawn stimulated progeny
-VERB s=critter/'[^_]*_(.*/)fast/(s:\d+) t=_ S=$S T=$S p=.001 v=spawn
+VERB s=critter/'[^_]*_(.*/)fast/(s=\d+) t=_ S=$S T=$S p=.001 v=spawn
 # Span non-stimulated progeny
-VERB s=critter/'[^_]*_(.*/)fast/(s:\d+) t=_ S=$S T=critter/'$1$2 p=.007 v=spawn
+VERB s=critter/'[^_]*_(.*/)fast/(s=\d+) t=_ S=$S T=critter/'$1$2 p=.007 v=spawn
 
 # Stimulated animals soon slow down ("soon" relative to the fast spawn rate)
 VERB s=critter/'[^_]*_(.*')/fast(.*) S=critter/'$1$2 p=.002 v=relax
 
 # Overcrowding
-VERB s=critter/.*/fast/s:\d+ t=critter/.*/fast/s:\d+ S=_ T=$T p=0.015 v=choke
+VERB s=critter/.*/fast/s=\d+ t=critter/.*/fast/s=\d+ S=_ T=$T p=0.015 v=choke
 
 # Movement is on von Neumann topology (so they can't escape through cracks)
-VERB s=critter/.*/fast/s:\d+ t=_ S=$T T=$S p=0.2 v=step d=.
+VERB s=critter/.*/fast/s=\d+ t=_ S=$T T=$S p=0.2 v=step d=.
 
 
 
@@ -201,21 +201,21 @@ VERB s=cement t=.* S=_ T=$T p=.01 v=drain
 # Cage builders: a simple geometric program with nested loops (bricks/walls).
 NOUN n=cage_builder.* c=8080c0 i=303030303f3f0000
 # Choose size and orientation:
-VERB s=cage_builder t=.* S=cage_builder/len:5 T=$T p=.3 v=plan_small_cage
-VERB s=cage_builder t=.* S=cage_builder/len:11 T=$T p=.3 v=plan_medium_cage
-VERB s=cage_builder t=.* S=cage_builder/len:21 T=$T p=.3 v=plan_large_cage
-VERB s=cage_builder/len:(\d+) t=.* S=cage_builder/len:$1/dir:$F T=$T p=1 v=choose_orientation
+VERB s=cage_builder t=.* S=cage_builder/len=5 T=$T p=.3 v=plan_small_cage
+VERB s=cage_builder t=.* S=cage_builder/len=11 T=$T p=.3 v=plan_medium_cage
+VERB s=cage_builder t=.* S=cage_builder/len=21 T=$T p=.3 v=plan_large_cage
+VERB s=cage_builder/len=(\d+) t=.* S=cage_builder/len=$1/dir=$F T=$T p=1 v=choose_orientation
 # Exclude diagonal cages (or animals can escape through the cracks)
-VERB s=cage_builder/len:(\d+)/dir:(ne|nw|se|sw) t=.* S=cage_builder/len:$1/dir:$F T=$T p=1 v=rethink_orientation
+VERB s=cage_builder/len=(\d+)/dir=(ne|nw|se|sw) t=.* S=cage_builder/len=$1/dir=$F T=$T p=1 v=rethink_orientation
 # OK, here's the program that actually builds the cage. It's a simple state machine: build, turn, stop.
-VERB s=cage_builder/len:(\d+)/dir:(.) t=.* S=cage_builder/len:$1/walls:3/steps:$1/dir:$2 T=$T p=1 v=start
-VERB s=cage_builder/len:(\d+)/walls:(\d)/steps:([^0].*)/dir:$F t=_ S=wall/5 T=cage_builder/len:$1/walls:$2/steps:$-3/dir:$F p=1 v=place_next_brick
-VERB s=cage_builder/len:(\d+)/walls:([^0])/steps:0/dir:$F t=.* S=cage_builder/len:$1/walls:$-2/steps:$1/dir:$+R T=$T p=1 v=build_next_wall
-VERB s=cage_builder/len:(\d+)/walls:0/steps:[01]/dir:.* t=.* S=wall/5 T=$T p=1 v=finish
+VERB s=cage_builder/len=(\d+)/dir=(.) t=.* S=cage_builder/len=$1/walls=3/steps=$1/dir=$2 T=$T p=1 v=start
+VERB s=cage_builder/len=(\d+)/walls=(\d)/steps=([^0].*)/dir=$F t=_ S=wall/5 T=cage_builder/len=$1/walls=$2/steps=$-3/dir=$F p=1 v=place_next_brick
+VERB s=cage_builder/len=(\d+)/walls=([^0])/steps=0/dir=$F t=.* S=cage_builder/len=$1/walls=$-2/steps=$1/dir=$+R T=$T p=1 v=build_next_wall
+VERB s=cage_builder/len=(\d+)/walls=0/steps=[01]/dir=.* t=.* S=wall/5 T=$T p=1 v=finish
 # Handle collisions gracefully:
-VERB s=cage_builder/.*dir:$F t=(wall/.*|cage_builder.*) S=wall/3 T=$T p=1 v=join_wall
+VERB s=cage_builder/.*dir=$F t=(wall/.*|cage_builder.*) S=wall/3 T=$T p=1 v=join_wall
 # Plant an animal every now and then (not near corners):
-VERB s=cage_builder/.*/steps:([^012].*)/dir:$+L t=_ T=animal v=seed p=.1
+VERB s=cage_builder/.*/steps=([^012].*)/dir=$+L t=_ T=animal v=seed p=.1
 
 
 # uncomment the following to test for runaway particle names... (cage_builder discovered this bug, that's why it's here)
@@ -238,22 +238,22 @@ VERB s=acid t=.* S=_ T=$T p=.005 v=drain
 VERB s=high_pressure_acid S=acid T=acid
 
 # Perfume
-VERB s=perfume t=critter/.*/s:\d+ S=$T T=$T p=1.0 v=uh_huh
+VERB s=perfume t=critter/.*/s=\d+ S=$T T=$T p=1.0 v=uh_huh
 VERB s=perfume t=_ S=_ T=$T p=0.1 v=disperse
 VERB s=perfume t=_ S=$S T=$S p=0.09 v=billow
 VERB s=perfume t=_ S=$T T=$S p=0.81 v=drift
 
 # Stimulant gas: makes animals fast, temporarily
 NOUN n=stimulant c=80ffa8 i=6
-VERB s=stimulant t=critter/'(.*')(/s:(\d+)) S=_ T=critter/'excited_$1/fast$2 p=1.0 v=stimulate
+VERB s=stimulant t=critter/'(.*')(/s=(\d+)) S=_ T=critter/'excited_$1/fast$2 p=1.0 v=stimulate
 VERB s=stimulant t=_ S=_ T=_ p=0.1 v=disperse
 VERB s=stimulant t=_ S=$T T=$S p=0.9 v=drift
 
 # Mutator gas: change the species number.
-VERB s=mutator t=critter/'.*'(.*)/s:(\d+) S=_ T=critter/'mutant'$1/s:$%18+1.2 p=1.0 v=mutate
-VERB s=mutator t=critter/'.*'(.*)/s:(\d+) S=_ T=critter/'mutant'$1/s:$%18+17.2 p=1.0 v=mutate
-VERB s=mutator t=critter/'.*'(.*)/s:(\d+) S=_ T=critter/'mutant'$1/s:$%18+2.2 p=0.1 v=mutate
-VERB s=mutator t=critter/'.*'(.*)/s:(\d+) S=_ T=critter/'mutant'$1/s:$%18+16.2 p=0.1 v=mutate
+VERB s=mutator t=critter/'.*'(.*)/s=(\d+) S=_ T=critter/'mutant'$1/s=$%18+1.2 p=1.0 v=mutate
+VERB s=mutator t=critter/'.*'(.*)/s=(\d+) S=_ T=critter/'mutant'$1/s=$%18+17.2 p=1.0 v=mutate
+VERB s=mutator t=critter/'.*'(.*)/s=(\d+) S=_ T=critter/'mutant'$1/s=$%18+2.2 p=0.1 v=mutate
+VERB s=mutator t=critter/'.*'(.*)/s=(\d+) S=_ T=critter/'mutant'$1/s=$%18+16.2 p=0.1 v=mutate
 VERB s=mutator t=_ S=_ T=_ p=0.1 v=disperse
 VERB s=mutator t=_ S=$T T=$S p=0.9 v=drift
 VERB s=mutator t=perfume S=$T T=$T p=1.0 v=react
@@ -341,19 +341,19 @@ BOND s=conga_guest/.* t=.*conga.* n=handsToHips e=+5 l=0 L=6 b=0 m=0
 BOND s=conga_head/.* t=.*conga.* n=handsToHips e=+10 l=0 L=6 b=0
 BOND s=conga_head/.* t=.*conga.* n=handsToHips e=+5 l=0 L=6 b=0 m=0
 
-# initial production rule:  conga -> conga_head/pos:$POS   where $POS \in { 10, 20, 30 }
+# initial production rule:  conga -> conga_head/pos=$POS   where $POS \in { 10, 20, 30 }
 # this (as you can probably guess) sets the length of the conga line at 10, 20 or 30
-VERB s=conga t=.* S=conga_head/pos:10 T=$T p=.3 v=start_lil_conga
-VERB s=conga t=.* S=conga_head/pos:20 T=$T p=.3 v=start_hapnin_conga
-VERB s=conga t=.* S=conga_head/pos:30 T=$T p=.3 v=start_monsta_conga
+VERB s=conga t=.* S=conga_head/pos=10 T=$T p=.3 v=start_lil_conga
+VERB s=conga t=.* S=conga_head/pos=20 T=$T p=.3 v=start_hapnin_conga
+VERB s=conga t=.* S=conga_head/pos=30 T=$T p=.3 v=start_monsta_conga
 
 # conga_head is the constructor
-# its stateful form is  conga_head/pos:$POS/dir:$DIR  where $POS is an integer and $DIR a compass direction
+# its stateful form is  conga_head/pos=$POS/dir=$DIR  where $POS is an integer and $DIR a compass direction
 # the first rule randomly picks $DIR
-VERB s=conga_head/pos:(\d+) t=.* S=conga_head/dir:$F/pos:$1 T=$T p=1 v=line_em_up d=.
-VERB s=conga_head/dir:$F/pos:([2-9]|\d\d+) t=_ S=conga_guest/ T=conga_head/dir:$F/pos:$-1 p=1 v=partay B=(s,handsToHips,t) k=(x,handsToHips,s)
+VERB s=conga_head/pos=(\d+) t=.* S=conga_head/dir=$F/pos=$1 T=$T p=1 v=line_em_up d=.
+VERB s=conga_head/dir=$F/pos=([2-9]|\d\d+) t=_ S=conga_guest/ T=conga_head/dir=$F/pos=$-1 p=1 v=partay B=(s,handsToHips,t) k=(x,handsToHips,s)
 VERB s=conga_head/.* t=_ S=$T T=$S p=.01 v=wobble k=(sT,handsToHips,x) k=(y,handsToHips,sT)
-VERB s=conga_head/dir:(.*)/pos:1 S=conga_guest/ p=1 v=lets_go k=(x,handsToHips,s)
+VERB s=conga_head/dir=(.*)/pos=1 S=conga_guest/ p=1 v=lets_go k=(x,handsToHips,s)
 
 # conga_guests can be male or female, wild/crazy/groovy/etc
 VERB s=conga_guest/ S=conga_guest/'conga_dude'/ k=(x,handsToHips,s) k=(s,handsToHips,y)
@@ -399,86 +399,86 @@ VERB s=anchored_cell_wall S=_ p=.0001 v=degrade
 
 # Cell builders
 # Choose size and orientation:
-VERB s=cell_builder t=.* S=cell_builder/len:5 T=$T p=.3 v=plan_small_cell
-VERB s=cell_builder t=.* S=cell_builder/len:11 T=$T p=.3 v=plan_medium_cell
-VERB s=cell_builder t=.* S=cell_builder/len:21 T=$T p=.3 v=plan_large_cell
-VERB s=cell_builder/len:(\d+) t=.* S=cell_builder/len:$1/dir:$F T=$T p=1 v=choose_orientation d=.
+VERB s=cell_builder t=.* S=cell_builder/len=5 T=$T p=.3 v=plan_small_cell
+VERB s=cell_builder t=.* S=cell_builder/len=11 T=$T p=.3 v=plan_medium_cell
+VERB s=cell_builder t=.* S=cell_builder/len=21 T=$T p=.3 v=plan_large_cell
+VERB s=cell_builder/len=(\d+) t=.* S=cell_builder/len=$1/dir=$F T=$T p=1 v=choose_orientation d=.
 # OK, here's the program that actually builds the cell. It's a simple state machine: build, turn, stop.
-VERB s=cell_builder/len:(\d+)/dir:$F t=_ T=cell_builder/len:$1/walls:3/steps:$-1/dir:$F S=anchored_cell_wall v=start B=(s,cellWall,t)
-VERB s=cell_builder/len:(\d+)/walls:(\d)/steps:([^0].*)/dir:$F t=_ S=cell_wall T=cell_builder/len:$1/walls:$2/steps:$-3/dir:$F v=place_next_brick k=(x,cellWall,s) B=(s,cellWall,t)
-VERB s=cell_builder/len:(\d+)/walls:([^0])/steps:0/dir:$F S=cell_builder/len:$1/walls:$-2/steps:$1/dir:$+L v=build_next_wall k=(x,cellWall,s)
-VERB s=cell_builder/len:(\d+)/walls:0/steps:0/dir:.* S=cell_wall v=finish k=(x,cellWall,s)
+VERB s=cell_builder/len=(\d+)/dir=$F t=_ T=cell_builder/len=$1/walls=3/steps=$-1/dir=$F S=anchored_cell_wall v=start B=(s,cellWall,t)
+VERB s=cell_builder/len=(\d+)/walls=(\d)/steps=([^0].*)/dir=$F t=_ S=cell_wall T=cell_builder/len=$1/walls=$2/steps=$-3/dir=$F v=place_next_brick k=(x,cellWall,s) B=(s,cellWall,t)
+VERB s=cell_builder/len=(\d+)/walls=([^0])/steps=0/dir=$F S=cell_builder/len=$1/walls=$-2/steps=$1/dir=$+L v=build_next_wall k=(x,cellWall,s)
+VERB s=cell_builder/len=(\d+)/walls=0/steps=0/dir=.* S=cell_wall v=finish k=(x,cellWall,s)
 # Join up:
-VERB s=cell_builder/.*dir:$F t=anchored_cell_wall S=cell_wall T=cell_wall p=1 v=join_wall k=(x,cellWall,s) k=(t,cellWall,y) B=(s,cellWall,t)
+VERB s=cell_builder/.*dir=$F t=anchored_cell_wall S=cell_wall T=cell_wall p=1 v=join_wall k=(x,cellWall,s) k=(t,cellWall,y) B=(s,cellWall,t)
 # Drop an animal every now and then:
-VERB s=cell_builder/.*/dir:$+R t=_ T=animal v=seed p=.04
+VERB s=cell_builder/.*/dir=$+R t=_ T=animal v=seed p=.04
 
 # Bombs throw off shrapnel...
 NOUN n=bomb.* c=00c080 i=00183c7e3c180000
 NOUN n=shrapnel.* c=00c080
-VERB s=bomb S=bomb/r:4/n:6
-VERB s=bomb/r:(\d)/n:([1-9]|\d\d+) S=bomb/r:$1/n:$-2 T=shrapnel/d:$F/v:$1 v=explode
-VERB s=bomb/r:(\d)/n:0 S=shrapnel/d:$F/v:$1 v=explode
+VERB s=bomb S=bomb/r=4/n=6
+VERB s=bomb/r=(\d)/n=([1-9]|\d\d+) S=bomb/r=$1/n=$-2 T=shrapnel/d=$F/v=$1 v=explode
+VERB s=bomb/r=(\d)/n=0 S=shrapnel/d=$F/v=$1 v=explode
 
 # shrapnel flies at various speeds (ugh, no way to specify this sort of match-dependent probability... yet)
-VERB s=shrapnel/d:$F/v:9 p=9 t=_ S=$T T=$S v=fly
-VERB s=shrapnel/d:$F/v:8 p=8 t=_ S=$T T=$S v=fly
-VERB s=shrapnel/d:$F/v:7 p=7 t=_ S=$T T=$S v=fly
-VERB s=shrapnel/d:$F/v:6 p=6 t=_ S=$T T=$S v=fly
-VERB s=shrapnel/d:$F/v:5 p=5 t=_ S=$T T=$S v=fly
-VERB s=shrapnel/d:$F/v:4 p=4 t=_ S=$T T=$S v=fly
-VERB s=shrapnel/d:$F/v:3 p=3 t=_ S=$T T=$S v=fly
-VERB s=shrapnel/d:$F/v:2 p=2 t=_ S=$T T=$S v=fly
-VERB s=shrapnel/d:$F/v:1 p=1 t=_ S=$T T=$S v=fly
+VERB s=shrapnel/d=$F/v=9 p=9 t=_ S=$T T=$S v=fly
+VERB s=shrapnel/d=$F/v=8 p=8 t=_ S=$T T=$S v=fly
+VERB s=shrapnel/d=$F/v=7 p=7 t=_ S=$T T=$S v=fly
+VERB s=shrapnel/d=$F/v=6 p=6 t=_ S=$T T=$S v=fly
+VERB s=shrapnel/d=$F/v=5 p=5 t=_ S=$T T=$S v=fly
+VERB s=shrapnel/d=$F/v=4 p=4 t=_ S=$T T=$S v=fly
+VERB s=shrapnel/d=$F/v=3 p=3 t=_ S=$T T=$S v=fly
+VERB s=shrapnel/d=$F/v=2 p=2 t=_ S=$T T=$S v=fly
+VERB s=shrapnel/d=$F/v=1 p=1 t=_ S=$T T=$S v=fly
 
 # shrapnel deceleration, explosion, ricochet
-VERB s=shrapnel/(d:$F/v:)([1-9]) t=_ S=$T T=shrapnel/$1$-2 v=fly/decelerate
-VERB s=shrapnel/d:.*/v:[01] S=exploding_shrapnel p=.9 v=explode
-VERB s=shrapnel/d:.*/.* t=[^_].* S=exploding_shrapnel v=explode
-VERB s=shrapnel/d:$F/v:(\d) t=[^_].* S=shrapnel/d:$++L/v:$1 T=$T p=.1 v=ricochet
-VERB s=shrapnel/d:$F/v:(\d) t=[^_].* S=shrapnel/d:$++R/v:$1 T=$T p=.05 v=ricochet
+VERB s=shrapnel/(d=$F/v=)([1-9]) t=_ S=$T T=shrapnel/$1$-2 v=fly/decelerate
+VERB s=shrapnel/d=.*/v=[01] S=exploding_shrapnel p=.9 v=explode
+VERB s=shrapnel/d=.*/.* t=[^_].* S=exploding_shrapnel v=explode
+VERB s=shrapnel/d=$F/v=(\d) t=[^_].* S=shrapnel/d=$++L/v=$1 T=$T p=.1 v=ricochet
+VERB s=shrapnel/d=$F/v=(\d) t=[^_].* S=shrapnel/d=$++R/v=$1 T=$T p=.05 v=ricochet
 # Without this last rule, shrapnel at uncrossable borders will never die
-VERB s=shrapnel/d:$B/v:.* t=.* S=_ T=$T p=.001 v=scatter
+VERB s=shrapnel/d=$B/v=.* t=.* S=_ T=$T p=.001 v=scatter
 
 # exploding shrapnel either turns into fire, or throws off more shrapnel (using a bomb)
-VERB s=exploding_shrapnel T=shrapnel/d:$F/v:1 p=.1
-VERB s=exploding_shrapnel T=fire/e:5 p=.1
-VERB s=exploding_shrapnel S=fire/e:9 p=.01
+VERB s=exploding_shrapnel T=shrapnel/d=$F/v=1 p=.1
+VERB s=exploding_shrapnel T=fire/e=5 p=.1
+VERB s=exploding_shrapnel S=fire/e=9 p=.01
 
 # Fire
-NOUN n=fire/e:0 c=100000
-NOUN n=fire/e:1 c=200000
-NOUN n=fire/e:2 c=300000
-NOUN n=fire/e:3 c=400000
-NOUN n=fire/e:4 c=500000
-NOUN n=fire/e:5 c=602000
-NOUN n=fire/e:6 c=703000
-NOUN n=fire/e:7 c=804000
-NOUN n=fire/e:8 c=906000
-NOUN n=fire/e:9 c=a08000
-NOUN n=fire/e:10 c=b0a000
-NOUN n=fire/e:11 c=c0c000
-NOUN n=fire/e:12 c=d0d000
-NOUN n=fire/e:13 c=e0e000
-NOUN n=fire/e:14 c=f0f000
-NOUN n=fire/e:15 c=ffff00
+NOUN n=fire/e=0 c=100000
+NOUN n=fire/e=1 c=200000
+NOUN n=fire/e=2 c=300000
+NOUN n=fire/e=3 c=400000
+NOUN n=fire/e=4 c=500000
+NOUN n=fire/e=5 c=602000
+NOUN n=fire/e=6 c=703000
+NOUN n=fire/e=7 c=804000
+NOUN n=fire/e=8 c=906000
+NOUN n=fire/e=9 c=a08000
+NOUN n=fire/e=10 c=b0a000
+NOUN n=fire/e=11 c=c0c000
+NOUN n=fire/e=12 c=d0d000
+NOUN n=fire/e=13 c=e0e000
+NOUN n=fire/e=14 c=f0f000
+NOUN n=fire/e=15 c=ffff00
 
 # spread quickly
-VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$+1 p=1 v=spread
-VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$1 p=1 v=spread
-VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$-1 p=1 v=spread
+VERB s=fire/e=([1-9]|\d\d+) T=fire/e=$+1 p=1 v=spread
+VERB s=fire/e=([1-9]|\d\d+) T=fire/e=$1 p=1 v=spread
+VERB s=fire/e=([1-9]|\d\d+) T=fire/e=$-1 p=1 v=spread
 # override: spread more slowly if neighbor is open space
-VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$+1 t=_ p=0 v=spread
-VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$1 t=_ p=.01 v=spread
-VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$-1 t=_ p=.02 v=spread
+VERB s=fire/e=([1-9]|\d\d+) T=fire/e=$+1 t=_ p=0 v=spread
+VERB s=fire/e=([1-9]|\d\d+) T=fire/e=$1 t=_ p=.01 v=spread
+VERB s=fire/e=([1-9]|\d\d+) T=fire/e=$-1 t=_ p=.02 v=spread
 # override: don't spread into fire ("rage" takes care of this, further down)
-VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$+1 t=fire/.* p=0 v=spread
-VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$1 t=fire/.* p=.05 v=spread
-VERB s=fire/e:([1-9]|\d\d+) T=fire/e:$-1 t=fire/.* p=.1 v=spread
+VERB s=fire/e=([1-9]|\d\d+) T=fire/e=$+1 t=fire/.* p=0 v=spread
+VERB s=fire/e=([1-9]|\d\d+) T=fire/e=$1 t=fire/.* p=.05 v=spread
+VERB s=fire/e=([1-9]|\d\d+) T=fire/e=$-1 t=fire/.* p=.1 v=spread
 # rage/ebb/extinguish
-VERB s=fire/e:([1-9]) t=fire/.* S=fire/e:$+1 p=.1 v=rage
-VERB s=fire/e:([1-9]|\d\d+) S=fire/e:$-1 p=.15 v=ebb
-VERB s=fire/e:0 S=_ p=.05 v=extinguish
+VERB s=fire/e=([1-9]) t=fire/.* S=fire/e=$+1 p=.1 v=rage
+VERB s=fire/e=([1-9]|\d\d+) S=fire/e=$-1 p=.15 v=ebb
+VERB s=fire/e=0 S=_ p=.05 v=extinguish
 
 
 
@@ -489,7 +489,7 @@ VERB s=fire/e:0 S=_ p=.05 v=extinguish
 # allowing moves that change many cells on the lattice simultaneously, such as "pull" and "pivot" moves.
 # RNA folding on the 3D triangular lattice
 # Joel Gillespie , Martin Mayne  and Minghui Jiang 
-# BMC Bioinformatics 2009, 10:369doi:10.1186/1471-2105-10-369
+# BMC Bioinformatics 2009, 10=369doi=10.1186/1471-2105-10-369
 
 # base colors: HSV values with S=1, V=0.5 & H depending on the first nucleotide: 0(a), .25(c), .5(g), .75(u)
 NOUN n=base/a.* c=800000 e=-10
@@ -560,12 +560,12 @@ VERB s=base/n S=base/y k=(x,5to3,s) k=(s,5to3,y) k=(xf,f5to3,s) k=(s,5to3f,yf) k
 
 # now here is the constructor for an RNA sequence
 # pick a direction, d
-# To prevent collisions, just set this to east for now; but could use d:$F
+# To prevent collisions, just set this to east for now; but could use d=$F
 # this rule is slow, to allow adequate sampling of chain IDs via the previous rule
-VERB s=RNA_sequence/[acgu]+ t=.* S=$S/d:e T=$T p=.05 v=/pick_direction
+VERB s=RNA_sequence/[acgu]+ t=.* S=$S/d=e T=$T p=.05 v=/pick_direction
 
 # generate first base
-VERB s=RNA_sequence/([acgu])([acgu]+)(/d:$F) t=_ S=base/$1 T=RNA_sequence/$2$3 p=1 v=generate_base_$1 B=(s,5to3,t) k=(x,5to3,s)
+VERB s=RNA_sequence/([acgu])([acgu]+)(/d=$F) t=_ S=base/$1 T=RNA_sequence/$2$3 p=1 v=generate_base_$1 B=(s,5to3,t) k=(x,5to3,s)
 
 # generate last base
 VERB s=RNA_sequence/([acgu])/.* t=.* S=base/$1 T=$T p=1 v=generate_last_base_$1 k=(x,5to3,s)
