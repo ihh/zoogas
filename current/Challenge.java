@@ -269,7 +269,7 @@ public class Challenge
     }
 
     public String getFeedback() {
-	return cond==null ? rewardText : cond.feedback;
+	return cond==null ? rewardText : cond.getFeedback();
     }
 
     // Challenge.Condition
@@ -288,6 +288,10 @@ public class Challenge
         
         public String getDescription(){
             return desc;
+        }
+        
+        public String getFeedback(){
+            return feedback;
         }
         
         public void setParentCondition(Condition c) {
@@ -522,7 +526,7 @@ public class Challenge
             c = count;
             board = b;
             this.particlePrefix = prefix;
-	    desc = "place " + c + " " + prefix + (c > 1? "s" : "") + " ";
+	    desc = "place " + c + " " + Particle.visibleText(prefix) + (c > 1? "s" : "") + " ";
         }
 
         public EncloseParticles(Condition p, int count, String prefix, Board b) {
@@ -561,10 +565,10 @@ public class Challenge
 
     // EnclosedParticleEntropy can be used to test the diversity of a population
     public static class EnclosedParticleEntropy extends EncloseParticles {
-        public EnclosedParticleEntropy(int count, String prefix, Board b, double minEntropy) {
+        public EnclosedParticleEntropy(int count, String prefix, Board b, double divScore) {
 	    super(count,prefix,b);
-	    this.minEntropy = minEntropy;
-	    desc = desc + " with diversity score " + Math.exp(minEntropy);
+	    this.minEntropy = Math.log(divScore);
+	    desc = desc + "with diversity " + String.format("%.2f", divScore) + "+";
         }
 
         public EnclosedParticleEntropy(Condition p, int count, String prefix, Board b, double minEntropy) {
@@ -573,26 +577,45 @@ public class Challenge
         }
         
 	double minEntropy;
+	protected double bestEntropy = 0;
+	String entropyFeedback = "";
 
         public boolean check() {
 	    super.check();
 	    double entropy = 0;
 	    for (Set<Point> locations : particleLocations.values()) {
-		double p = (double) locations.size() / (double) totalParticles;
-		entropy -= p * Math.log(p);
+		if (locations.size() > 0) {
+		    double p = (double) locations.size() / (double) totalParticles;
+		    entropy -= p * Math.log(p);
+		}
+	    }
+	    System.err.println(entropy+" "+bestEntropy);
+	    if (entropy > bestEntropy) {
+		bestEntropy = entropy;
+		entropyFeedback = "best diversity " + String.format("%.2f", Math.exp(bestEntropy));
 	    }
 	    return entropy >= minEntropy;
         }
+
+	public String getFeedback() {
+	    return feedback + "; " + entropyFeedback;
+	}
     }
+
     
     // SucceedNTimes can be used to test for a condition holding true over a continuous period of time.
     // The time period resets as soon as the condition stops being true.
     public static class SucceedNTimes extends Condition {
-        public SucceedNTimes(ZooGas gas, Condition p, Condition condition, int n){
+        public SucceedNTimes(ZooGas gas, Condition condition, int n){
             cond = condition;
             count = n;
             
-            desc = "for at least " + ((double) count / (double) gas.targetUpdateRate) + " seconds, " + cond.getDescription();
+            desc = "for " + count + "+ turns, " + cond.getDescription();
+        }
+
+        public SucceedNTimes(ZooGas gas, Condition p, Condition condition, int n){
+	    this(gas,condition,n);
+	    parent = p;
         }
 
         Condition cond;
@@ -604,9 +627,11 @@ public class Challenge
             if(cond == null || cond.check()) {
                 if(++successes >= count)
                     return true;
+		feedback = "Turns so far: " + successes + "/" + count;
                 return false;
             }
-            
+
+	    feedback = cond == null ? "" : cond.getFeedback();
             successes = 0;
             return false;
         }
@@ -616,14 +641,17 @@ public class Challenge
     // It succeeds if at least one particle was sprayed.
     public static class SprayEvent extends Condition {
 
-        public SprayEvent(Board board,SprayTool tool,String oldPrefix){
+	BoardRenderer renderer;
+        public SprayEvent(Board board,BoardRenderer renderer,SprayTool tool,String oldPrefix){
 	    this.board = board;
+	    this.renderer = renderer;
 	    this.tool = tool;
 	    this.oldPrefix = oldPrefix;
+	    this.desc = "cope with " + tool.particle.visibleName() + "s";
         }
 
-        public SprayEvent(Board board,SprayTool tool){
-	    this (board, tool, board.spaceParticle.prefix);
+        public SprayEvent(Board board,BoardRenderer renderer,SprayTool tool){
+	    this (board, renderer, tool, board.spaceParticle.prefix);
 	}
 
 	Board board;
@@ -642,7 +670,9 @@ public class Challenge
 		sprayPoint.x = (int) (Math.random() * board.size);
 		sprayPoint.y = (int) (Math.random() * board.size);
 	    }
-	    return tool.spray (sprayPoint, board, null, oldPrefix);
+	    boolean success = tool.spray (sprayPoint, board, renderer, oldPrefix);
+	    tool.refill();
+	    return success;
 	}
     }
 }

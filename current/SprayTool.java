@@ -8,20 +8,32 @@ public class SprayTool {
     protected char hotKey = 0;
     protected Particle particle = null;
 
-    // constructor
-    static RuleSyntax toolSyntax = new RuleSyntax("TOOL n! k= d=1 p=1 r=1 f=1 w=1", "n=Particle k=Key d=Diameter p=Power r=Reserve f=RefillRate w=DisplayWidth");
+    // constructors
+    public SprayTool (Board board, String pn, double sd, double sp, double rmax, double fill) {
+	this.particleName = pn;
+	this.sprayDiameter = sd;
+	this.sprayPower = sp;
+	this.reserve = 0;
+	this.maxReserve = rmax;
+	this.refillRate = fill;
+	this.barWidth = 0;
+        this.particle = board.getOrCreateParticle(particleName);
+    }
+
+    static RuleSyntax toolSyntax = new RuleSyntax
+	("TOOL n! k= d=1 p=1 r=1 f=1 w=1", "n=Particle k=Key d=Diameter p=Power r=Reserve f=RefillRate w=DisplayWidth");
     static SprayTool fromString (String toolString, Board board) {
 	SprayTool stat = null;
         if(RuleSet.isRule(toolString)) {
             if (toolSyntax.matches(toolString)) {
-                stat = new SprayTool();
-                stat.particleName = toolSyntax.getXmlTagValue("Particle");
-                stat.hotKey = toolSyntax.getXmlTagValue("Key").charAt(0);
-                stat.sprayDiameter = Double.parseDouble(toolSyntax.getXmlTagValue("Diameter"));
-                stat.sprayPower = Double.parseDouble(toolSyntax.getXmlTagValue("Power"));
-                stat.maxReserve = Double.parseDouble(toolSyntax.getXmlTagValue("Reserve"));
-                stat.refillRate = Double.parseDouble(toolSyntax.getXmlTagValue("RefillRate"));
+                stat = new SprayTool(board,
+				     toolSyntax.getXmlTagValue("Particle"),
+				     Double.parseDouble(toolSyntax.getXmlTagValue("Diameter")),
+				     Double.parseDouble(toolSyntax.getXmlTagValue("Power")),
+				     Double.parseDouble(toolSyntax.getXmlTagValue("Reserve")),
+				     Double.parseDouble(toolSyntax.getXmlTagValue("RefillRate")));
                 stat.barWidth = Double.parseDouble(toolSyntax.getXmlTagValue("DisplayWidth"));
+                stat.hotKey = toolSyntax.getXmlTagValue("Key").charAt(0);
             }
             else {
                 System.err.println("Wrong no. of args in toolString '" + toolString + "'");
@@ -36,6 +48,7 @@ public class SprayTool {
     }
 
     // methods
+    void refill() { refill(1); }
     void refill(double scale) {
 	if(reserve < maxReserve)
 	{

@@ -285,20 +285,41 @@ public class ZooGas implements KeyListener {
 
         // hackish test cases (kept here for reference)
         // place 5 guests anywhere
-	challengeGiver.addObjective (new Challenge(this, new Challenge.EncloseParticles(5, "zoo_guest", board)));
+	challengeGiver.addObjective (new Challenge
+				     (this, new Challenge.EncloseParticles
+				      (5, "zoo_guest", board)));
         // create 4 separated enclosures
 	int minEncSize = 20, maxEncSize = board.size * board.size / 2;
-	challengeGiver.addObjective (new Challenge(this, new Challenge.EnclosuresCondition(this,
-									    null,
-									    4, minEncSize, maxEncSize, false, "wall")));
+	challengeGiver.addObjective (new Challenge
+				     (this, new Challenge.EnclosuresCondition
+				      (this, null,
+				       4, minEncSize, maxEncSize, false, "wall")));
         // create 3 separated enclosures with 4 zoo_guests in each
-        challengeGiver.addObjective (new Challenge(this, new Challenge.EnclosuresCondition(this,
-											   new Challenge.EncloseParticles(4, "zoo_guest", board),
-											   3, minEncSize, maxEncSize, false, "wall")));
-        // place a zoo_guest, then wait 50 updates
-        // challengeGiver.addObjective (new Challenge(this, new Challenge.SucceedNTimes(null, new Challenge.EncloseParticles(1, "zoo_guest", board), 50)));
+        challengeGiver.addObjective (new Challenge
+				     (this, new Challenge.EnclosuresCondition
+				      (this, new Challenge.EncloseParticles(4, "zoo_guest", board),
+				       3, minEncSize, maxEncSize, false, "wall")));
+        // keep a zoo_guest alive for 50 updates
+	challengeGiver.addObjective (new Challenge
+				     (this, new Challenge.SucceedNTimes
+				      (this, new Challenge.EncloseParticles
+				       (1, "zoo_guest", board), 50)));
+
         // place 5 animals anywhere
-        // challengeGiver.addObjective (new Challenge(this, new Challenge.EncloseParticles(5, "critter/.*", board)));
+	challengeGiver.addObjective (new Challenge
+				     (this, new Challenge.EncloseParticles
+				      (5, "critter", board)));
+        // keep animal population at 10 and diversity score at 3.5 for 50 updates
+	challengeGiver.addObjective (new Challenge
+				     (this, new Challenge.SucceedNTimes
+				      (this, new Challenge.EnclosedParticleEntropy
+				       (10, "critter", board, 3.5), 50)));
+
+	// throw a bomb in at a random location
+	challengeGiver.addObjective(new Challenge
+				    (this, new Challenge.SprayEvent
+				     (board, renderer, new SprayTool
+				      (board, "bomb", 1, 1, 1, 1))));
 
 	// init hints
 	String specialKeys = "Special keys: "+cheatKey+" (reveal state) "+slowKey+" (reveal bonds) "+stopKey+" (freeze)";
