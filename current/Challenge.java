@@ -128,6 +128,7 @@ public class Challenge
 	}
 
 	public void drawAvatar(Graphics g,int x,int y,int w,int h) {
+	    // drawSquareAvatar(g,Math.max(x-score,0),y,w,h);
 	    drawPacmanAvatar(g,Math.max(x-score,0),y,w,h);
 	    if (hasObjective())
 		drawAvatarBalloon(gas,g,Math.max(x-score,0),y+h);
@@ -187,20 +188,18 @@ public class Challenge
 	    g.fillRect(-i+(int)(x+w*.3),-j+(int)(y+h*.9),2*i+(int)(w*.4),2*j+(int)(h*.4));
 
 	    // hat
-	    drawAvatarHat(g,x,y,w,h);
+	    drawAvatarHat(g,x+i,y,w,h);
 	}
 
 	private void drawAvatarHat(Graphics g,int x,int y,int w,int h) {
-	    int i = avatarXoffset - maxOffset/2;
-
 	    // hat
 	    g.setColor(new Color(0,64,0));
-	    g.fillRect(i+(int)(x-w*.3),(int)(y+h*.3),(int)(w*1.3),(int)(h*.1));
-	    g.fillRect(i+(int)(x),(int)(y),(int)(w*1),(int)(h*.4));
+	    g.fillRect((int)(x-w*.3),(int)(y+h*.3),(int)(w*1.3),(int)(h*.1));
+	    g.fillRect((int)(x),(int)(y),(int)(w*1),(int)(h*.4));
 
 	    // logo
 	    g.setColor(new Color(16,32,16));
-	    g.drawString("zoo",i+(int)(x+w*.1),(int)(y+ZooGas.charHeight(g)/2));
+	    g.drawString("zoo",(int)(x+w*.1),(int)(y+ZooGas.charHeight(g)/2));
 	}
 
 	// Pac-man avatar
@@ -664,8 +663,8 @@ public class Challenge
 		particleLocations.put (particle, pArea);
 		totalParticles += pArea.size();
 	    }
-	    if (totalParticles > 1)
-		feedback = "There are " + totalParticles + " so far";
+	    if (totalParticles > 0)
+		feedback = "There " + (totalParticles>1 ? "are " : "is ") + totalParticles + " so far";
             return totalParticles >= c;
         }
     }
