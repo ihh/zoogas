@@ -73,6 +73,11 @@ public class ZooGas implements KeyListener {
     long boardUpdateCount = 0;
     long[] timeFirstTrue = new long[100]; // indexed by row: tracks the first time when various conditions are true, so that the messages flash at first
 
+    // Challenge givers
+    // TODO: create several different challenge givers, with different personalities,
+    // e.g. add a mean zookeeper who likes to see animals tormented.
+    // Completing a challenge-giver's quest adds to that NPC's score,
+    // eventually getting them promoted (possibly to the detriment of the other challenge-givers).
     Challenge.Giver challengeGiver = new Challenge.Giver(this);
 
     // constant helper vars
@@ -103,10 +108,7 @@ public class ZooGas implements KeyListener {
     Point[] placeHistory = new Point[verbHistoryLength];
     int[] verbHistoryAge = new int[verbHistoryLength];
 
-    Vector<String> hints = new Vector<String>();
-    int currentHint = 0;
-    double hintBrightness = 0, initialHintBrightness = 240, hintDecayRate = .2;
-    private final int updatesRow = 0, titleRow = 4, networkRow = 5, hintRow = 6, objectiveRow = 8;
+    private final int updatesRow = 0, titleRow = 4, networkRow = 5, objectiveRow = 7;
 
     // helper objects
     Point cursorPos = new Point(); // co-ordinates of cell beneath current mouse position
@@ -317,35 +319,36 @@ public class ZooGas implements KeyListener {
 
 	// throw a bomb in at a random location
 	challengeGiver.addObjective(new Challenge
-				    (this, new Challenge.SprayEvent
-				     (board, renderer, new SprayTool
-				      (board, "bomb", 1, 1, 1, 1))));
+				    (this, new Challenge.SucceedNTimes
+				     (this, new Challenge.SprayEvent
+				      (board, renderer, new SprayTool
+				       (board, "bomb", 1, 1, 1, 1)), 20)));
 
 	// init hints
 	String specialKeys = "Special keys: "+cheatKey+" (reveal state) "+slowKey+" (reveal bonds) "+stopKey+" (freeze)";
-	hints.add ("Deputy Head Zookeeper, Celia O'Tuamata.");
-	hints.add ("Make a zoo using the tools in your Toolbox (left).");
-	hints.add ("Select a tool by clicking, or press its hot-key.");
-	hints.add ("Try building a cage.");
+	challengeGiver.addHint ("Deputy Head Zookeeper, Celia O'Tuamata.");
+	challengeGiver.addHint ("Make a zoo using the tools in your Toolbox (left).");
+	challengeGiver.addHint ("Select a tool by clicking, or press its hot-key.");
+	challengeGiver.addHint ("Try building a cage.");
 	if (toolBox.tool.size() > 0)
-	    hints.add ("Press \"" + toolBox.tool.get(0).hotKey + "\" to select " + toolBox.tool.get(0).particleName + "; etc.");
-	hints.add ("Click on the board to use the currently selected tool.");
-	hints.add ("Hold down the tool hotkey with the mouse over the board.");
+	    challengeGiver.addHint ("Press \"" + toolBox.tool.get(0).hotKey + "\" to select " + toolBox.tool.get(0).particleName + "; etc.");
+	challengeGiver.addHint ("Click on the board to use the currently selected tool.");
+	challengeGiver.addHint ("Hold down the tool hotkey with the mouse over the board.");
 	if (toolBox.tool.size() > 0)
-	    hints.add ("Mouseover the board & hold \"" + toolBox.tool.get(0).hotKey + "\" to spray " + toolBox.tool.get(0).particleName + " pixels; etc.");
-	hints.add ("Use cage-builders to get your zoo started.");
-	hints.add ("Next to each tool is a bar showing the reserve.");
-	hints.add ("If you mouseover a pixel on the board, its name appears.");
-	hints.add ("When you build a cage, it contains a few animals.");
-	hints.add (specialKeys);
-	hints.add ("The \""+cheatKey+"\" key reveals the hidden state of a pixel.");
-	hints.add (specialKeys);
-	hints.add ("The \""+cheatKey+"\" key reveals outgoing(>) and incoming(<) bonds.");
-	hints.add ("The \""+stopKey+"\" key stops all action on the board.");
-	hints.add ("Keep cage walls in good repair, or animals will escape.");
-	hints.add (specialKeys);
-	hints.add ("The \""+cheatKey+"\" key reveals the number of pixels in existence.");
-	hints.add ("The \""+slowKey+"\" key draws bonds on the board.");
+	    challengeGiver.addHint ("Mouseover the board & hold \"" + toolBox.tool.get(0).hotKey + "\" to spray " + toolBox.tool.get(0).particleName + " pixels; etc.");
+	challengeGiver.addHint ("Use cage-builders to get your zoo started.");
+	challengeGiver.addHint ("Next to each tool is a bar showing the reserve.");
+	challengeGiver.addHint ("If you mouseover a pixel on the board, its name appears.");
+	challengeGiver.addHint ("When you build a cage, it contains a few animals.");
+	challengeGiver.addHint (specialKeys);
+	challengeGiver.addHint ("The \""+cheatKey+"\" key reveals the hidden state of a pixel.");
+	challengeGiver.addHint (specialKeys);
+	challengeGiver.addHint ("The \""+cheatKey+"\" key reveals outgoing(>) and incoming(<) bonds.");
+	challengeGiver.addHint ("The \""+stopKey+"\" key stops all action on the board.");
+	challengeGiver.addHint ("Keep cage walls in good repair, or animals will escape.");
+	challengeGiver.addHint (specialKeys);
+	challengeGiver.addHint ("The \""+cheatKey+"\" key reveals the number of pixels in existence.");
+	challengeGiver.addHint ("The \""+slowKey+"\" key draws bonds on the board.");
 
         // init JFrame
         zooGasFrame = new JFrame("ZooGas");
@@ -425,8 +428,7 @@ public class ZooGas implements KeyListener {
          
         MouseListener statusMouse = new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
-                hintBrightness = initialHintBrightness;
-                currentHint = (currentHint + 1) % hints.size();
+		challengeGiver.giveHint();
             }
         };
         statusPanel.addMouseListener(statusMouse);
@@ -588,80 +590,8 @@ public class ZooGas implements KeyListener {
         flashOrHide(g, "Connected", networkRow + 1, board.connected(), 0, -1, false, Color.cyan);
 
         // current objective
-        if (challengeGiver.hasObjective()) {
-	    // draw avatar
-	    int avatarSize = 2*charHeight(g);
-	    // Commented out call to drawAvatar as I'm not sure I like it very much. Idea (obviously) was to personify challengeGiver... may return to this, IH 3/28/2010
-	    challengeGiver.drawAvatar(g,textBarWidth-avatarSize,rowYpos(g,objectiveRow-2),avatarSize,avatarSize);
-	    // text
-	    String[] cgText = new String[2];
-	    cgText[0] = challengeGiver.getDescription();
-	    cgText[1] = challengeGiver.getFeedback();
-	    Color[] cgColor = new Color[2];
-	    cgColor[0] = Color.white;
-	    cgColor[1] = Color.green;
-	    drawSpeechBalloonAtGraphicsCoords (g, new java.awt.Point (textBarWidth - avatarSize, rowYpos(g,objectiveRow)),
-					       -.5,3,
-					       4,
-					       cgText, cgColor,
-					       challengeGiver.avatarSpeaking() ? Color.white : Color.gray,
-					       challengeGiver.avatarSpeaking() ? Color.white : Color.black,
-					       Color.black);
-	} else {
-	    // once all challenges are completed, revert to previous test display: an auto-rotating hint and a few feedback scores
-
-	    // current hint
-	    hintBrightness -= hintDecayRate;
-	    if (hintBrightness < 0) {
-		hintBrightness = initialHintBrightness;
-		currentHint = (currentHint + 1) % hints.size();
-	    }
-	    
-	    Color hintColor = new Color ((int) hintBrightness, (int) hintBrightness, 0);
-	    printOrHide(g, hints.elementAt(currentHint), hintRow, true, hintColor);
-
-	    // quick, hacky feedback scores on population stats - to be replaced by more generic challenges (which may incorporate these scores)
-	    String guestName = "zoo_guest";
-	    String critterPrefix = "critter";
-	    int targetGuests = 10;
-	    int targetCritters = 100;
-	    double targetDiversity = 3.5;
-
-	    Particle guestParticle = board.getParticleByName(guestName);
-	    int totalGuests = guestParticle==null ? 0 : guestParticle.getReferenceCount();
-	    String guestString = "Guests: " + String.format("% 2d", totalGuests) + (totalGuests < targetGuests
-							     ? (" (goal: " + targetGuests + ")")
-							     : "");
-
-	    int totalCritters = 0;
-	    double diversityScore = 0;
-	    if (board.gotPrefix(critterPrefix)) {
-		Set<Particle> critters = board.getParticlesByPrefix(critterPrefix);
-		if (critters != null) {
-		    for (Particle critter : critters)
-			totalCritters += critter.getReferenceCount();
-		    double entropy = 0;
-		    for (Particle critter : critters) {
-			double p = ((double) critter.getReferenceCount()) / (double) totalCritters;
-			if (p > 0)
-			    entropy -= p * Math.log(p);
-		    }
-		    diversityScore = Math.exp(entropy);
-		}
-	    }
-
-	    String popString = "Animals: " + String.format("% 3d", totalCritters) + (totalCritters < targetCritters
-										     ? (" (goal: " + targetCritters + ")")
-										     : "");
-
-	    String divString = totalCritters < targetCritters
-		? ""
-		: (", diversity: " + String.format("%.2f", diversityScore) + (diversityScore < targetDiversity
-									      ? (" (goal: " + targetDiversity + ")")
-									      : ""));
-            printOrHide(g, guestString, objectiveRow, true, Color.green);
-            printOrHide(g, popString + divString, objectiveRow + 1, true, Color.green);
-	}
+	int avatarSize = 2*charHeight(g);
+	challengeGiver.drawAvatar(g,textBarWidth-avatarSize,rowYpos(g,objectiveRow),avatarSize,avatarSize);
 
         // update rate and other stats
         StringBuilder sb = new StringBuilder();
@@ -742,10 +672,17 @@ public class ZooGas implements KeyListener {
 
     // TODO: drawSpeechBalloon should detect cases where the speech balloon is out of the Panel's paintable area, and adjust its position accordingly
     protected void drawSpeechBalloon (Graphics g, Point cell, double xOffset, double yOffset, int balloonBorder, String[] text, Color[] textColor, Color balloonColor, Color bgColor) {
-	drawSpeechBalloonAtGraphicsCoords (g, renderer.getGraphicsCoords(cell), xOffset, yOffset, balloonBorder, text, textColor, balloonColor, balloonColor, bgColor);
+	java.awt.Point
+	    bSize = balloonSize(g,text),
+	    cellCoords = renderer.getGraphicsCoords(cell);
+	java.awt.Point
+	    balloonTopLeft = new java.awt.Point(cellCoords.x + (int) (bSize.x * (xOffset - 0.5)),
+						cellCoords.y + (int) (bSize.y * yOffset));
+
+	drawSpeechBalloonAtGraphicsCoords (g, cellCoords, balloonTopLeft, balloonBorder, text, textColor, balloonColor, balloonColor, bgColor);
     }
 
-    protected void drawSpeechBalloonAtGraphicsCoords (Graphics g, java.awt.Point cellGraphicsCoords, double xOffset, double yOffset, int balloonBorder, String[] text, Color[] textColor, Color balloonColor, Color stalkColor, Color bgColor) {
+    protected java.awt.Point balloonSize(Graphics g,String[] text) {
         FontMetrics fm = g.getFontMetrics();
 
 	int xSize = 0,
@@ -755,33 +692,37 @@ public class ZooGas implements KeyListener {
 	    xSize = Math.max (xSize, fm.stringWidth(text[n]));
 	}
 
-	int xPos = cellGraphicsCoords.x + (int) (xSize * (xOffset - 0.5)),
-	    yPos = cellGraphicsCoords.y + (int) (ySize * yOffset);
+	return new java.awt.Point(xSize,ySize);
+    }
+
+    protected void drawSpeechBalloonAtGraphicsCoords (Graphics g, java.awt.Point stalkBase, java.awt.Point balloonTopLeft, int balloonBorder, String[] text, Color[] textColor, Color balloonColor, Color stalkColor, Color bgColor) {
+
+	java.awt.Point bSize = balloonSize(g,text);
 
 	// draw speech balloon
-	int yTextSize = ySize * text.length;
+	int yTextSize = bSize.y * text.length;
 
 	if (stalkColor != null) {
 	    g.setColor(stalkColor);
-	    g.drawLine(xPos, yPos, cellGraphicsCoords.x, cellGraphicsCoords.y);
+	    g.drawLine(balloonTopLeft.x, balloonTopLeft.y, stalkBase.x, stalkBase.y);
 	}
 
 	g.setColor(bgColor);
-	g.fillRect(xPos - balloonBorder,
-		   yPos - yTextSize - balloonBorder,
-		   xSize + 2*balloonBorder,
+	g.fillRect(balloonTopLeft.x - balloonBorder,
+		   balloonTopLeft.y - yTextSize - balloonBorder,
+		   bSize.x + 2*balloonBorder,
 		   yTextSize + 2*balloonBorder);
 
 	for (int n = 0; n < text.length; ++n) {
 	    g.setColor(textColor[n]);
-	    g.drawString(text[n], xPos, yPos - ySize*n);
+	    g.drawString(text[n], balloonTopLeft.x, balloonTopLeft.y - bSize.y*n);
 	}
 
 	if (balloonColor != null) {
 	    g.setColor(balloonColor);
-	    g.drawRect(xPos - balloonBorder,
-		       yPos - yTextSize - balloonBorder,
-		       xSize + 2*balloonBorder,
+	    g.drawRect(balloonTopLeft.x - balloonBorder,
+		       balloonTopLeft.y - yTextSize - balloonBorder,
+		       bSize.x + 2*balloonBorder,
 		       yTextSize + 2*balloonBorder);
 	}
 
