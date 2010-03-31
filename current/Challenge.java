@@ -71,10 +71,9 @@ public class Challenge
 	    return f;
 	}
 
-	private int avatarXoffset = 0, avatarYoffset = 0;
-	public boolean avatarSpeaking() { return state == State.GivingChallenge || state == State.GivingReward || state == State.GivingHint; }
-	public void drawAvatar(Graphics g,int x,int y,int w,int h) {
-	    int maxOffset = 2;
+	// avatar
+	private int avatarXoffset = 0, avatarYoffset = 0, maxOffset = 2;
+	private void nudgeAvatarOffset() {
 	    if (Math.random() < .1) {
 		if (avatarSpeaking()) {
 		    if (Math.random() < .5) {
@@ -92,6 +91,25 @@ public class Challenge
 		    if (avatarYoffset > 0) --avatarYoffset;
 		}
 	    }
+	}
+
+	private void rotateAvatarOffset() {
+	    avatarYoffset = avatarSpeaking()
+		? ((avatarYoffset + 1) % maxOffset)
+		: (avatarYoffset > 0 ? (avatarYoffset-1) : 0);
+	}
+
+	public void drawAvatar(Graphics g,int x,int y,int w,int h) {
+	    drawPacmanAvatar(g,x,y,w,h);
+	}
+
+	public boolean avatarSpeaking() { return state == State.GivingChallenge || state == State.GivingReward || state == State.GivingHint; }
+
+	// square-faced avatar
+	private void drawSquareAvatar(Graphics g,int x,int y,int w,int h) {
+
+	    maxOffset = 2;
+	    nudgeAvatarOffset();
 
 	    int i = avatarXoffset - maxOffset/2;
 	    int j = avatarYoffset - maxOffset/2;
@@ -114,13 +132,38 @@ public class Challenge
 	    g.fillRect(-i+(int)(x+w*.3),-j+(int)(y+h*.9),2*i+(int)(w*.4),2*j+(int)(h*.4));
 
 	    // hat
-	    g.setColor(Color.green);
+	    drawAvatarHat(g,x,y,w,h);
+	}
+
+	private void drawAvatarHat(Graphics g,int x,int y,int w,int h) {
+	    int i = avatarXoffset - maxOffset/2;
+
+	    // hat
+	    g.setColor(new Color(0,64,0));
 	    g.fillRect(i+(int)(x-w*.3),(int)(y+h*.3),(int)(w*1.3),(int)(h*.1));
 	    g.fillRect(i+(int)(x),(int)(y),(int)(w*1),(int)(h*.4));
 
 	    // logo
+	    g.setColor(new Color(16,32,16));
+	    g.drawString("zoo",i+(int)(x+w*.1),(int)(y+ZooGas.charHeight(g)/2));
+	}
+
+	// Pac-man avatar
+	private void drawPacmanAvatar(Graphics g,int x,int y,int w,int h) {
+
+	    maxOffset = 6;
+	    rotateAvatarOffset();
+
+	    // face
+	    g.setColor(Color.yellow);
+	    g.fillOval(x,y,w-1,h-1);
+
+	    // mouth
 	    g.setColor(Color.black);
-	    g.drawString("z00g45",i+(int)(x+w*.1),(int)(y+ZooGas.charHeight(g)/2));
+	    g.fillArc(x,y,w-1,h-1,180-4*avatarYoffset-15,8*avatarYoffset+30);
+
+	    // hat
+	    drawAvatarHat(g,(int)(x+w*.1),(int)(y-h*.1),w,h);
 	}
 
 	public void addObjective(Challenge c) {

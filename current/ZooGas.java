@@ -592,7 +592,7 @@ public class ZooGas implements KeyListener {
 	    // draw avatar
 	    int avatarSize = 2*charHeight(g);
 	    // Commented out call to drawAvatar as I'm not sure I like it very much. Idea (obviously) was to personify challengeGiver... may return to this, IH 3/28/2010
-	    //	    challengeGiver.drawAvatar(g,textBarWidth-avatarSize,rowYpos(g,objectiveRow-2),avatarSize,avatarSize);
+	    challengeGiver.drawAvatar(g,textBarWidth-avatarSize,rowYpos(g,objectiveRow-2),avatarSize,avatarSize);
 	    // text
 	    String[] cgText = new String[2];
 	    cgText[0] = challengeGiver.getDescription();
