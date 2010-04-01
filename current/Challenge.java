@@ -25,11 +25,11 @@ public class Challenge
     // Challenge.Giver
     public static class Giver {
 	static private int defaultTimePeriod = 5;  // time in seconds between states
-	static private int spontaneousHintDelay = 20, hintDisplayTime = spontaneousHintDelay;
+	static private int spontaneousHintDelay = 20, maxHintDisplayTime = spontaneousHintDelay, minHintDisplayTime = 5;
 	static private double spontaneousHintRate = .01;
 
 	public enum State { GivingChallenge, Waiting, GivingFeedback, GivingHint, GivingReward, OutOfChallenges };
-	public State state = State.GivingChallenge;
+	public State state = State.OutOfChallenges;
 	public int timeInState = 0;
 	public int score = 0;
 
@@ -61,7 +61,7 @@ public class Challenge
 	}
 
 	public String getDescription() {
-	    if (objective() != null)
+	    if (hasObjective())
 		return (state == State.GivingReward ? "Passed: " : "Goal: ") + objective().getDescription();
 	    return "";
 	}
@@ -71,7 +71,8 @@ public class Challenge
 	    String oFeedback = (objective() == null ? null : objective().getFeedback());
 	    if (oFeedback!=null && !lastFeedback.equals(oFeedback)) {
 		lastFeedback = oFeedback;
-		if (state == State.GivingHint || state == State.GivingFeedback || state == State.Waiting)
+		if ((state == State.GivingHint && timeInState > minHintDisplayTime)
+		    || state == State.GivingFeedback || state == State.Waiting)
 		    setState(State.GivingFeedback);
 	    }
 
@@ -92,11 +93,13 @@ public class Challenge
 	}
 
 	public void giveHint() {
-	    int lastHint = currentHint;
-	    do {
-		currentHint = (int) (Math.random() * hints.size());
-	    } while (currentHint == lastHint);
-	    setState(State.GivingHint);
+	    if (state != State.GivingReward) {
+		int lastHint = currentHint;
+		do {
+		    currentHint = (int) (Math.random() * hints.size());
+		} while (currentHint == lastHint);
+		setState(State.GivingHint);
+	    }
 	}
 
 	// avatar
@@ -130,7 +133,7 @@ public class Challenge
 	public void drawAvatar(Graphics g,int x,int y,int w,int h) {
 	    // drawSquareAvatar(g,Math.max(x-score,0),y,w,h);
 	    drawPacmanAvatar(g,Math.max(x-score,0),y,w,h);
-	    if (hasObjective())
+	    if (hasObjective() && state != State.OutOfChallenges)
 		drawAvatarBalloon(gas,g,Math.max(x-score,0),y+h);
 	}
 
@@ -148,7 +151,9 @@ public class Challenge
 	    cgText[1] = getFeedback() + (cheating()? (" :" + timeInState): "");
 	    Color[] cgColor = new Color[2];
 	    cgColor[0] = Color.white;
-	    cgColor[1] = new java.awt.Color(Math.max(255-timeInState*4,0), Math.max(255-timeInState*3,0), 0);
+	    cgColor[1] = new java.awt.Color(state==State.GivingHint? Math.max(255-timeInState*4,0) :0,
+					    Math.max(255-timeInState*3,0),
+					    0);
 	    java.awt.Point bSize = gas.balloonSize(g,cgText);
 	    gas.drawSpeechBalloonAtGraphicsCoords (g,
 						   new java.awt.Point (x, y),
@@ -229,6 +234,13 @@ public class Challenge
 	    timeInState = 0;
 	}
 
+	public boolean checkObjective() {
+	    boolean passed = objective()==null? false: objective().check();
+	    if (passed)
+		setState(State.GivingReward);
+	    return passed;
+	}
+
 	public void check() {
 	    ++timeInState;
 	    if (awardingScore())
@@ -239,22 +251,28 @@ public class Challenge
 		    setState(State.Waiting);
 		break;
 	    case GivingHint:
-		if (timeInState >= hintDisplayTime)
+		if (timeInState >= maxHintDisplayTime)
 		    setState(State.Waiting);
+		checkObjective();
 		break;
 	    case GivingFeedback:
 		if (timeInState >= speakingTime)
 		    setState(State.Waiting);
-		// control passes into Waiting state, thus calling objective().check()
+		checkObjective();
+		break;
 	    case Waiting:
-		if (objective() != null && objective().check())  // objective's timers, etc., are incremented here
-		    setState(State.GivingReward);
-		else if (timeInState > spontaneousHintDelay && Math.random() < spontaneousHintRate)
-		    giveHint();
+		if (!checkObjective())
+		    if (timeInState > spontaneousHintDelay && Math.random() < spontaneousHintRate)
+			giveHint();
 		break;
 	    case GivingReward:
 		if (timeInState > rewardTime)
 		    nextObjective();
+		break;
+	    case OutOfChallenges:
+		if (hasObjective())
+		    setState(State.GivingChallenge);
+		break;
 	    default:
 		break;
 	    }
@@ -501,7 +519,7 @@ public class Challenge
             int n = 0, total = 0;
 	    for(List<Point> areaList : getEnclosures(board,wallPrefixSet,allowDiagonalConnections)) {
 		int areaSize = areaList.size();
-		if (areaSize > minArea && (maxArea == 0 || areaSize < maxArea)) {
+		if (areaSize >= minArea && (maxArea == 0 || areaSize <= maxArea)) {
 		    TreeSet<Point> area = new TreeSet<Point> (areaList);
 		    cond.setArea(area);
 		    ++total;
@@ -529,7 +547,7 @@ public class Challenge
 
 	    passed1 = passed2 = false;
             
-            desc = cond1.getDescription() + "then " + cond2.getDescription() + " ";
+            desc = cond1.getDescription() + "then " + cond2.getDescription();
         }
 
         public ThenCondition(Condition p, Condition c1, Condition c2){
@@ -638,7 +656,7 @@ public class Challenge
             c = count;
             board = b;
             this.particlePrefix = prefix;
-	    desc = "place " + c + " " + Particle.visibleText(prefix) + (c > 1? "s" : "") + " ";
+	    desc = "place " + c + " " + Particle.visibleText(prefix) + (c > 1? "s" : "");
         }
 
         public EncloseParticles(Condition p, int count, String prefix, Board b) {
@@ -680,7 +698,7 @@ public class Challenge
         public EnclosedParticleEntropy(int count, String prefix, double divScore, Board b) {
 	    super(count,prefix,b);
 	    this.minEntropy = Math.log(divScore);
-	    desc = desc + "with diversity " + String.format("%.2f", divScore) + "+";
+	    desc = desc + " with diversity " + String.format("%.2f", divScore) + "+";
         }
 
         public EnclosedParticleEntropy(Condition p, int count, String prefix, double minEntropy, Board b) {

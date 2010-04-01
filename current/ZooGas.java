@@ -291,7 +291,7 @@ public class ZooGas implements KeyListener {
 				     (this, new Challenge.EncloseParticles
 				      (5, "zoo_guest", board)));
         // create 4 separated enclosures
-	int minEncSize = 20, maxEncSize = board.size * board.size / 2;
+	int minEncSize = 16, maxEncSize = board.size * board.size / 2;
 	challengeGiver.addObjective (new Challenge
 				     (this, new Challenge.EnclosuresCondition
 				      (this, null,
