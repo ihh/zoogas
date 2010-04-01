@@ -257,21 +257,25 @@ public class Challenge
 	    avatarTargetXpos = challengesCompleted * challengeWidth;
 	}
 
+	private void gotoWait() {
+	    setState(hasObjective()? State.Waiting: State.OutOfChallenges);
+	}
+
 	public void check() {
 	    ++timeInState;
 	    switch (state) {
 	    case GivingChallenge:
 		if (timeInState > speakingTime)
-		    setState(State.Waiting);
+		    gotoWait();
 		break;
 	    case GivingHint:
 		if (timeInState >= maxHintDisplayTime)
-		    setState(State.Waiting);
+		    gotoWait();
 		checkObjective();
 		break;
 	    case GivingFeedback:
 		if (timeInState >= speakingTime)
-		    setState(State.Waiting);
+		    gotoWait();
 		checkObjective();
 		break;
 	    case Waiting:
