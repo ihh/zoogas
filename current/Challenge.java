@@ -531,10 +531,11 @@ public class Challenge
 	boolean allowDiagonalConnections;
         Board board;
         AreaCondition cond;
-        private int count, minArea, maxArea;
+        protected int count, minArea, maxArea, n, total;
 
         public boolean check() {
-            int n = 0, total = 0;
+            n = 0;
+	    total = 0;
 	    for(List<Point> areaList : getEnclosures(board,wallPrefixSet,allowDiagonalConnections)) {
 		int areaSize = areaList.size();
 		if (areaSize >= minArea && (maxArea == 0 || areaSize <= maxArea)) {
@@ -687,8 +688,8 @@ public class Challenge
         Board board;
 
 	// member variables set by check()
-	int totalParticles;
-	Map<Particle,Set<Point>> particleLocations;
+	protected int totalParticles;
+	protected Map<Particle,Set<Point>> particleLocations;
                 
         public boolean check() {
 	    Set<Point> area = getArea();
