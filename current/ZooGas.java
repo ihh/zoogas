@@ -304,8 +304,8 @@ public class ZooGas implements KeyListener {
         // keep a zoo_guest alive for 50 updates
 	challengeGiver.addObjective (new Challenge
 				     (this, new Challenge.SucceedNTimes
-				      (this, new Challenge.EncloseParticles
-				       (1, "zoo_guest", board), 50)));
+				      (this, 50, new Challenge.EncloseParticles
+				       (1, "zoo_guest", board))));
 
         // place 5 animals anywhere
 	challengeGiver.addObjective (new Challenge
@@ -314,15 +314,17 @@ public class ZooGas implements KeyListener {
         // keep animal population at 10 and diversity score at 3.5 for 50 updates
 	challengeGiver.addObjective (new Challenge
 				     (this, new Challenge.SucceedNTimes
-				      (this, new Challenge.EnclosedParticleEntropy
-				       (10, "critter", board, 3.5), 50)));
+				      (this, 50, new Challenge.EnclosedParticleEntropy
+				       (10, "critter", 3.5, board))));
 
 	// throw a bomb in at a random location
 	challengeGiver.addObjective(new Challenge
 				    (this, new Challenge.SucceedNTimes
-				     (this, new Challenge.SprayEvent
-				      (board, renderer, new SprayTool
-				       (board, "bomb", 1, 1, 1, 1)), 20)));
+				     (this, 20, new Challenge.OrCondition
+				      (new Challenge.SprayEvent
+				       (board, renderer, new SprayTool
+					(board, "bomb", 1, 1, 1, 1)),
+				       new Challenge.TrueCondition()))));
 
 	// init hints
 	String specialKeys = "Special keys: "+cheatKey+" (reveal state) "+slowKey+" (reveal bonds) "+stopKey+" (freeze)";

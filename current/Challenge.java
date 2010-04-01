@@ -557,7 +557,10 @@ public class Challenge
             cond1.setParentCondition(this);
             cond2.setParentCondition(this);
             
-            desc = cond1.getDescription() + "and " + cond2.getDescription() + " ";
+            desc = cond1.getDescription();
+	    if (desc.length() > 0 && cond2.getDescription().length() > 0)
+		desc += " and ";
+	    desc += cond2.getDescription();
         }
 
         public AndCondition(Condition p, Condition c1, Condition c2){
@@ -580,7 +583,10 @@ public class Challenge
             cond1.setParentCondition(this);
             cond2.setParentCondition(this);
             
-            desc = cond1.getDescription() + "or " + cond2.getDescription() + " ";
+            desc = cond1.getDescription();
+	    if (desc.length() > 0 && cond2.getDescription().length() > 0)
+		desc += " or ";
+	    desc += cond2.getDescription();
         }
         public OrCondition(Condition p, Condition c1, Condition c2){
             this(c1, c2);
@@ -671,14 +677,14 @@ public class Challenge
 
     // EnclosedParticleEntropy can be used to test the diversity of a population
     public static class EnclosedParticleEntropy extends EncloseParticles {
-        public EnclosedParticleEntropy(int count, String prefix, Board b, double divScore) {
+        public EnclosedParticleEntropy(int count, String prefix, double divScore, Board b) {
 	    super(count,prefix,b);
 	    this.minEntropy = Math.log(divScore);
 	    desc = desc + "with diversity " + String.format("%.2f", divScore) + "+";
         }
 
-        public EnclosedParticleEntropy(Condition p, int count, String prefix, Board b, double minEntropy) {
-            this(count, prefix, b, minEntropy);
+        public EnclosedParticleEntropy(Condition p, int count, String prefix, double minEntropy, Board b) {
+            this(count, prefix, minEntropy, b);
             parent = p;
         }
         
@@ -714,15 +720,15 @@ public class Challenge
     // SucceedNTimes can be used to test for a condition holding true over a continuous period of time.
     // The time period resets as soon as the condition stops being true.
     public static class SucceedNTimes extends Condition {
-        public SucceedNTimes(ZooGas gas, Condition condition, int n){
+        public SucceedNTimes(ZooGas gas, int n, Condition condition){
             cond = condition;
             count = n;
             
             desc = "for " + count + "+ turns, " + cond.getDescription();
         }
 
-        public SucceedNTimes(ZooGas gas, Condition p, Condition condition, int n){
-	    this(gas,condition,n);
+        public SucceedNTimes(ZooGas gas, int n, Condition condition, Condition p){
+	    this(gas,n,condition);
 	    parent = p;
         }
 
