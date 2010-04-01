@@ -40,6 +40,8 @@ public class ZooGas implements KeyListener {
     static String defaultPatternSetFilename = "ECOLOGY.txt", defaultToolboxFilename = "TOOLS.txt";
     static int defaultBoardSize = 128;
     static int defaultTargetUpdateRate = 50;  // reduced to run on my 2yr-old Macbook Air - IH, 3/23/2010
+    static double cacheFlushFraction = .5;  // when this fraction of the heap is used, flush all caches
+    int cacheFlushes = 0;
 
     // size of board in cells
     int size = defaultBoardSize;
@@ -118,7 +120,7 @@ public class ZooGas implements KeyListener {
     boolean slowPressed = false; // true if slowKey is pressed (slows updates on this board)
     int targetUpdateRate = defaultTargetUpdateRate;
     double updatesPerSecond = 0;
-    long timeCheckPeriod = 20; // board refreshes between recalculations of updatesPerSecond
+    long timeCheckPeriod = 20; // board refreshes between calling challengeGiver.check() and recalculating debug stats (updatesPerSecond)
     String lastDumpStats = ""; // hacky way to avoid concurrency issues
 
     // connection
@@ -469,8 +471,10 @@ public class ZooGas implements KeyListener {
 
                 if (boardUpdateCount % timeCheckPeriod == 0) {
                     double heapFraction = ((double)(runtime.totalMemory() - runtime.freeMemory())) / (double)runtime.maxMemory();
-                    if (heapFraction > .5)
+                    if (heapFraction > cacheFlushFraction) {
+			++cacheFlushes;
                         board.flushCaches();
+		    }
 
                     lastDumpStats = board.debugDumpStats();
                     long currentTimeCheck = System.currentTimeMillis();
@@ -601,7 +605,11 @@ public class ZooGas implements KeyListener {
         Formatter formatter = new Formatter(sb, Locale.US);
         Runtime runtime = Runtime.getRuntime();
         printOrHide(g, lastDumpStats, updatesRow, true, new Color(48, 48, 0));
-        printOrHide(g, "Heap: current " + kmg(runtime.totalMemory()) + ", max " + kmg(runtime.maxMemory()) + ", free " + kmg(runtime.freeMemory()),
+        printOrHide(g,
+		    "Heap: current " + kmg(runtime.totalMemory())
+		    + ", max " + kmg(runtime.maxMemory())
+		    + ", free " + kmg(runtime.freeMemory())
+		    + (cacheFlushes>0 ? (", cache flushes " + cacheFlushes) : ""),
                     updatesRow + 1, true, new Color(48, 48, 0));
         printOrHide(g, formatter.format("Updates/sec: %.2f", updatesPerSecond).toString(), updatesRow + 2, true, new Color(64, 64, 0));
     }
