@@ -603,7 +603,7 @@ public class Board extends MooreTopology {
     public final Set<Particle> getParticlesByPrefix(String prefix) {
         if(prefixToParticles.containsKey(prefix))
             return prefixToParticles.get(prefix);
-        System.err.println(prefix+" particles are not defined!");
+	//        System.err.println(prefix+" particles are not defined!");
         return new HashSet<Particle>();
     }
 

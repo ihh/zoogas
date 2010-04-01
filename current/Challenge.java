@@ -31,7 +31,7 @@ public class Challenge
 	public enum State { GivingChallenge, Waiting, GivingFeedback, GivingHint, GivingReward, OutOfChallenges };
 	public State state = State.OutOfChallenges;
 	public int timeInState = 0;
-	public int score = 0;
+	public int challengesCompleted = 0;
 
 	private Vector<String> hints = new Vector<String>();
 	private int currentHint = 0;
@@ -103,8 +103,17 @@ public class Challenge
 	}
 
 	// avatar
+	// irregular (square-eye avatar jiggle) or clock-like (pacman mouth movement) displacements of the avatar
 	private int avatarXoffset = 0, avatarYoffset = 0, maxOffset = 2;
-	private void nudgeAvatarOffset() {
+	public void animate() { return; }   // slower animation hook
+
+	private void rotateAvatarYoffset() {
+	    avatarYoffset = avatarSpeaking()
+		? ((avatarYoffset + 1) % maxOffset)
+		: (avatarYoffset > 0 ? (avatarYoffset-1) : 0);
+	}
+
+	private void brownianAvatarOffset() {
 	    if (Math.random() < .1) {
 		if (avatarSpeaking()) {
 		    if (Math.random() < .5) {
@@ -124,25 +133,25 @@ public class Challenge
 	    }
 	}
 
-	private void rotateAvatarOffset() {
-	    avatarYoffset = avatarSpeaking()
-		? ((avatarYoffset + 1) % maxOffset)
-		: (avatarYoffset > 0 ? (avatarYoffset-1) : 0);
-	}
-
+	// progression of the avatar leftwards
+	private int avatarXpos = 0, avatarTargetXpos = 0;
+	static private int challengeWidth = 32;
 	public void drawAvatar(Graphics g,int x,int y,int w,int h) {
-	    // drawSquareAvatar(g,Math.max(x-score,0),y,w,h);
-	    drawPacmanAvatar(g,Math.max(x-score,0),y,w,h);
-	    if (hasObjective() && state != State.OutOfChallenges)
-		drawAvatarBalloon(gas,g,Math.max(x-score,0),y+h);
+	    avatarXpos -= Integer.signum(avatarXpos - avatarTargetXpos);
+	    int realXpos = Math.max(x-avatarXpos,0);
+	    drawPacmanAvatar(g,realXpos,y,w,h);
+	    //	    drawSquareAvatar(g,realXpos,y,w,h);
+	    boolean hasDescription = hasObjective() && state != State.OutOfChallenges,
+		hasFeedback = state == State.GivingHint || getFeedback() != "";
+	    if (hasDescription || hasFeedback)
+		drawAvatarBalloon(gas,g,Math.max(x-avatarXpos,0),y+h);
 	}
 
+	// speaking?
 	public boolean avatarSpeaking() {
 	    return (state == State.GivingChallenge || state == State.GivingReward || state == State.GivingFeedback || state == State.GivingHint)
 		&& timeInState < speakingTime;
 	}
-
-	public boolean awardingScore() { return state == State.GivingChallenge || state == State.GivingReward; }
 
 	private boolean cheating() { return gas.cheatPressed; }
 	public void drawAvatarBalloon(ZooGas gas,Graphics g,int x,int y) {
@@ -150,7 +159,8 @@ public class Challenge
 	    cgText[0] = getDescription();
 	    cgText[1] = getFeedback() + (cheating()? (" :" + timeInState): "");
 	    Color[] cgColor = new Color[2];
-	    cgColor[0] = Color.white;
+	    int descIntensity = state==State.GivingReward? Math.max(255-255*timeInState/rewardTime,0): 255;
+	    cgColor[0] = new java.awt.Color(descIntensity,descIntensity,descIntensity);
 	    cgColor[1] = new java.awt.Color(state==State.GivingHint? Math.max(255-timeInState*4,0) :0,
 					    Math.max(255-timeInState*3,0),
 					    0);
@@ -170,7 +180,7 @@ public class Challenge
 	private void drawSquareAvatar(Graphics g,int x,int y,int w,int h) {
 
 	    maxOffset = 2;
-	    nudgeAvatarOffset();
+	    brownianAvatarOffset();
 
 	    int i = avatarXoffset - maxOffset/2;
 	    int j = avatarYoffset - maxOffset/2;
@@ -211,7 +221,7 @@ public class Challenge
 	private void drawPacmanAvatar(Graphics g,int x,int y,int w,int h) {
 
 	    maxOffset = 6;
-	    rotateAvatarOffset();
+	    rotateAvatarYoffset();
 
 	    // face
 	    g.setColor(Color.yellow);
@@ -237,14 +247,18 @@ public class Challenge
 	public boolean checkObjective() {
 	    boolean passed = objective()==null? false: objective().check();
 	    if (passed)
-		setState(State.GivingReward);
+		giveReward();
 	    return passed;
+	}
+
+	private void giveReward() {
+	    setState(State.GivingReward);
+	    ++challengesCompleted;
+	    avatarTargetXpos = challengesCompleted * challengeWidth;
 	}
 
 	public void check() {
 	    ++timeInState;
-	    if (awardingScore())
-		++score;
 	    switch (state) {
 	    case GivingChallenge:
 		if (timeInState > speakingTime)
@@ -707,19 +721,17 @@ public class Challenge
         }
         
 	double minEntropy;
-	protected double bestEntropy = 0;
+	protected double entropy = 0, bestEntropy = 0;
 	String entropyFeedback = "";
-
         public boolean check() {
 	    super.check();
-	    double entropy = 0;
+	    entropy = 0;
 	    for (Set<Point> locations : particleLocations.values()) {
 		if (locations.size() > 0) {
 		    double p = (double) locations.size() / (double) totalParticles;
 		    entropy -= p * Math.log(p);
 		}
 	    }
-	    System.err.println(entropy+" "+bestEntropy);
 	    entropyFeedback = "diversity " + String.format("%.2f", Math.exp(entropy));
 	    if (entropy > bestEntropy) {
 		bestEntropy = entropy;

@@ -1,4 +1,4 @@
-import java.io.IOException;
+import java.io.*;
 
 import java.util.*;
 import java.util.regex.*;
@@ -36,6 +36,9 @@ public class RuleSyntax {
     static Pattern firstWordPattern = Pattern.compile("^(\\S+)");
     static Pattern defaultArgPattern = Pattern.compile("\\b(\\S)(=|!|\\*)(\\S*)");
     static Pattern parsedArgPattern = Pattern.compile("\\b(\\S)=(\\S+)");
+
+    // debug logging method
+    static public PrintStream debugXMLdumpStream = null;  // set this to System.err if you want to print XML to standard error (ZooGas.java also dumps DTD to this if non-null)
 
     // constructors
     RuleSyntax (String init) {
@@ -117,7 +120,8 @@ public class RuleSyntax {
                 }
             }
 	}
-	if (match) System.err.println(makeXML());
+	if (match && debugXMLdumpStream != null)
+	    debugXMLdumpStream.println(makeXML());
 	return match;
     }
 

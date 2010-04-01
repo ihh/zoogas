@@ -444,7 +444,8 @@ public class ZooGas implements KeyListener {
 	    board.initClient(serverAddr);
 
 	// just before running the game, dump the DTD to stderr (TODO: remove this)
-	System.err.println(RuleSyntax.makeDTD());
+	if (RuleSyntax.debugXMLdumpStream != null)
+	    RuleSyntax.debugXMLdumpStream.println(RuleSyntax.makeDTD());
 
 	// run
 	gameLoop();
@@ -482,6 +483,7 @@ public class ZooGas implements KeyListener {
                     lastTimeCheck = currentTimeCheck;
 
 		    challengeGiver.check();
+		    challengeGiver.animate();
                 }
                 zooGasFrame.repaint();
 
