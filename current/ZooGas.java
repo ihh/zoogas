@@ -348,7 +348,7 @@ public class ZooGas implements KeyListener {
 	challengeGiver.addHint ("The \""+cheatKey+"\" key reveals the hidden state of a pixel.");
 	challengeGiver.addHint (specialKeys);
 	challengeGiver.addHint ("The \""+cheatKey+"\" key reveals outgoing(>) and incoming(<) bonds.");
-	challengeGiver.addHint ("The \""+cheatKey+"\" key reveals separated spaces.");
+	challengeGiver.addHint ("The \""+slowKey+"\" key reveals separated spaces.");
 	challengeGiver.addHint ("The \""+stopKey+"\" key stops all action on the board.");
 	challengeGiver.addHint ("Keep cage walls in good repair, or animals will escape.");
 	challengeGiver.addHint (specialKeys);
@@ -858,7 +858,7 @@ public class ZooGas implements KeyListener {
                     break;
                 case 'm':
                     for (String ss : board.nameToParticle.keySet())
-                        System.err.println(ss);
+                        System.err.println("Particle "+ss+" count "+board.nameToParticle.get(ss).getReferenceCount());
                     break;
                 case '`':
                     if(statusPanel.isVisible()) {
