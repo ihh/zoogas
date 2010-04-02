@@ -1,4 +1,12 @@
-import java.util.*;
+package zoogas.core.rules;
+
+import java.util.HashMap;
+import java.util.Vector;
+
+import zoogas.core.Board;
+import zoogas.core.Particle;
+import zoogas.core.Point;
+
 
 public class UpdateEvent {
     // data
@@ -132,6 +140,34 @@ public class UpdateEvent {
 	    }
 	}
 	return true;
+    }
+    
+    public Point getSourceCoords() {
+        return sourceCoords;
+    }
+    
+    public Particle getSource() {
+        return source;
+    }
+    
+    public Particle getOldSource() {
+        return oldSource;
+    }
+    
+    public Particle getTarget() {
+        return target;
+    }
+    
+    public Particle getOldTarget() {
+        return oldTarget;
+    }
+    
+    public String getVerb() {
+        return verb;
+    }
+    
+    public TransformRulePattern getPattern() {
+        return pattern;
     }
 
     private HashMap<String,Point> getHashMap(String label,boolean begin,String ignoreLabel) {

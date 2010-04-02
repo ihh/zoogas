@@ -1,45 +1,19 @@
+package zoogas;
+
 import java.awt.Color;
-import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 
 import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-
-import java.io.Reader;
-import java.io.Writer;
+import java.awt.event.MouseEvent;;
 
 import java.net.BindException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-
-import java.net.SocketTimeoutException;
-
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.IntBuffer;
-import java.nio.channels.AsynchronousCloseException;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
-
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 import javax.swing.JButton;
@@ -50,9 +24,16 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
 import javax.swing.JTextArea;
 import javax.swing.border.LineBorder;
+
+import zoogas.core.Point;
+
+import zoogas.gui.BoardRenderer;
+import zoogas.gui.ObserverRenderer;
+
+import zoogas.network.ClientToServer;
+import zoogas.network.WorldServer;
 
 /**
  * Multiplayer loading interface
@@ -356,7 +337,7 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
                             if(currentSelection != null)
                                 (observerMap.get(currentSelection)).getJPanel().setBorder(null);
 
-                            if(!observerMap.get(p).hasPlayer){
+                            if(!observerMap.get(p).getHasPlayer()){
                                 currentSelection = p;
                                 (observerMap.get(currentSelection)).getJPanel().setBorder(new LineBorder(Color.BLUE, 3));
                                 launchMPButton.setEnabled(true);
@@ -370,9 +351,12 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
 
         pack();
     }
-    void initPlayerLocs(Set<Point> clientSet) {
+    public void initPlayerLocs(Set<Point> clientSet) {
         for(Point p : clientSet) {
             observerMap.get(p).setHasPlayer(true);
         }
+    }
+    public HashMap<Point, ObserverRenderer> getObserverMap() {
+        return observerMap;
     }
 }

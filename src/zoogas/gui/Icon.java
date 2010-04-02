@@ -1,7 +1,6 @@
-public class Icon {
-    int size = 0;
-    boolean[][] mask = null;  // mask[row][col]
+package zoogas.gui;
 
+public class Icon {
     // method to initialize optional "icon" (bitmask encoded as a hex string)
     public Icon(String iconEncoding) {
 	// hexadecimal string, length L
@@ -36,5 +35,12 @@ public class Icon {
 	} else {
 	    throw new RuntimeException (L + "-byte string " + iconEncoding + " is not a valid int-square-bitmap string");
 	}
+    }
+    
+    private int size = 0;
+    public boolean[][] mask = null;  // mask[row][col]
+    
+    public int getSize() {
+        return size;
     }
 }

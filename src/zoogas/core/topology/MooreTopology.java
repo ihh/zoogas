@@ -1,4 +1,6 @@
-import java.util.*;
+package zoogas.core.topology;
+
+import zoogas.core.Point;
 
 public class MooreTopology extends Topology{
     // method to get a given neighbor of a given cell, returning the directional index

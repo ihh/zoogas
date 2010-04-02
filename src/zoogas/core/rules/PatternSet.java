@@ -1,10 +1,16 @@
-import java.lang.*;
+package zoogas.core.rules;
+
 import java.util.*;
 import java.util.regex.*;
 import java.awt.Color;
-import java.text.*;
-import java.net.*;
 import java.io.*;
+
+import zoogas.core.Board;
+import zoogas.core.Particle;
+import zoogas.core.Point;
+import zoogas.core.topology.Topology;
+
+import zoogas.gui.Icon;
 
 /**
  * A set that contains rules parsed into definitions of pairwise interactions
@@ -130,7 +136,7 @@ public class PatternSet extends RuleSet{
     }
 
     // method to get a Particle from the Board object or create and add one
-    Particle getOrCreateParticle(String particleName, Board board) {
+    public Particle getOrCreateParticle(String particleName, Board board) {
 	// look for existing particle
 	Particle p = board.getParticleByName (particleName);
 
@@ -149,7 +155,7 @@ public class PatternSet extends RuleSet{
     }
 
     // helper to get a set of transformation rules for a given Particle/direction
-    protected TransformRuleMatch[] getSourceTransformRules (String particleName, int dir) {
+    public TransformRuleMatch[] getSourceTransformRules (String particleName, int dir) {
 	Vector<TransformRuleMatch> v = new Vector<TransformRuleMatch>();
 	Vector<TransformRuleMatch> w = transformRuleMatch.get(dir);
 	for (int n = 0; n < w.size(); ++n) {
@@ -214,7 +220,7 @@ public class PatternSet extends RuleSet{
 	return ps;
     }
 
-    static PatternSet fromFile (String filename, Topology topology) {
+    public static PatternSet fromFile (String filename, Topology topology) {
 	try {
 	    FileInputStream fis = new FileInputStream(filename);
 	    return fromStream(fis, topology);

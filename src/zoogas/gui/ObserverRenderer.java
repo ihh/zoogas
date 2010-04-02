@@ -1,3 +1,5 @@
+package zoogas.gui;
+
 import java.awt.Color;
 import java.awt.Dimension;
 
@@ -7,6 +9,9 @@ import java.awt.image.BufferedImage;
 import java.util.HashMap;
 
 import javax.swing.JPanel;
+
+import zoogas.core.Point;
+import zoogas.core.rules.UpdateEvent;
 
 public class ObserverRenderer extends BoardRenderer {
     public ObserverRenderer(int size) {
@@ -36,6 +41,10 @@ public class ObserverRenderer extends BoardRenderer {
 
     public JPanel getJPanel() {
         return panel;
+    }
+    
+    public boolean getHasPlayer() {
+        return hasPlayer;
     }
 
     public boolean setHasPlayer(boolean b) {

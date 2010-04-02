@@ -1,9 +1,11 @@
+package zoogas.core.rules;
+
 import java.util.*;
 
 public class TransformRulePattern extends RulePattern {
     // data
     String dir = null, C = null, D = null, V = null;
-    double P = 0;
+    private double probability = 0;
     Vector<BondPattern> optionalLhsBond = null, requiredLhsBond = null, excludedLhsBond = null, rhsBond = null;
 
     // constructor
@@ -18,8 +20,12 @@ public class TransformRulePattern extends RulePattern {
 	    this.dir = dir;
 	C = c;
 	D = d;
-	P = p;
+	probability = p;
 	V = v;
+    }
+    
+    public double getProbability(){
+        return probability;
     }
 
     // wrappers to add bonds

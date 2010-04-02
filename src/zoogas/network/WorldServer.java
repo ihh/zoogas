@@ -1,27 +1,27 @@
+package zoogas.network;
+
 import java.awt.Rectangle;
 
 import java.io.IOException;
 
 import java.net.BindException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketAddress;
 
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectableChannel;
 import java.nio.channels.ServerSocketChannel;
 
 import java.nio.channels.SocketChannel;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
+
+import zoogas.ZooGas;
+
+import zoogas.core.Point;
+import zoogas.core.rules.RuleSet;
 
 /**
  * The main server that enables connections between players on a grid

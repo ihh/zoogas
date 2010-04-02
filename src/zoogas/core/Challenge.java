@@ -1,24 +1,20 @@
-import java.awt.Rectangle;
+package zoogas.core;
+
 import java.awt.Color;
 import java.awt.Graphics;
-import java.awt.Graphics.*;
 
-import java.lang.reflect.Method;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.Stack;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.Vector;
+
+import zoogas.ZooGas;
+
+import zoogas.gui.BoardRenderer;
 
 public class Challenge
 {
@@ -41,11 +37,11 @@ public class Challenge
 	private LinkedList<Challenge> objectives = new LinkedList<Challenge>();
 	private int speakingTime = defaultTimePeriod, rewardTime = defaultTimePeriod;
 
-	Giver (ZooGas g) {
+	public Giver (ZooGas g) {
 	    gas = g;
 	}
 
-	Giver (ZooGas g, int t) {
+	public Giver (ZooGas g, int t) {
 	    gas = g;
 	    rewardTime = t;
 	}
@@ -153,7 +149,7 @@ public class Challenge
 		&& timeInState < speakingTime;
 	}
 
-	private boolean cheating() { return gas.cheatPressed; }
+	private boolean cheating() { return gas.isCheatPressed(); }
 	public void drawAvatarBalloon(ZooGas gas,Graphics g,int x,int y) {
 	    String[] cgText = new String[2];
 	    cgText[0] = getDescription();
@@ -312,7 +308,7 @@ public class Challenge
     }
     public Challenge(ZooGas g, Condition c) {
 	gas = g;
-	board = g.board;
+	board = g.getBoard();
         cond = c;
     }
 
@@ -498,7 +494,7 @@ public class Challenge
 
 	// set maxArea=0 for unlimited area
         public EnclosuresCondition(ZooGas g, Condition condition, int requiredEnclosures, int minArea, int maxArea, boolean allowDiagonalConnections) {
-            board = g.board;
+            board = g.getBoard();
             cond = new AreaCondition(this, condition, null);
             if(condition != null)
                 condition.setParentCondition(cond);

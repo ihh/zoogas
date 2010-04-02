@@ -1,3 +1,8 @@
+package zoogas.core.rules;
+
+import zoogas.core.Point;
+import zoogas.core.topology.Topology;
+
 // Syntax for regexp-based production rule generators:
 //  A B E
 // where

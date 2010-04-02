@@ -1,3 +1,7 @@
+package zoogas.core.topology;
+
+import zoogas.core.Point;
+
 public abstract class Topology {
     public abstract int getNeighbor (Point p, Point n, int ni);
     public abstract int neighborhoodSize();

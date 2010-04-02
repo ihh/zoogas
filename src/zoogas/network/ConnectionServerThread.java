@@ -1,3 +1,5 @@
+package zoogas.network;
+
 import java.net.*;
 import java.io.*;
 

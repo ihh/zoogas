@@ -1,7 +1,7 @@
+package zoogas.core;
+
 // probability distribution over Objects
 import java.util.*;
-import java.lang.*;
-
 
 public class RandomVariable<V> {
     // private data

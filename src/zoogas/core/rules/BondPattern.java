@@ -1,3 +1,5 @@
+package zoogas.core.rules;
+
 import java.util.regex.*;
 
 public class BondPattern {

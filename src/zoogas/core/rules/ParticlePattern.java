@@ -1,10 +1,13 @@
-import java.lang.*;
-import java.util.*;
+package zoogas.core.rules;
+
 import java.util.regex.*;
 import java.awt.Color;
-import java.text.*;
-import java.net.*;
-import java.io.*;
+
+import zoogas.core.Board;
+
+import zoogas.core.Particle;
+
+import zoogas.gui.Icon;
 
 public class ParticlePattern {
     // data

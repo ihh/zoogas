@@ -1,4 +1,6 @@
-import java.util.*;
+package zoogas.core.topology;
+
+import zoogas.core.Point;
 
 public class HexTopology extends Topology{
     // method to sample a random neighbor of a given cell, returning the directional index

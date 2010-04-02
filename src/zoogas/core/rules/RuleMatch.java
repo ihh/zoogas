@@ -1,14 +1,8 @@
-import java.lang.*;
+package zoogas.core.rules;
 
-import java.util.*;
 import java.util.regex.*;
 
-import java.text.*;
-
-import java.net.*;
-
-import java.io.*;
-
+import zoogas.core.topology.Topology;
 
 // RuleMatch - a partially- or fully-bound RulePattern.
 public class RuleMatch {
@@ -197,9 +191,9 @@ public class RuleMatch {
             Matcher m = incGroupPattern.matcher(s);
             if (m.find()) {
                 String inc = m.group(1), g = m.group(2);
-                int n = string2int(getGroup(g));
-                int delta = inc.length() > 0 ? string2int(inc) : 1;
-                m.appendReplacement(sb, int2string(n + delta));
+                int n = Integer.valueOf(getGroup(g));
+                int delta = inc.length() > 0 ? Integer.valueOf(inc) : 1;
+                m.appendReplacement(sb, String.valueOf(n + delta));
             }
             m.appendTail(sb);
         } catch (Exception e) {
@@ -217,10 +211,10 @@ public class RuleMatch {
             Matcher m = decGroupPattern.matcher(s);
             if (m.find()) {
                 String dec = m.group(1), g = m.group(2);
-                int n = string2int(getGroup(g));
-                int delta = dec.length() > 0 ? string2int(dec) : 1;
+                int n = Integer.valueOf(getGroup(g));
+                int delta = dec.length() > 0 ? Integer.valueOf(dec) : 1;
                 if (n >= delta)
-                    m.appendReplacement(sb, int2string(n - delta));
+                    m.appendReplacement(sb, String.valueOf(n - delta));
             }
             m.appendTail(sb);
         } catch (Exception e) {
@@ -238,10 +232,10 @@ public class RuleMatch {
             Matcher m = modGroupPattern.matcher(s);
             if (m.find()) {
                 String mod = m.group(1), inc = m.group(2), g = m.group(3);
-                int n = string2int(getGroup(g));
-                int M = string2int(mod);
-                int delta = inc.length() > 0 ? string2int(inc) : 1;
-                m.appendReplacement(sb, int2string((n + delta) % M));
+                int n = Integer.valueOf(getGroup(g));
+                int M = Integer.valueOf(mod);
+                int delta = inc.length() > 0 ? Integer.valueOf(inc) : 1;
+                m.appendReplacement(sb, String.valueOf((n + delta) % M));
             }
             m.appendTail(sb);
         } catch (Exception e) {
@@ -269,10 +263,4 @@ public class RuleMatch {
 
     // helper methods to encode/decode decimal numbers
     static private int base = 10;
-    static String int2string(int n) {
-        return Integer.toString(n, base);
-    }
-    static int string2int(String s) {
-        return Integer.parseInt(s, base);
-    }
 }

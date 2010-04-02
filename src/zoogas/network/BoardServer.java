@@ -1,6 +1,15 @@
+package zoogas.network;
+
 import java.net.*;
 import java.util.regex.*;
 import java.io.*;
+
+import zoogas.core.Board;
+
+import zoogas.core.Particle;
+import zoogas.core.Point;
+
+import zoogas.gui.BoardRenderer;
 
 public class BoardServer extends Thread {
     protected Board board = null;
@@ -138,13 +147,13 @@ public class BoardServer extends Thread {
         }
     }
 
-    static void sendTCPPacket (InetAddress addr, int port, String data) {
+    public static void sendTCPPacket (InetAddress addr, int port, String data) {
         String[] dataArray = new String[1];
         dataArray[0] = data;
         sendTCPPacket (addr, port, dataArray);
     }
 
-    static void sendTCPPacket (InetAddress addr, int port, String[] data) {
+    public static void sendTCPPacket (InetAddress addr, int port, String[] data) {
         Socket socket = null;
         PrintWriter out = null;
 
@@ -168,15 +177,15 @@ public class BoardServer extends Thread {
         }
     }
 
-    static String connectString (Point remoteCell, Point localCell, String localHost, int localPort) {
+    public static String connectString (Point remoteCell, Point localCell, String localHost, int localPort) {
 	return packetCommand.CONNECT.ordinal() + " " + remoteCell.x + " " + remoteCell.y + " " + localCell.x + " " + localCell.y + " " + localHost + " " + localPort;
     }
 
-    void sendConnectDatagram (InetAddress addr, int port, Point remoteCell, Point localCell, String localHost, int localPort) {
+    public void sendConnectDatagram (InetAddress addr, int port, Point remoteCell, Point localCell, String localHost, int localPort) {
 	sendDatagram (addr, port, connectString (remoteCell, localCell, localHost, localPort));
     }
 
-    void sendEvolveDatagram (InetAddress addr, int port, Point remoteTarget, Particle oldSourceState, Point localSource, int dir, double energyBarrier, String returnHost, int returnPort, int writeCount) {
+    public void sendEvolveDatagram (InetAddress addr, int port, Point remoteTarget, Particle oldSourceState, Point localSource, int dir, double energyBarrier, String returnHost, int returnPort, int writeCount) {
 	sendDatagram (addr, port, packetCommand.EVOLVE.ordinal() + " " + remoteTarget.x + " " + remoteTarget.y + " " + oldSourceState.name + " " + dir + " " + energyBarrier + " " + localSource.x + " " + localSource.y + " " + returnHost + " " + returnPort + " " + writeCount);
     }
 

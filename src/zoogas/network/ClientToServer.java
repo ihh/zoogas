@@ -1,8 +1,6 @@
-import java.awt.Color;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+package zoogas.network;
 
-import java.awt.image.BufferedImage;
+import java.awt.Color;
 
 import java.io.IOException;
 
@@ -19,13 +17,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import java.util.SortedSet;
 
-import javax.swing.JPanel;
-import javax.swing.border.LineBorder;
+import zoogas.Loader;
+import zoogas.ZooGas;
+
+import zoogas.core.Particle;
+import zoogas.core.Point;
+import zoogas.core.rules.RuleSet;
+
+import zoogas.gui.ObserverRenderer;
 
 public class ClientToServer extends NetworkThread {
     public ClientToServer (ZooGas gas) {
@@ -262,7 +265,7 @@ public class ClientToServer extends NetworkThread {
         HashMap<Integer, Integer> numParts = new HashMap<Integer, Integer>();
         HashMap<Integer, List<Particle>> colors = new HashMap<Integer, List<Particle>>();
         int byteSize = 4;
-        for(Particle p : gas.board.nameToParticle.values()) {
+        for(Particle p : gas.getBoard().getNameToParticleMap().values()) {
             int size = p.getOccupiedPoints().size();
             if(size > 0 && !"_".equals(p.name)) {
                 //byteSize += 1 + p.name.getBytes().length; // name
@@ -325,9 +328,9 @@ public class ClientToServer extends NetworkThread {
         verifyAndSend(bb, cmd, serverSocket, true);
     }
     public void sendRefreshObserved() {
-        for(Point p : loader.observerMap.keySet()) {
-            ObserverRenderer obsRenderer = loader.observerMap.get(p);
-            if(obsRenderer.hasPlayer) {
+        for(Point p : loader.getObserverMap().keySet()) {
+            ObserverRenderer obsRenderer = loader.getObserverMap().get(p);
+            if(obsRenderer.getHasPlayer()) {
                 sendRefreshObserved(p);
                 try {
                     Thread.currentThread().sleep(500);
@@ -391,7 +394,7 @@ public class ClientToServer extends NetworkThread {
         int x0 = bb.getInt();
         int y0 = bb.getInt();
         System.out.println("Received " + x0 + " " + y0);
-        ObserverRenderer renderer = loader.observerMap.get(new Point(x0, y0));
+        ObserverRenderer renderer = loader.getObserverMap().get(new Point(x0, y0));
         if(renderer == null) {
             System.err.println("Renderer not found");
             return;
@@ -426,6 +429,6 @@ public class ClientToServer extends NetworkThread {
             } catch (InterruptedException e) {
             }
         }
-        gas.board.connectBorderInDirection(direction, new InetSocketAddress(address, port));
+        gas.getBoard().connectBorderInDirection(direction, new InetSocketAddress(address, port));
     }
 }

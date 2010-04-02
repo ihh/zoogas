@@ -1,17 +1,25 @@
+package zoogas.gui;
+
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
+
+import zoogas.ZooGas;
+
+import zoogas.core.Board;
+import zoogas.core.Point;
+import zoogas.core.rules.UpdateEvent;
 
 public class PlayerRenderer extends BoardRenderer{
     static double balloonRate = .0001;  // probability that any given update verb will be printed in a speech balloon (TODO: make this a rule-specific parameter)
 
-    PlayerRenderer (Board board, int size) {
+    public PlayerRenderer (Board board, int size) {
         this.board = board;
         int pixelsPerSide = getBoardSize(size);
 
         image = new BufferedImage(pixelsPerSide, pixelsPerSide, BufferedImage.TYPE_3BYTE_BGR);
         bfGraphics = image.createGraphics();
     }
-    PlayerRenderer (ZooGas gas, Board board, int size) {
+    public PlayerRenderer (ZooGas gas, Board board, int size) {
         this.board = board;
         this.gas = gas;
         int pixelsPerSide = getBoardSize(size);
@@ -36,21 +44,21 @@ public class PlayerRenderer extends BoardRenderer{
      * @param updateEvent
      */
     public void showVerb(UpdateEvent updateEvent) {
-	double showBalloonProbability = balloonRate / updateEvent.pattern.P;
-        if (gas.verbsSinceLastRefresh == 0) {
-            if (gas.cheatPressed || updateEvent.visibleVerb().length() > 0) {
+	double showBalloonProbability = balloonRate / updateEvent.getPattern().getProbability();
+        if (gas.getNumVerbsSinceLastRefresh() == 0) {
+            if (gas.isCheatPressed() || updateEvent.visibleVerb().length() > 0) {
                 // check for duplicates
                 boolean foundDuplicate = false;
-                for (int v = 0; v < gas.verbHistoryLength; ++v)
-                    if (updateEvent.verb.equals(gas.verbHistory[v]) && updateEvent.oldSource.color.equals(gas.nounHistory[v].color)) {
+                for (int v = 0; v < gas.getVerbHistoryLength(); ++v)
+                    if (updateEvent.getVerb().equals(gas.getVerbHistory(v)) && updateEvent.getOldSource().color.equals(gas.getParticleHistory(v).color)) {
                         foundDuplicate = true;
                         break;
                     }
                 if (!foundDuplicate && Math.random() < showBalloonProbability) {
-                    gas.verbHistoryPos = (gas.verbHistoryPos + 1) % gas.verbHistoryLength;
-                    gas.verbHistory[gas.verbHistoryPos] = updateEvent.verb;
-                    gas.nounHistory[gas.verbHistoryPos] = updateEvent.oldSource;
-                    gas.placeHistory[gas.verbHistoryPos] = updateEvent.sourceCoords;
+                    gas.verbHistoryPos = (gas.verbHistoryPos + 1) % gas.getVerbHistoryLength();
+                    gas.verbHistory[gas.verbHistoryPos] = updateEvent.getVerb();
+                    gas.particleHistory[gas.verbHistoryPos] = updateEvent.getOldSource();
+                    gas.placeHistory[gas.verbHistoryPos] = updateEvent.getSourceCoords();
                     gas.verbHistoryAge[gas.verbHistoryPos] = 0;
                     ++gas.verbsSinceLastRefresh;
                 }

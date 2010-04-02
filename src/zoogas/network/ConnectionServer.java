@@ -1,5 +1,9 @@
+package zoogas.network;
+
 import java.net.*;
 import java.io.*;
+
+import zoogas.core.Board;
 
 public class ConnectionServer extends BoardServer {
     public ConnectionServer (Board board, int port) {

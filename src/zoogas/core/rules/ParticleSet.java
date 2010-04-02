@@ -1,12 +1,17 @@
-import java.lang.*;
-import java.util.*;
+package zoogas.core.rules;
+
+import java.util.Set;
+import java.util.HashSet;
 import java.io.*;
 
+import zoogas.core.Board;
+import zoogas.core.Particle;
+
 public class ParticleSet {
-    public Set<String> particleName = new HashSet<String>();
+    protected Set<String> particleName = new HashSet<String>();
 
     // method to convert names to particles
-    Set<Particle> getParticles(Board board) {
+    public Set<Particle> getParticles(Board board) {
 	Set<Particle> ps = new HashSet<Particle>();
 	for (String e : particleName)
 	    ps.add(board.getOrCreateParticle(e));
@@ -31,7 +36,7 @@ public class ParticleSet {
 	}
     }
 
-    static ParticleSet fromStream (InputStream in) {
+    private static ParticleSet fromStream (InputStream in) {
 	ParticleSet ps = new ParticleSet();
 	InputStreamReader read = new InputStreamReader(in);
 	BufferedReader buff = new BufferedReader(read);
@@ -49,7 +54,7 @@ public class ParticleSet {
 	return ps;
     }
 
-    static ParticleSet fromFile (String filename) {
+    public static ParticleSet fromFile (String filename) {
 	try {
 	    FileInputStream fis = new FileInputStream(filename);
 	    return fromStream(fis);

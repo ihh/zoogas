@@ -1,12 +1,18 @@
+package zoogas.network;
+
 import java.net.*;
 import java.util.regex.*;
 import java.io.*;
+
+import zoogas.core.Board;
+
+import zoogas.gui.BoardRenderer;
 
 public class UpdateServer extends BoardServer {
     private DatagramSocket socket = null;
     private static int maxPacketSize = 1024;  // needs to be significantly bigger than Particle.maxNameLength
 
-    UpdateServer (Board board, int port, BoardRenderer renderer) throws IOException {
+    public UpdateServer (Board board, int port, BoardRenderer renderer) throws IOException {
 	super(board,port,renderer);
         if(renderer == null)
             System.out.println("Update server renderer should not be null");

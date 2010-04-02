@@ -1,3 +1,5 @@
+package zoogas.core.rules;
+
 // Syntax for energy rule patterns:
 //  A B E
 // where

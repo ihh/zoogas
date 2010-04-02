@@ -1,17 +1,35 @@
-import java.io.*;
+package zoogas.network;
+
 import java.net.*;
-import java.util.*;
+
+import zoogas.core.Point;
 
 public class RemoteCellCoord {
-    InetSocketAddress sockAddr;
-    InetAddress addr = null;
-    int port = -1;
-    Point p = null;
-
-    RemoteCellCoord (InetSocketAddress sockAddr, Point p) {
+    public RemoteCellCoord (InetSocketAddress sockAddr, Point p) {
 	this.sockAddr = sockAddr;
 	this.addr = sockAddr.getAddress();
 	this.port = sockAddr.getPort();
 	this.p = new Point(p);
+    }
+    
+    private InetSocketAddress sockAddr;
+    private InetAddress addr = null;
+    private int port = -1;
+    Point p = null;
+    
+    public InetAddress getAddress() {
+        return addr;
+    }
+    
+    public InetSocketAddress getSocketAddress() {
+        return sockAddr;
+    }
+    
+    public int getPort() {
+        return port;
+    }
+    
+    public Point getPoint() {
+        return p;
     }
 }

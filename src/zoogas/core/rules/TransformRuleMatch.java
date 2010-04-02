@@ -1,5 +1,8 @@
-import java.util.*;
+package zoogas.core.rules;
+
 import java.util.regex.*;
+
+import zoogas.core.topology.Topology;
 
 // Syntax for regex-based production rule generators:
 //  A B C D P V
@@ -68,5 +71,6 @@ public class TransformRuleMatch extends RuleMatch {
     public final String C() { return expand(transformPattern().C); }
     public final String D() { return expand(transformPattern().D); }
     public final String V() { return expand(transformPattern().V); }
-    public final double P() { return transformPattern().P; }
+    public final double P() { return transformPattern().getProbability(); }
+    public RulePattern getPattern() { return pattern; }
 }

@@ -1,3 +1,5 @@
+package zoogas.network;
+
 import java.io.IOException;
 
 import java.nio.ByteBuffer;
@@ -6,33 +8,6 @@ import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 
 public abstract class NetworkThread extends Thread {
-    /*
-    public NetworkThread(ThreadGroup threadGroup, Runnable runnable, String string, long l) {
-        super(threadGroup, runnable, string, l);
-    }
-    public NetworkThread(ThreadGroup threadGroup, Runnable runnable, String string) {
-        super(threadGroup, runnable, string);
-    }
-    public NetworkThread(Runnable runnable, String string) {
-        super(runnable, string);
-    }
-    public NetworkThread(ThreadGroup threadGroup, String string) {
-        super(threadGroup, string);
-    }
-    public NetworkThread(String string) {
-        super(string);
-    }
-    public NetworkThread(ThreadGroup threadGroup, Runnable runnable) {
-        super(threadGroup, runnable);
-    }
-    public NetworkThread(Runnable runnable) {
-        super(runnable);
-    }
-    public NetworkThread() {
-        super();
-    }
-    */
-
     // constants
     public final int allocateBufferSize = Integer.MAX_VALUE >> 16;
     public final static int CONNECTIONS_FULL = -1;

@@ -1,2 +1,2 @@
 all zoogas:
-	cd current; make
+	cd src; make

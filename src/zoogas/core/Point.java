@@ -1,3 +1,5 @@
+package zoogas.core;
+
 // Point: a 2D integer vector/coordinate class
 public class Point extends java.awt.Point implements Comparable{
     public Point() { super(); }

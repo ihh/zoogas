@@ -1,9 +1,15 @@
+package zoogas.core;
+
 import java.awt.*;
-import java.util.*;
+
+import zoogas.core.rules.RuleSet;
+import zoogas.core.rules.RuleSyntax;
+
+import zoogas.gui.BoardRenderer;
 
 public class SprayTool {
     // data
-    protected String particleName = null;
+    private String particleName = null;
     protected double sprayDiameter = 0, sprayPower = 0, reserve = 0, maxReserve = 0, refillRate = 0, barWidth = 1;
     protected char hotKey = 0;
     protected Particle particle = null;
@@ -17,12 +23,12 @@ public class SprayTool {
 	this.maxReserve = rmax;
 	this.refillRate = fill;
 	this.barWidth = 0;
-        this.particle = board.getOrCreateParticle(particleName);
+	this.particle = board.getOrCreateParticle(particleName);
     }
 
     static RuleSyntax toolSyntax = new RuleSyntax
 	("TOOL n! k= d=1 p=1 r=1 f=1 w=1", "n=Particle k=Key d=Diameter p=Power r=Reserve f=RefillRate w=DisplayWidth");
-    static SprayTool fromString (String toolString, Board board) {
+    public static SprayTool fromString (String toolString, Board board) {
 	SprayTool stat = null;
         if(RuleSet.isRule(toolString)) {
             if (toolSyntax.matches(toolString)) {
@@ -48,8 +54,8 @@ public class SprayTool {
     }
 
     // methods
-    void refill() { refill(1); }
-    void refill(double scale) {
+    public void refill() { refill(1); }
+    public void refill(double scale) {
 	if(reserve < maxReserve)
 	{
 	    double refillAmount = refillRate * scale;
@@ -59,7 +65,7 @@ public class SprayTool {
     }
 
     // spray(...) returns true if at least one particle was sprayed. (This is used by Challenge.SprayCondition)
-    boolean spray(Point cursorPos,Board board,BoardRenderer renderer,String spacePrefix) {
+    public boolean spray(Point cursorPos,Board board,BoardRenderer renderer,String spacePrefix) {
 	boolean succeeded = false;
 	Point sprayCell = new Point();
 	for (int n = 0; reserve >= 1 && n < sprayPower; ++n) {
@@ -80,13 +86,12 @@ public class SprayTool {
 	return succeeded;
     }
 
-    void plotReserve (Graphics g, int yTop, int toolHeight, int toolReserveBarWidth, int toolTextWidth, boolean selected) {
+    public void plotReserve (Graphics g, int yTop, int toolHeight, int toolReserveBarWidth, int toolTextWidth, boolean selected) {
 	int toolBarWidth = toolReserveBarWidth + toolTextWidth;
 
 	int yMid =  yTop + toolHeight / 2;
 
 	FontMetrics fm = g.getFontMetrics();
-	int cw = fm.charWidth(hotKey);
 	int ch = fm.getHeight();
 
 	g.setColor (particle.color);
@@ -105,8 +110,8 @@ public class SprayTool {
 
 	// if there's an icon, hollow out the bar
 	if (particle.icon != null)
-	    if (particle.icon.size > 0) {
-		int iconSize = particle.icon.size;
+	    if (particle.icon.getSize() > 0) {
+		int iconSize = particle.icon.getSize();
 		int pixelsPerIconPixel = Math.max (1, bh / iconSize);
 		int columns = (int) ((w - 2) / pixelsPerIconPixel);
 		int columnsWhenFull = (int) ((tw - 2) / pixelsPerIconPixel);
@@ -129,5 +134,14 @@ public class SprayTool {
     }
 
     // isHotKey helper
-    boolean isHotKey(char c) { return Character.toUpperCase(hotKey) == Character.toUpperCase(c); }
+    @Deprecated
+    public boolean isHotKey(char c) { return Character.toUpperCase(hotKey) == Character.toUpperCase(c); }
+    
+    public char getHotKey() {
+        return hotKey;
+    }
+    
+    public String getParticleName() {
+        return particleName;
+    }
 }

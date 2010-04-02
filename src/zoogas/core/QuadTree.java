@@ -1,4 +1,4 @@
-import java.util.*;
+package zoogas.core;
 
 public class QuadTree {
     // data

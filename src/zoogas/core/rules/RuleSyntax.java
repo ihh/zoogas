@@ -1,3 +1,5 @@
+package zoogas.core.rules;
+
 import java.io.*;
 
 import java.util.*;
@@ -16,6 +18,17 @@ import java.util.regex.*;
 // where <ArgumentMapping> is as follows:
 //  B=xyz  means "argument B maps to XML tag xyz, i.e. <xyz>...</xyz>"
 public class RuleSyntax {
+    public RuleSyntax (String init) {
+    initialize(init);
+    makeDTDElements();
+    }
+
+    public RuleSyntax (String init, String xmlMapping) {
+    initialize(init);
+    initializeXmlMapping(xmlMapping);
+    makeDTDElements();
+    }
+
     // static constants
     static String documentType = "ZOOGAS";  // DTD Document Type
 
@@ -39,18 +52,6 @@ public class RuleSyntax {
 
     // debug logging method
     static public PrintStream debugXMLdumpStream = null;  // set this to System.err if you want to print XML to standard error (ZooGas.java also dumps DTD to this if non-null)
-
-    // constructors
-    RuleSyntax (String init) {
-	initialize(init);
-	makeDTDElements();
-    }
-
-    RuleSyntax (String init, String xmlMapping) {
-	initialize(init);
-	initializeXmlMapping(xmlMapping);
-	makeDTDElements();
-    }
 
     // init method
     private void initialize (String init) {
@@ -137,7 +138,7 @@ public class RuleSyntax {
 	return parsedArg.containsKey(arg) || argType.get(arg).equals("=");
     }
 
-    String getXmlTagValue(String tag) {
+    public String getXmlTagValue(String tag) {
 	String arg = tagArg.get(tag);
 	if (arg == null)
 	    throw new RuntimeException("Tag " + tag + " not found");
@@ -205,7 +206,8 @@ public class RuleSyntax {
 	elements.add("<!-- End of top-level element " + firstWord + " -->\n");
     }
 
-    static String makeDTD() {
+    @Deprecated
+    public static String makeDTD() {
 	String dtd = "<!DOCTYPE " + documentType + " [\n";
 	String tab = "    ";
 	for (String elem : elements)

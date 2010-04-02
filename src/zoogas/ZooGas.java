@@ -1,3 +1,5 @@
+package zoogas;
+
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
@@ -6,7 +8,6 @@ import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
-import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
@@ -28,6 +29,24 @@ import javax.swing.JPanel;
 import javax.swing.border.LineBorder;
 import javax.swing.event.MouseInputAdapter;
 
+import zoogas.core.Board;
+import zoogas.core.Particle;
+import zoogas.core.Challenge;
+
+import zoogas.core.Point;
+
+import zoogas.core.SprayTool;
+import zoogas.core.rules.ParticleSet;
+
+import zoogas.core.rules.RuleMatch;
+
+import zoogas.core.rules.RuleSyntax;
+
+import zoogas.gui.BoardRenderer;
+import zoogas.gui.PlayerRenderer;
+import zoogas.gui.ToolBox;
+
+import zoogas.network.ClientToServer;
 
 public class ZooGas implements KeyListener {
 
@@ -37,7 +56,7 @@ public class ZooGas implements KeyListener {
 
     // command-line argument defaults
     static int defaultPort = 4444;
-    static String defaultPatternSetFilename = "ECOLOGY.txt", defaultToolboxFilename = "TOOLS.txt";
+    public static String defaultPatternSetFilename = "ECOLOGY.txt", defaultToolboxFilename = "TOOLS.txt";
     static int defaultBoardSize = 128;
     static int defaultTargetUpdateRate = 50;  // reduced to run on my 2yr-old Macbook Air - IH, 3/23/2010
     static double cacheFlushFraction = .5;  // when this fraction of the heap is used, flush all caches
@@ -47,7 +66,7 @@ public class ZooGas implements KeyListener {
     int size = defaultBoardSize;
 
     // board
-    Board board = null;
+    private Board board = null;
 
     // pattern set
     String patternSetFilename = defaultPatternSetFilename;
@@ -104,11 +123,12 @@ public class ZooGas implements KeyListener {
     int textBarWidth = 400, textHeight = 30;
 
     // verb history / subtitle track
-    int verbHistoryLength = 10, verbHistoryPos = 0, verbHistoryRefreshPeriod = 20, verbHistoryRefreshCounter = 0, verbsSinceLastRefresh = 0;
-    String[] verbHistory = new String[verbHistoryLength];
-    Particle[] nounHistory = new Particle[verbHistoryLength];
-    Point[] placeHistory = new Point[verbHistoryLength];
-    int[] verbHistoryAge = new int[verbHistoryLength];
+    private int verbHistoryLength = 10, verbHistoryRefreshPeriod = 20, verbHistoryRefreshCounter = 0;
+    public int verbHistoryPos = 0, verbsSinceLastRefresh = 0;
+    public String[] verbHistory = new String[verbHistoryLength];
+    public Particle[] particleHistory = new Particle[verbHistoryLength];
+    public Point[] placeHistory = new Point[verbHistoryLength];
+    public int[] verbHistoryAge = new int[verbHistoryLength];
 
     private final int updatesRow = 0, titleRow = 4, networkRow = 5, objectiveRow = 7;
 
@@ -240,7 +260,7 @@ public class ZooGas implements KeyListener {
     public void start(InetSocketAddress serverAddr)
     {
 	// set helpers, etc.
-	boardSize = board.getBoardSize(size,renderer.pixelsPerCell);
+	boardSize = board.getBoardSize(size, renderer.getPixelsPerCell());
 
         // init board
         if (initImageFilename != null) {
@@ -254,7 +274,7 @@ public class ZooGas implements KeyListener {
             }
         } else {
             board.fill(spaceParticle);
-            String initParticleName = initParticlePrefix + '/' + RuleMatch.int2string(size / 2);
+            String initParticleName = initParticlePrefix + '/' + String.valueOf(size / 2);
             Particle initParticle = board.getOrCreateParticle(initParticleName);
             if (initParticle == null)
                 throw new RuntimeException("Initialization particle " + initParticleName + " not found");
@@ -334,12 +354,12 @@ public class ZooGas implements KeyListener {
 	challengeGiver.addHint ("Make a zoo using the tools in your Toolbox (left).");
 	challengeGiver.addHint ("Select a tool by clicking, or press its hot-key.");
 	challengeGiver.addHint ("Try building a cage.");
-	if (toolBox.tool.size() > 0)
-	    challengeGiver.addHint ("Press \"" + toolBox.tool.get(0).hotKey + "\" to select " + toolBox.tool.get(0).particleName + "; etc.");
+	if (toolBox.getTools().size() > 0)
+	    challengeGiver.addHint ("Press \"" + toolBox.getTools().get(0).getHotKey() + "\" to select " + toolBox.getTools().get(0).getParticleName() + "; etc.");
 	challengeGiver.addHint ("Click on the board to use the currently selected tool.");
 	challengeGiver.addHint ("Hold down the tool hotkey with the mouse over the board.");
-	if (toolBox.tool.size() > 0)
-	    challengeGiver.addHint ("Mouseover the board & hold \"" + toolBox.tool.get(0).hotKey + "\" to spray " + toolBox.tool.get(0).particleName + " pixels; etc.");
+	if (toolBox.getTools().size() > 0)
+	    challengeGiver.addHint ("Mouseover the board & hold \"" + toolBox.getTools().get(0).getHotKey() + "\" to spray " + toolBox.getTools().get(0).getParticleName() + " pixels; etc.");
 	challengeGiver.addHint ("Use cage-builders to get your zoo started.");
 	challengeGiver.addHint ("Next to each tool is a bar showing the reserve.");
 	challengeGiver.addHint ("If you mouseover a pixel on the board, its name appears.");
@@ -364,7 +384,7 @@ public class ZooGas implements KeyListener {
         boardPanel = new JPanel() {
                 public void paintComponent(Graphics g) {
                     //super.paintComponent(g);
-                    g.drawImage(renderer.image, 0, 0, null);
+                    g.drawImage(renderer.getImage(), 0, 0, null);
                     if (slowPressed) {
                         drawBonds(g);
                         drawEnclosures(g);
@@ -397,7 +417,7 @@ public class ZooGas implements KeyListener {
 
         // set size
         boardPanel.setPreferredSize(new Dimension(boardSize, boardSize));
-        toolBoxPanel.setPreferredSize(new Dimension(toolBarWidth + toolLabelWidth, Math.max (boardSize, toolBox.tool.size() * toolHeight)));
+        toolBoxPanel.setPreferredSize(new Dimension(toolBarWidth + toolLabelWidth, Math.max (boardSize, toolBox.getTools().size() * toolHeight)));
         statusPanel.setPreferredSize(new Dimension(textBarWidth, boardSize));
 
         boardPanel.setBorder(new LineBorder(Color.white, 1));
@@ -504,10 +524,7 @@ public class ZooGas implements KeyListener {
 
     // init tools method
     private void initSprayTools() {
-        toolBox = ToolBox.fromFile(toolboxFilename, board);
-        toolBox.toolHeight = toolHeight;
-        toolBox.toolReserveBarWidth = toolBarWidth;
-        toolBox.toolTextWidth = toolLabelWidth;
+        toolBox = ToolBox.fromFile(toolboxFilename, board, toolHeight, toolBarWidth, toolLabelWidth);
     }
 
     private void useTools() {
@@ -515,8 +532,8 @@ public class ZooGas implements KeyListener {
             zooGasFrame.setCursor(boardCursor);
 
             // do spray
-            if (mouseDown && toolBox.currentTool != null) {
-                toolBox.currentTool.spray(cursorPos, board, renderer, spaceParticleName);
+            if (mouseDown && toolBox.getCurrentTool() != null) {
+                toolBox.getCurrentTool().spray(cursorPos, board, renderer, spaceParticleName);
                 return;
             }
         } else
@@ -525,8 +542,20 @@ public class ZooGas implements KeyListener {
         toolBox.refill(1);
     }
     
+    public Board getBoard() {
+        return board;
+    }
+    
+    public BoardRenderer getBoardRenderer() {
+        return renderer;
+    }
+    
     public ClientToServer getWorldServerThread() {
         return toWorldServer;
+    }
+    
+    public boolean isCheatPressed() {
+        return cheatPressed;
     }
     
     /**
@@ -562,7 +591,7 @@ public class ZooGas implements KeyListener {
         g.setColor(new Color((float)Math.random(), (float)Math.random(), (float)Math.random()));
         Point pg = renderer.getGraphicsCoords(p);
         Point qg = renderer.getGraphicsCoords(q);
-        int k = renderer.pixelsPerCell >> 1;
+        int k = renderer.getPixelsPerCell() >> 1;
         g.drawLine(pg.x + k, pg.y + k, qg.x + k, qg.y + k);
     }
 
@@ -577,8 +606,8 @@ public class ZooGas implements KeyListener {
 		ig.setColor(new Color ((float)Math.random(), (float)Math.random(), (float)Math.random()));
 		for (Point p : enclosure) {
 		    Point q = renderer.getGraphicsCoords(p);
-		    ig.fillRect((int) (q.x + Math.random() * renderer.pixelsPerCell),
-				(int) (q.y + Math.random() * renderer.pixelsPerCell),
+		    ig.fillRect((int) (q.x + Math.random() * renderer.getPixelsPerCell()),
+				(int) (q.y + Math.random() * renderer.getPixelsPerCell()),
 				1, 1);
 		}
 	    }
@@ -634,9 +663,9 @@ public class ZooGas implements KeyListener {
 		if (verbHistoryAge[v]++ >= maxAge)
 		    verbHistory[v] = null;
 		else {
-		    String nounText = cheatPressed ? nounHistory[v].name : nounHistory[v].visibleName();
+		    String nounText = cheatPressed ? particleHistory[v].name : particleHistory[v].visibleName();
 		    String verbText = cheatPressed ? verbHistory[v] : Particle.visibleText(verbHistory[v]);
-		    Color verbColor = nounHistory[v].color;
+		    Color verbColor = particleHistory[v].color;
 
 		    String[] text = new String[bubbleLines];
 		    Color[] textColor = new Color[bubbleLines];
@@ -695,7 +724,7 @@ public class ZooGas implements KeyListener {
 	drawSpeechBalloonAtGraphicsCoords (g, cellCoords, balloonTopLeft, balloonBorder, text, textColor, balloonColor, balloonColor, bgColor);
     }
 
-    protected java.awt.Point balloonSize(Graphics g,String[] text) {
+    public java.awt.Point balloonSize(Graphics g,String[] text) {
         FontMetrics fm = g.getFontMetrics();
 
 	int xSize = 0,
@@ -708,7 +737,7 @@ public class ZooGas implements KeyListener {
 	return new java.awt.Point(xSize,ySize);
     }
 
-    protected void drawSpeechBalloonAtGraphicsCoords (Graphics g, java.awt.Point stalkBase, java.awt.Point balloonTopLeft, int balloonBorder, String[] text, Color[] textColor, Color balloonColor, Color stalkColor, Color bgColor) {
+    public void drawSpeechBalloonAtGraphicsCoords (Graphics g, java.awt.Point stalkBase, java.awt.Point balloonTopLeft, int balloonBorder, String[] text, Color[] textColor, Color balloonColor, Color stalkColor, Color bgColor) {
 
 	java.awt.Point bSize = balloonSize(g,text);
 
@@ -802,6 +831,32 @@ public class ZooGas implements KeyListener {
         printOrHide(g, text, row, show, color);
     }
 
+    public int getNumVerbsSinceLastRefresh() {
+        return verbsSinceLastRefresh;
+    }
+    
+    public int getVerbHistoryLength() {
+        return verbHistoryLength;
+    }
+    
+    /**
+     *Returns the verb at history index i
+     * @param i
+     * @return String
+     */
+    public String getVerbHistory(int i) {
+        return verbHistory[i];
+    }
+    
+    /**
+     *Returns the noun at history index i
+     * @param i
+     * @return String
+     */
+    public Particle getParticleHistory(int i) {
+        return particleHistory[i];
+    }
+
 
     // UI methods
     // mouse events
@@ -857,8 +912,8 @@ public class ZooGas implements KeyListener {
                     slowPressed = true;
                     break;
                 case 'm':
-                    for (String ss : board.nameToParticle.keySet())
-                        System.err.println("Particle "+ss+" count "+board.nameToParticle.get(ss).getReferenceCount());
+                    for (String ss : board.getNameToParticleMap().keySet())
+                        System.err.println("Particle "+ss+" count "+board.getNameToParticleMap().get(ss).getReferenceCount());
                     break;
                 case '`':
                     if(statusPanel.isVisible()) {

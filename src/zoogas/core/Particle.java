@@ -1,10 +1,15 @@
-import java.lang.*;
+package zoogas.core;
+
 import java.util.*;
 import java.util.regex.*;
 import java.awt.Color;
-import java.text.*;
-import java.net.*;
-import java.io.*;
+
+import zoogas.core.rules.PatternSet;
+import zoogas.core.rules.TransformRuleMatch;
+import zoogas.core.rules.TransformRulePattern;
+import zoogas.core.rules.UpdateEvent;
+
+import zoogas.gui.Icon;
 
 // Particle class, encapsulating the behavior, appearance & summary statistics of a given CA state
 public class Particle implements Comparable{
@@ -183,7 +188,7 @@ public class Particle implements Comparable{
 		Particle newTarget = patternSet.getOrCreateParticle(dName,board);
 
 		if (newSource == null || newTarget == null) {
-		    System.err.println ("Null outcome of rule '" + rm.pattern + "': "
+		    System.err.println ("Null outcome of rule '" + rm.getPattern() + "': "
 					+ name + " " + target.name + " -> " + cName + " " + dName);
 		} else {
 
