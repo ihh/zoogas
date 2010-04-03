@@ -30,10 +30,10 @@ testserver: $(MAINCLASSFILES)
 
 testclient: $(MAINCLASSFILES)
 	$(JAVA) $(ZOOGAS) -p 4445 -c localhost
-    
+
 loader: $(MAINCLASSFILES)
 	$(JAVA) $(LOADER)
-    
+
 jar: $(MAINCLASSFILES)
 	jar -c -v -m META-INF/MANIFEST.MF -f ZooGas.jar -C classes/ .
 
