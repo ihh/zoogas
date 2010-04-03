@@ -9,17 +9,17 @@ import zoogas.core.Board;
 import zoogas.core.Point;
 import zoogas.core.rules.UpdateEvent;
 
-public class PlayerRenderer extends BoardRenderer{
-    static double balloonRate = .0001;  // probability that any given update verb will be printed in a speech balloon (TODO: make this a rule-specific parameter)
+public class PlayerRenderer extends BoardRenderer {
+    static double balloonRate = .0001; // probability that any given update verb will be printed in a speech balloon (TODO: make this a rule-specific parameter)
 
-    public PlayerRenderer (Board board, int size) {
+    public PlayerRenderer(Board board, int size) {
         this.board = board;
         int pixelsPerSide = getBoardSize(size);
 
         image = new BufferedImage(pixelsPerSide, pixelsPerSide, BufferedImage.TYPE_3BYTE_BGR);
         bfGraphics = image.createGraphics();
     }
-    public PlayerRenderer (ZooGas gas, Board board, int size) {
+    public PlayerRenderer(ZooGas gas, Board board, int size) {
         this.board = board;
         this.gas = gas;
         int pixelsPerSide = getBoardSize(size);
@@ -44,7 +44,7 @@ public class PlayerRenderer extends BoardRenderer{
      * @param updateEvent
      */
     public void showVerb(UpdateEvent updateEvent) {
-	double showBalloonProbability = balloonRate / updateEvent.getPattern().getProbability();
+        double showBalloonProbability = balloonRate / updateEvent.getPattern().getProbability();
         if (gas.getNumVerbsSinceLastRefresh() == 0) {
             if (gas.isCheatPressed() || updateEvent.visibleVerb().length() > 0) {
                 // check for duplicates

@@ -1,7 +1,9 @@
 package zoogas.network;
 
 import java.net.*;
+
 import java.util.regex.*;
+
 import java.io.*;
 
 import zoogas.core.Board;
@@ -10,36 +12,38 @@ import zoogas.gui.BoardRenderer;
 
 public class UpdateServer extends BoardServer {
     private DatagramSocket socket = null;
-    private static int maxPacketSize = 1024;  // needs to be significantly bigger than Particle.maxNameLength
+    private static int maxPacketSize = 1024; // needs to be significantly bigger than Particle.maxNameLength
 
-    public UpdateServer (Board board, int port, BoardRenderer renderer) throws IOException {
-	super(board,port,renderer);
-        if(renderer == null)
+    public UpdateServer(Board board, int port, BoardRenderer renderer) throws IOException {
+        super(board, port, renderer);
+        if (renderer == null)
             System.out.println("Update server renderer should not be null");
-	socket = new DatagramSocket(port);
+        socket = new DatagramSocket(port);
     }
 
     public void run() {
-	Boolean listening = true;
-	while (listening) {
-	    try {
-		byte[] buf = new byte[maxPacketSize];
-		DatagramPacket packet = new DatagramPacket(buf, maxPacketSize);
-		socket.receive(packet);
+        Boolean listening = true;
+        while (listening) {
+            try {
+                byte[] buf = new byte[maxPacketSize];
+                DatagramPacket packet = new DatagramPacket(buf, maxPacketSize);
+                socket.receive(packet);
 
-		String packetString = new String (packet.getData());
-		Matcher m = commandRegex.matcher(packetString);
-		if (m.find()) {
-		    String command = m.group(1);
-		    processPacket (command, listening);
-		} else {
-		    System.err.println ("BoardServer: Ignoring empty or unterminated line " + packetString);
-		}
-	    } catch (IOException e) {
-		e.printStackTrace();
-	    }
-	}
+                String packetString = new String(packet.getData());
+                Matcher m = commandRegex.matcher(packetString);
+                if (m.find()) {
+                    String command = m.group(1);
+                    processPacket(command, listening);
+                }
+                else {
+                    System.err.println("BoardServer: Ignoring empty or unterminated line " + packetString);
+                }
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
-	socket.close();
+        socket.close();
     }
 }

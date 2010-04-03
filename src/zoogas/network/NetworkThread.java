@@ -14,25 +14,25 @@ public abstract class NetworkThread extends Thread {
 
     // Commands
     public static enum packetCommand {
-        PING              (0),
-        SEND_SIZE         (2, "ii", 4 + 4),
-        CLAIM_GRID        (2, "ii", 4 + 4),
-        LAUNCH            (0),
-        OBSERVE           (2, "ii", 4 + 4),
-        DISCONNECT        (0),
+        PING(0),
+        SEND_SIZE(2, "ii", 4 + 4),
+        CLAIM_GRID(2, "ii", 4 + 4),
+        LAUNCH(0),
+        OBSERVE(2, "ii", 4 + 4),
+        DISCONNECT(0),
 
         //CURRENT_CLIENTS  (2, "i(ii)*", 0); // ideally, should be something regex-like
-        CURRENT_CLIENTS   (1, "i", 4 + 4 + 4), // variadic
-        CONNECT_PEER      (3, "sii", 4), // address, port, int
+        CURRENT_CLIENTS(1, "i", 4 + 4 + 4), // variadic
+        CONNECT_PEER(3, "sii", 4), // address, port, int
 
-        CHECKIN_ALL_RULES (1, "i", 4), // variadic
-        CHECKIN_RULESET   (1, "i", 4), // variadic
-        REQUEST_PARTICLES (0),
-        SEND_PARTICLES    (1, "i", 4), // variadic
-        
-        REFRESH_OBSERVED  (2, "ii", 4 + 4),
-        UPDATE_OBSERVED   (2, "ii", 4 + 4); // variadic
-        
+        CHECKIN_ALL_RULES(1, "i", 4), // variadic
+        CHECKIN_RULESET(1, "i", 4), // variadic
+        REQUEST_PARTICLES(0),
+        SEND_PARTICLES(1, "i", 4), // variadic
+
+        REFRESH_OBSERVED(2, "ii", 4 + 4),
+        UPDATE_OBSERVED(2, "ii", 4 + 4); // variadic
+
 
         private packetCommand(int numArgs) {
             expectedCount = numArgs;
@@ -58,12 +58,12 @@ public abstract class NetworkThread extends Thread {
             return numArgs == expectedCount;
         }
     }
-    
+
     protected ArrayList<Object> collectParameters(packetCommand command, ByteBuffer bb) {
         ArrayList<Object> parameters = new ArrayList<Object>();
-        for(int i = 0; i < command.getExpectedCount(); ++i) {
+        for (int i = 0; i < command.getExpectedCount(); ++i) {
             char c = command.getExpectedArgs().charAt(i);
-            switch(c) {
+            switch (c) {
                 case 'b':
                     parameters.add(bb.get());
                     break;
@@ -81,7 +81,7 @@ public abstract class NetworkThread extends Thread {
                     break;
             }
         }
-        
+
         return parameters;
     }
 
@@ -91,7 +91,7 @@ public abstract class NetworkThread extends Thread {
     public String getStringFromBuffer(ByteBuffer bb) {
         StringBuilder sb = new StringBuilder();
         byte c = bb.get();
-        while(c != '\0') {
+        while (c != '\0') {
             sb.append((char)c); // TODO: check non-utf-8
             c = bb.get();
         }
@@ -109,10 +109,10 @@ public abstract class NetworkThread extends Thread {
      * @param cmd
      * @return
      */
-    public ByteBuffer prepareBuffer(packetCommand cmd){
+    public ByteBuffer prepareBuffer(packetCommand cmd) {
         return prepareBuffer(cmd, cmd.expectedBytes);
     }
-    public ByteBuffer prepareBuffer(packetCommand cmd, int byteCount){
+    public ByteBuffer prepareBuffer(packetCommand cmd, int byteCount) {
         ByteBuffer bb = ByteBuffer.allocate(4 + byteCount);
         bb.putInt(cmd.ordinal());
         return bb;
@@ -120,17 +120,19 @@ public abstract class NetworkThread extends Thread {
     public boolean verifyAndSend(ByteBuffer bb, packetCommand cmd, SocketChannel sc, boolean requiresBlocking) {
         bb.flip();
         try {
-            if(requiresBlocking)
+            if (requiresBlocking)
                 sc.configureBlocking(true);
             sc.write(bb);
-            if(requiresBlocking)
+            if (requiresBlocking)
                 sc.configureBlocking(false);
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             e.printStackTrace();
             System.err.println(this.getClass() + ": connection closed already?");
             return false;
-        } catch(NullPointerException e) {
-            if(sc == null)
+        }
+        catch (NullPointerException e) {
+            if (sc == null)
                 System.err.println("SocketChannel not yet created.");
         }
         return true;

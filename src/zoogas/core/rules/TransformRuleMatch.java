@@ -26,7 +26,6 @@ import zoogas.core.topology.Topology;
 //  $%3+2.1 => ($1 + 2) mod 3
 
 
-
 public class TransformRuleMatch extends RuleMatch {
     // data
     private Pattern dirPattern = null;
@@ -34,43 +33,55 @@ public class TransformRuleMatch extends RuleMatch {
 
     // constructors
     public TransformRuleMatch(TransformRulePattern p) {
-	super(p);
-	if (p.dir != null)
-	    dirPattern = Pattern.compile(p.dir);
+        super(p);
+        if (p.dir != null)
+            dirPattern = Pattern.compile(p.dir);
     }
 
-    public TransformRuleMatch(TransformRulePattern p, Topology topology,int dir) {
-	this(p);
-	bindDir(topology, dir);
+    public TransformRuleMatch(TransformRulePattern p, Topology topology, int dir) {
+        this(p);
+        bindDir(topology, dir);
     }
 
     // rule accessor
-    public final TransformRulePattern transformPattern() { return (TransformRulePattern) pattern; }
+    public final TransformRulePattern transformPattern() {
+        return (TransformRulePattern)pattern;
+    }
 
     // override bindDir()
     public boolean bindDir(Topology t, int d) {
-	boolean boundOk = super.bindDir(t, d);
-	if (dirPattern == null)
-	    dirMatches = true;
-	else {
-	    String dirString = topology.dirString(d);
-	    dirMatches = dirPattern.matcher(dirString).matches();
-	    boundOk = boundOk && dirMatches;
-	}
-	return boundOk;
+        boolean boundOk = super.bindDir(t, d);
+        if (dirPattern == null)
+            dirMatches = true;
+        else {
+            String dirString = topology.dirString(d);
+            dirMatches = dirPattern.matcher(dirString).matches();
+            boundOk = boundOk && dirMatches;
+        }
+        return boundOk;
     }
 
     // override matches()
     public boolean matches() {
-	if (dirBound() && !dirMatches)
-	    return false;
-	return super.matches();
+        if (dirBound() && !dirMatches)
+            return false;
+        return super.matches();
     }
 
     // other public methods
-    public final String C() { return expand(transformPattern().C); }
-    public final String D() { return expand(transformPattern().D); }
-    public final String V() { return expand(transformPattern().V); }
-    public final double P() { return transformPattern().getProbability(); }
-    public RulePattern getPattern() { return pattern; }
+    public final String C() {
+        return expand(transformPattern().C);
+    }
+    public final String D() {
+        return expand(transformPattern().D);
+    }
+    public final String V() {
+        return expand(transformPattern().V);
+    }
+    public final double P() {
+        return transformPattern().getProbability();
+    }
+    public RulePattern getPattern() {
+        return pattern;
+    }
 }

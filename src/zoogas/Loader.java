@@ -10,9 +10,10 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 
 import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;;
+import java.awt.event.MouseEvent;
 
 import java.net.BindException;
+
 import java.util.HashMap;
 import java.util.Set;
 
@@ -81,41 +82,41 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
         c.gridx = 2;
 
         automaticallyRefresh = new JCheckBox("Automatically Refresh") {
-            Thread refresher = null;
-            Loader loader = null;
-            
-            public void fireActionPerformed(ActionEvent e){
-                if(loader == null) {
-                    if(getActionListeners().length > 0)
-                        loader = (Loader)this.getActionListeners()[0];
-                    else {
-                        return;
-                    }
-                }
-                if(isSelected() && loader.toWorldServer.isConnected()) {
-                    refresher = new Thread() {
-                        public void run() {
-                            while(isSelected()) {
-                                if(loader != null) {
-                                    loader.refreshObserved();
-                                }
-                                try {
-                                    Thread.currentThread().sleep(5000);
-                                }
-                                catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                            }
+                Thread refresher = null;
+                Loader loader = null;
+
+                public void fireActionPerformed(ActionEvent e) {
+                    if (loader == null) {
+                        if (getActionListeners().length > 0)
+                            loader = (Loader)this.getActionListeners()[0];
+                        else {
+                            return;
                         }
-                    };
-                    refresher.start();
+                    }
+                    if (isSelected() && loader.toWorldServer.isConnected()) {
+                        refresher = new Thread() {
+                                public void run() {
+                                    while (isSelected()) {
+                                        if (loader != null) {
+                                            loader.refreshObserved();
+                                        }
+                                        try {
+                                            Thread.currentThread().sleep(5000);
+                                        }
+                                        catch (InterruptedException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                }
+                            };
+                        refresher.start();
+                    }
+                    else {
+                        refresher = null;
+                    }
+                    super.fireActionPerformed(e);
                 }
-                else {
-                    refresher = null;
-                }
-                super.fireActionPerformed(e);
-            }
-        };
+            };
         automaticallyRefresh.setActionCommand("AutoRefresh");
         automaticallyRefresh.setMnemonic('r');
         automaticallyRefresh.addActionListener(this);
@@ -156,12 +157,12 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
         add(server, c);
         c.gridwidth = 1;
         c.gridx = 2;
-        
+
         manualRefresh = new JButton("Refresh");
         manualRefresh.setActionCommand("manualRefresh");
         manualRefresh.addActionListener(this);
         add(manualRefresh, c);
-        
+
         // Menu items
         JMenuBar menubar = new JMenuBar();
         JMenu file = new JMenu("File");
@@ -176,7 +177,7 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
         options.setMnemonic('o');
         menubar.add(file);
         menubar.add(options);
-        
+
         setJMenuBar(menubar);
 
         pack();
@@ -219,10 +220,11 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
 
     public static void main(String[] args) {
         Loader load = new Loader();
-        while(!load.readyToLaunch) {
+        while (!load.readyToLaunch) {
             try {
                 Thread.sleep(100);
-            } catch (InterruptedException e) {
+            }
+            catch (InterruptedException e) {
             }
         }
         ZooGas.main(load.getArgs(), load.toWorldServer);
@@ -236,8 +238,9 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
         boolean selected = (e.getStateChange() == e.SELECTED);
         if (e.getItemSelectable() == showWorldCheck) {
 
-        } else {
-            System.out.println(e.getItemSelectable());  
+        }
+        else {
+            System.out.println(e.getItemSelectable());
             return;
         }
     }
@@ -248,44 +251,52 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
             readyToLaunch = true;
             launch();
             return;
-        } else if ("Connect".equals(e.getActionCommand())) {
+        }
+        else if ("Connect".equals(e.getActionCommand())) {
             toWorldServer.connectToWorld();
             forceReconnect.setText("Reconnect");
             return;
-        } else if ("LaunchMP".equals(e.getActionCommand())) {
+        }
+        else if ("LaunchMP".equals(e.getActionCommand())) {
             (observerMap.get(currentSelection)).getJPanel().setBorder(new LineBorder(Color.YELLOW, 3));
             toWorldServer.sendJoinLocation(currentSelection);
             return;
-        } else if ("testServer".equals(e.getActionCommand())) {
+        }
+        else if ("testServer".equals(e.getActionCommand())) {
             forceReconnect.setEnabled(false);
             try {
                 ws = new WorldServer();
-            } catch (BindException f) {
+            }
+            catch (BindException f) {
                 setMessage("Could not bind WorldServer's address. WorldServer already started?");
             }
             forceReconnect.setEnabled(true);
             return;
-        } else if ("manualRefresh".equals(e.getActionCommand())) {
+        }
+        else if ("manualRefresh".equals(e.getActionCommand())) {
             refreshObserved();
             return;
-        } else if ("AutoRefresh".equals(e.getActionCommand())){
+        }
+        else if ("AutoRefresh".equals(e.getActionCommand())) {
             // See constructor of automaticallyRefresh
             return;
-        } else if ("openrules".equals(e.getActionCommand())) {
+        }
+        else if ("openrules".equals(e.getActionCommand())) {
             // TODO: add real implementation
             ZooGas.defaultPatternSetFilename = "ECOLOGY2.txt";
             return;
-        } else {
+        }
+        else {
             System.err.println("Handler for action " + e.getActionCommand() + " not found");
         }
     }
-    
-    private void refreshObserved(){
+
+    private void refreshObserved() {
         toWorldServer.sendRefreshObserved();
     }
 
     public void setConnected(boolean connected) {
-        if(connected == true && automaticallyRefresh.isSelected()) {
+        if (connected == true && automaticallyRefresh.isSelected()) {
             automaticallyRefresh.setSelected(false);
             automaticallyRefresh.doClick();
         }
@@ -302,15 +313,15 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
     }
     public void launch(int listeningPort) {
         //(observerMap.get(currentSelection)).getJPanel().setBorder(new LineBorder(Color.GREEN, 3));
-        launchArgs = new String[] {"-s", "-p", String.valueOf(listeningPort)};
+        launchArgs = new String[] { "-s", "-p", String.valueOf(listeningPort) };
         readyToLaunch = true;
         dispose();
     }
 
     public void setGridSize(int width, int height) {
         observerPanel.removeAll();
-        for(int x = 0; x < width; ++x) {
-            for(int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            for (int y = 0; y < height; ++y) {
                 observerConstraints.gridx = x;
                 observerConstraints.gridy = y;
                 ObserverRenderer obs = new ObserverRenderer(ZooGas.defaultBoardSize);
@@ -318,33 +329,31 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
                 JPanel pane = obs.getJPanel();
                 final Point p = new Point(x, y);
                 observerMap.put(p, obs);
-                pane.addMouseListener(
-                    new MouseAdapter() {
+                pane.addMouseListener(new MouseAdapter() {
                         public void mousePressed(MouseEvent e) {
                             // double click
-                            if(readyToLaunch) {
+                            if (readyToLaunch) {
                                 return;
                             }
 
-                            if(p.equals(currentSelection)) {
-                                if(e.getClickCount() == 2) {
+                            if (p.equals(currentSelection)) {
+                                if (e.getClickCount() == 2) {
                                     (observerMap.get(currentSelection)).getJPanel().setBorder(new LineBorder(Color.YELLOW, 3));
                                     toWorldServer.sendJoinLocation(p);
                                 }
                                 return;
                             }
 
-                            if(currentSelection != null)
+                            if (currentSelection != null)
                                 (observerMap.get(currentSelection)).getJPanel().setBorder(null);
 
-                            if(!observerMap.get(p).getHasPlayer()){
+                            if (!observerMap.get(p).getHasPlayer()) {
                                 currentSelection = p;
                                 (observerMap.get(currentSelection)).getJPanel().setBorder(new LineBorder(Color.BLUE, 3));
                                 launchMPButton.setEnabled(true);
                             }
                         }
-                    }
-                );
+                    });
                 observerPanel.add(pane, observerConstraints);
             }
         }
@@ -352,7 +361,7 @@ public class Loader extends JFrame implements ItemListener, ActionListener {
         pack();
     }
     public void initPlayerLocs(Set<Point> clientSet) {
-        for(Point p : clientSet) {
+        for (Point p : clientSet) {
             observerMap.get(p).setHasPlayer(true);
         }
     }

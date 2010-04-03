@@ -37,14 +37,16 @@ public class RuleSet {
                         byteSize += 1 + s.getBytes().length;
                     }
                 }
-            } catch (IOException e) {
+            }
+            catch (IOException e) {
                 e.printStackTrace();
             }
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             e.printStackTrace();
         }
-         
-        for(String prefix : undeclaredWords) {
+
+        for (String prefix : undeclaredWords) {
             System.err.println("RuleSet: undeclared Word: " + prefix);
         }
     }
@@ -65,7 +67,7 @@ public class RuleSet {
     public SortedSet<String> getAllRawRules() {
         return ruleLines;
     }
-    
+
     /**
      *Gets all rules associated with a <i>prefix</i>
      * @param prefix
@@ -96,10 +98,10 @@ public class RuleSet {
 
         return true;
     }
-    
+
     private SortedSet<String> getOrCreateWordSet(String prefix) {
         PrefixSet set;
-        if(wordSets.containsKey(prefix)) {
+        if (wordSets.containsKey(prefix)) {
             set = wordSets.get(prefix);
         }
         else {
@@ -110,29 +112,29 @@ public class RuleSet {
 
         return set;
     }
-    
-    public boolean add(String str){
+
+    public boolean add(String str) {
         final Pattern wordDeclRegex = Pattern.compile("WORD (.*)"); // handler for declaring a Word type
         final Pattern wordValueRegex = Pattern.compile(".*W=(\\S*/).*");
-        if(!ruleLines.contains(str)) {
+        if (!ruleLines.contains(str)) {
             Matcher matcher = wordValueRegex.matcher(str); // match Word value
-            if(matcher.matches()) {
+            if (matcher.matches()) {
                 String prefix = matcher.group(1);
                 ruleLines.add(str);
-                if(!getOrCreateWordSet(prefix).add(str))
+                if (!getOrCreateWordSet(prefix).add(str))
                     System.err.println("PatternSet: duplicate line: " + str);
 
                 return true;
-            } 
+            }
             else { // match declaration of a Word
                 matcher = wordValueRegex.matcher(str);
-                if(matcher.matches()) {
+                if (matcher.matches()) {
                     String[] prefixes = matcher.group(1).split(" ");
-                    for(String s : prefixes) {
-                        if(!wordSets.containsKey(s)) {
+                    for (String s : prefixes) {
+                        if (!wordSets.containsKey(s)) {
                             wordSets.put(s, new PrefixSet());
                         }
-                        
+
                         undeclaredWords.remove(s);
                     }
                     return true;
@@ -141,26 +143,26 @@ public class RuleSet {
         }
         return true; // TODO: add other declaration types?
     }
-    
-    
-    public class PrefixSet extends TreeSet<String>{
-        PrefixSet(){
+
+
+    public class PrefixSet extends TreeSet<String> {
+        PrefixSet() {
             super();
         }
         private int byteSize = 0;
-        
-        public int getByteSize(){
+
+        public int getByteSize() {
             return byteSize;
         }
-        
+
         public boolean add(String str) {
             byteSize += str.getBytes().length + 1;
             return super.add(str);
         }
-                
+
         public boolean remove(Object str) {
             boolean ret = super.remove(str);
-            if(ret)
+            if (ret)
                 byteSize -= ((String)str).getBytes().length;
 
             return ret;

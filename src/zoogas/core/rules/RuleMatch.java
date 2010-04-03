@@ -116,8 +116,12 @@ public class RuleMatch {
     // expanded pattern methods
     // keep regexB() independent of regexA() as it greatly simplifies optimization
     //  (although it was nice to have backreference expressive capability for AB...)
-    public final String regexA() { return expandDir(pattern.getSourceName()); }
-    public final String regexB() { return expandDir(pattern.getTargetName()); }
+    public final String regexA() {
+        return expandDir(pattern.getSourceName());
+    }
+    public final String regexB() {
+        return expandDir(pattern.getTargetName());
+    }
 
     // main expand() methods
     protected final String expand(String s) {
@@ -161,22 +165,27 @@ public class RuleMatch {
             Matcher m = macroPattern.matcher(s);
             while (m.find()) {
                 String g = m.group(1);
-		if (g.length() > 0)
-		    if (g.equals("S"))
-			m.appendReplacement(sb, A);
-		    else if (g.equals("T")) {
-			m.appendReplacement(sb, B);
-		    } else if (g.charAt(0) == '+') {
-			m.appendReplacement(sb, expandInc(g));
-		    } else if (g.charAt(0) == '-') {
-			m.appendReplacement(sb, expandDec(g));
-		    } else if (g.charAt(0) == '%') {
-			m.appendReplacement(sb, expandMod(g));
-		    } else
-			m.appendReplacement(sb, getGroup(g));
+                if (g.length() > 0)
+                    if (g.equals("S"))
+                        m.appendReplacement(sb, A);
+                    else if (g.equals("T")) {
+                        m.appendReplacement(sb, B);
+                    }
+                    else if (g.charAt(0) == '+') {
+                        m.appendReplacement(sb, expandInc(g));
+                    }
+                    else if (g.charAt(0) == '-') {
+                        m.appendReplacement(sb, expandDec(g));
+                    }
+                    else if (g.charAt(0) == '%') {
+                        m.appendReplacement(sb, expandMod(g));
+                    }
+                    else
+                        m.appendReplacement(sb, getGroup(g));
             }
             m.appendTail(sb);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             System.err.println("While expanding " + s);
             e.printStackTrace();
         }
@@ -196,7 +205,8 @@ public class RuleMatch {
                 m.appendReplacement(sb, String.valueOf(n + delta));
             }
             m.appendTail(sb);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             System.err.println("While expanding " + s);
             e.printStackTrace();
         }
@@ -217,7 +227,8 @@ public class RuleMatch {
                     m.appendReplacement(sb, String.valueOf(n - delta));
             }
             m.appendTail(sb);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             System.err.println("While expanding " + s);
             e.printStackTrace();
         }
@@ -238,7 +249,8 @@ public class RuleMatch {
                 m.appendReplacement(sb, String.valueOf((n + delta) % M));
             }
             m.appendTail(sb);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             System.err.println("While expanding " + s);
             e.printStackTrace();
         }
@@ -252,9 +264,10 @@ public class RuleMatch {
             int n = new Integer(group).intValue();
             if (n <= am.groupCount())
                 val = am.group(n);
-	    else if (n <= am.groupCount() + bm.groupCount())
-		val = bm.group(n - am.groupCount());
-        } catch (Exception e) {
+            else if (n <= am.groupCount() + bm.groupCount())
+                val = bm.group(n - am.groupCount());
+        }
+        catch (Exception e) {
             System.err.println("While trying to get group $" + group + " matching " + A + " " + B + " to " + aPattern.pattern() + " " + bPattern.pattern());
             e.printStackTrace();
         }

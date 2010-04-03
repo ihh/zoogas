@@ -24,11 +24,11 @@ public abstract class BoardRenderer {
     public int getBoardSize(int size) {
         return size * pixelsPerCell;
     }
-    
+
     public int getPixelsPerCell() {
         return pixelsPerCell;
     }
-    
+
     public BufferedImage getImage() {
         return image;
     }

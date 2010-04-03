@@ -14,20 +14,22 @@ public class EnergyRulePattern extends RulePattern {
     double minAngle, maxAngle;
     double lenTolerance, angleTolerance;
     double E;
-    
+
     // constructors
-    public EnergyRulePattern (String w, String a, String b, String n, double e, double l, double L, double lTol, double minAngle, double maxAngle, double aTol) {
-	super(w,a,b);
-	bondName = n;
-	minLen = l;
-	maxLen = L;
-	this.minAngle = minAngle;
-	this.maxAngle = maxAngle;
-	lenTolerance = lTol;
-	angleTolerance = aTol;
-	E = e;
+    public EnergyRulePattern(String w, String a, String b, String n, double e, double l, double L, double lTol, double minAngle, double maxAngle, double aTol) {
+        super(w, a, b);
+        bondName = n;
+        minLen = l;
+        maxLen = L;
+        this.minAngle = minAngle;
+        this.maxAngle = maxAngle;
+        lenTolerance = lTol;
+        angleTolerance = aTol;
+        E = e;
     }
 
     // accessors
-    public final boolean hasAngleConstraint() { return maxAngle - minAngle < 2 || angleTolerance < 1; }
+    public final boolean hasAngleConstraint() {
+        return maxAngle - minAngle < 2 || angleTolerance < 1;
+    }
 }

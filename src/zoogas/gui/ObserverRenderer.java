@@ -24,10 +24,10 @@ public class ObserverRenderer extends BoardRenderer {
                     super.paintComponent(g);
                     g.drawImage(image, 0, 0, null);
                 }
-        };
+            };
         panel.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));
 
-        Color c = new Color(100,100,150);
+        Color c = new Color(100, 100, 150);
         /*Color c = new Color(100+(int)(Math.random() * 155),
                             100+(int)(Math.random() * 155),
                             100+(int)(Math.random() * 155));*/
@@ -37,19 +37,19 @@ public class ObserverRenderer extends BoardRenderer {
     JPanel panel;
     boolean hasPlayer = false;
     int pixelsPerSide;
-        HashMap<Point, Color> particles;
+    HashMap<Point, Color> particles;
 
     public JPanel getJPanel() {
         return panel;
     }
-    
+
     public boolean getHasPlayer() {
         return hasPlayer;
     }
 
     public boolean setHasPlayer(boolean b) {
         hasPlayer = b;
-        if(b)
+        if (b)
             panel.setBackground(Color.BLACK);
         return hasPlayer;
     }
@@ -69,7 +69,7 @@ public class ObserverRenderer extends BoardRenderer {
     public void clear() {
         image = new BufferedImage(pixelsPerSide, pixelsPerSide, BufferedImage.TYPE_4BYTE_ABGR); // TODO: can this be replaced with 3BYTE_BGR?
     }
-    
+
     public void showVerb(UpdateEvent updateEvent) {
         return;
     }
