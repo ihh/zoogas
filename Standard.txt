@@ -1,0 +1,209 @@
+---+ Zoo Gas Standard
+
+"Zoo Gas" is a standard for a peer-to-peer stochastic cellular automata sandbox.
+The ZooGas standard may be implemented by various peer clients / cloud servers.
+
+Components of the standard:
+ The Sandbox Rule Set
+ Peer-to-Peer Connectivity
+ (Experimental) World Server
+ (In development) Challenge Structures
+
+---++ The Sandbox Rule Set
+The Sandbox Rule Set is described in terms of
+ particle descriptions (NOUN),
+ pairwise cell update rules (VERB),
+ persistent interactions between cells (BOND),
+ player affordances (TOOL).
+
+---+++ Interpretation of the sandbox rules
+A NOUN describes a particle: its name, color, energy, assets etc.
+ Name [Color] [Icon] ...
+
+The states of two adjacent cells are referred to as Source and Target.
+A BOND describes a link between two cells:
+ Source Target Energy
+Attributes allow the BOND energy to depend on length, angle & distance.
+
+A VERB describes a pairwise update of two adjacent cells:
+ OldSource OldTarget -> NewSource NewTarget [Direction] [Probability]
+A VERB can create and destroy BONDs.
+
+A TOOL is a spray-can that the player can use to place particles on the board:
+ Particle [Diameter] [Power] [Reserve] [RefillRate] ...
+
+---+++ Dynamic and Static sandboxes
+The Sandbox Rule Set can be interpreted Dynamically (NOUN, VERB and BOND
+match patterns interpreted as regular expressions), or Statically (patterns
+interpreted as exact string constants, all particles enumerated ahead of time).
+
+The relevant attributes are:
+ Name, Source, Target, OldSource, OldTarget, NewSource, NewTarget.
+
+Implementations provide either a Dynamic Sandbox or a Static Sandbox.
+While the standard currently provides no way of querying an implementation
+as to its performance (though it obviously should), some general notes:
+- both types of sandbox have strong complexity guarantees (the regexes in
+a Dynamic Sandbox compile to state machines with known state-space sizes);
+- a Static Sandbox is considerably faster to run than a Dynamic Sandbox
+(particle names can be compiled to integers and all interactions pre-computed).
+- a Static Sandbox can easily be "compiled" from a Dynamic Sandbox assuming
+that some algorithm exists to enumerate all valid particles.
+
+The reference implementation at zoogas.net uses a Dynamic Sandbox.
+It looks like early phone clients will be Static, for performance reasons.
+The reference implementation can also be viewed as a Dynamic->Static compiler.
+
+---++ Peer-to-Peer Connectivity
+The standard defines messaging protocols (UDP and TCP) for
+ establishing inter-board connectivity (CONNECT),
+ sending pairwise interaction requests (EVOLVE),
+ returning pairwise interactions (RETURN),
+ terminating a connection (BYE).
+
+---++ World Server
+An experimental "World-Server" standard defines network protocols for
+ remote observation
+  (registration (OBSERVE),
+   update request (REFRESH_OBSERVED),
+   response (SEND_PARTICLES)),
+ staking a claim in a world space (CLAIM_GRID),
+ verifying the validity of a rule set (CHECKIN_ALL_RULES).
+
+---++ Challenge Structures
+In development: a "Challenge Structure" standard for describing
+game challenges, associated game conditions (e.g. presence of N particles
+of type X, division of board space into K connected components,
+condition C has been true for T turns, conditions A and B are simultaneously
+true, etc.) and descriptions of challenge-giving NPCs, combining menus,
+basic feedback, and basic assets (images, sounds), and allowing for
+client-specific extensions.
+
+---++ Licensing
+The standard is completely open. Third parties are free to develop
+and/or sell commercial products and operate marketplaces for
+client applications (e.g. iPhone or FaceBook apps),
+specialized rules, challenges and associated assets (in-game sales),
+and in-game advertising. The only restriction is that software derived
+directly from the Zoo Gas source code (which is GPL'd) must itself
+follow the terms of the GPL. However, selling independently-developed
+code that implements the Zoo Gas standard is 100% legit, and need not
+follow the GPL as long as no code is shared with the code at zoogas.net.
+Furthermore, distribution costs may be ameliorated e.g. by selling in-game
+advertising or charging for distribution in an "App Store" or similar
+marketplace. This sort of distribution-related revenue is entirely consistent
+with the terms of the GPL, as long as there remains a way for users to download
+the source code for free and build it themselves.
+
+The role of the Evolutionary Software Foundation is to maintain the
+standard and reference implementations at zoogas.net.
+
+---++ XML representation of Sandbox Rule Set
+The sandbox rule set has the following DTD:
+
+<!DOCTYPE ZooGas [
+    <!ELEMENT NOUN (Name, Color?, Energy?, Icon*)>
+      <!ELEMENT Name (#PCDATA)>
+      <!ELEMENT Color (#PCDATA)>
+    <!-- Default value of NOUN.Color is "ffffff" -->
+      <!ELEMENT Energy (#PCDATA)>
+    <!-- Default value of NOUN.Energy is "0" -->
+      <!ELEMENT Icon (#PCDATA)>
+    <!-- Child elements may be specified as attributes -->
+      <!ATTLIST NOUN Color CDATA "ffffff">
+      <!ATTLIST NOUN Energy CDATA "0">
+      <!ATTLIST NOUN Icon CDATA "null">
+    <!-- End of top-level element NOUN -->
+
+    <!ELEMENT VERB
+ (OldSource, OldTarget?, NewSource?, NewTarget?, Dir?, Prob?, Say?,
+ OptionalBond*, DeleteBond*, ExcludeBond*, NewBond*,
+ KeepOptionalBond*, KeepRequiredBond*)>
+      <!ELEMENT OldSource (#PCDATA)>
+      <!ELEMENT OldTarget (#PCDATA)>
+    <!-- Default value of VERB.OldTarget is ".*" -->
+      <!ELEMENT NewSource (#PCDATA)>
+    <!-- Default value of VERB.NewSource is "$S" -->
+      <!ELEMENT NewTarget (#PCDATA)>
+    <!-- Default value of VERB.NewTarget is "$T" -->
+      <!ELEMENT Dir (#PCDATA)>    <!-- Default value of VERB.Dir is "" -->
+      <!ELEMENT Prob (#PCDATA)>    <!-- Default value of VERB.Prob is "1" -->
+      <!ELEMENT Say (#PCDATA)>    <!-- Default value of VERB.Say is "_" -->
+      <!ELEMENT OptionalBond (#PCDATA)>
+      <!ELEMENT DeleteBond (#PCDATA)>
+      <!ELEMENT ExcludeBond (#PCDATA)>
+      <!ELEMENT NewBond (#PCDATA)>
+      <!ELEMENT KeepOptionalBond (#PCDATA)>
+      <!ELEMENT KeepRequiredBond (#PCDATA)>
+    <!-- Child elements may be specified as attributes -->
+      <!ATTLIST VERB OldTarget CDATA ".*">
+      <!ATTLIST VERB NewSource CDATA "$S">
+      <!ATTLIST VERB NewTarget CDATA "$T">
+      <!ATTLIST VERB Dir CDATA "">
+      <!ATTLIST VERB Prob CDATA "1">
+      <!ATTLIST VERB Say CDATA "_">
+      <!ATTLIST VERB OptionalBond CDATA "null">
+      <!ATTLIST VERB DeleteBond CDATA "null">
+      <!ATTLIST VERB ExcludeBond CDATA "null">
+      <!ATTLIST VERB NewBond CDATA "null">
+      <!ATTLIST VERB KeepOptionalBond CDATA "null">
+      <!ATTLIST VERB KeepRequiredBond CDATA "null">
+    <!-- End of top-level element VERB -->
+
+    <!ELEMENT BOND
+ (Name, Energy?, Source?, Target?,
+ MinLen?, MaxLen?, LenTolerance?, MinAngle?, MaxAngle?, AngleTolerance?)>
+    <!-- Default value of BOND.Energy is "" -->
+      <!ELEMENT Source (#PCDATA)>
+    <!-- Default value of BOND.Source is ".*" -->
+      <!ELEMENT Target (#PCDATA)>
+    <!-- Default value of BOND.Target is ".*" -->
+      <!ELEMENT MinLen (#PCDATA)>
+    <!-- Default value of BOND.MinLen is "1" -->
+      <!ELEMENT MaxLen (#PCDATA)>
+    <!-- Default value of BOND.MaxLen is "1.5" -->
+      <!ELEMENT LenTolerance (#PCDATA)>
+    <!-- Default value of BOND.LenTolerance is "1" -->
+      <!ELEMENT MinAngle (#PCDATA)>
+    <!-- Default value of BOND.MinAngle is "-1" -->
+      <!ELEMENT MaxAngle (#PCDATA)>
+    <!-- Default value of BOND.MaxAngle is "1" -->
+      <!ELEMENT AngleTolerance (#PCDATA)>
+    <!-- Default value of BOND.AngleTolerance is "1" -->
+    <!-- Child elements may be specified as attributes -->
+      <!ATTLIST BOND Energy CDATA "">
+      <!ATTLIST BOND Source CDATA ".*">
+      <!ATTLIST BOND Target CDATA ".*">
+      <!ATTLIST BOND MinLen CDATA "1">
+      <!ATTLIST BOND MaxLen CDATA "1.5">
+      <!ATTLIST BOND LenTolerance CDATA "1">
+      <!ATTLIST BOND MinAngle CDATA "-1">
+      <!ATTLIST BOND MaxAngle CDATA "1">
+      <!ATTLIST BOND AngleTolerance CDATA "1">
+    <!-- End of top-level element BOND -->
+
+    <!ELEMENT TOOL
+ (Particle, Key?, Diameter?, Power?, Reserve?, RefillRate?, DisplayWidth?)>
+      <!ELEMENT Particle (#PCDATA)>
+      <!ELEMENT Key (#PCDATA)>
+    <!-- Default value of TOOL.Key is "" -->
+      <!ELEMENT Diameter (#PCDATA)>
+    <!-- Default value of TOOL.Diameter is "1" -->
+      <!ELEMENT Power (#PCDATA)>
+    <!-- Default value of TOOL.Power is "1" -->
+      <!ELEMENT Reserve (#PCDATA)>
+    <!-- Default value of TOOL.Reserve is "1" -->
+      <!ELEMENT RefillRate (#PCDATA)>
+    <!-- Default value of TOOL.RefillRate is "1" -->
+      <!ELEMENT DisplayWidth (#PCDATA)>
+    <!-- Default value of TOOL.DisplayWidth is "1" -->
+    <!-- Child elements may be specified as attributes -->
+      <!ATTLIST TOOL Key CDATA "">
+      <!ATTLIST TOOL Diameter CDATA "1">
+      <!ATTLIST TOOL Power CDATA "1">
+      <!ATTLIST TOOL Reserve CDATA "1">
+      <!ATTLIST TOOL RefillRate CDATA "1">
+      <!ATTLIST TOOL DisplayWidth CDATA "1">
+    <!-- End of top-level element TOOL -->
+
+]>
