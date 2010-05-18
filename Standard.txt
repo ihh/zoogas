@@ -18,16 +18,21 @@ The Sandbox Rule Set is described in terms of
 
 ---+++ Interpretation of the sandbox rules
 A NOUN describes a particle: its name, color, energy, assets etc.
- Name [Color] [Icon] ...
+ Name [Color] [Icon] [Energy] ...
 
-The states of two adjacent cells are referred to as Source and Target.
-A BOND describes a link between two cells:
+The states of two cells are referred to as Source and Target.
+A BOND describes a link between two cells (they need not be adjacent):
  Source Target Energy
 Attributes allow the BOND energy to depend on length, angle & distance.
 
 A VERB describes a pairwise update of two adjacent cells:
  OldSource OldTarget -> NewSource NewTarget [Direction] [Probability]
-A VERB can create and destroy BONDs.
+
+A VERB can create and destroy BONDs, and NOUNs. The net change in energy
+defines a Boltzmann accept/reject probability for the event. Energies
+are expressed in units of kT, with positive energy-states more stable.
+So the Boltzmann acceptance probability is P(accept)=min(1,exp(Delta E))
+where "Delta E" is the net change in energy for the VERB event.
 
 A TOOL is a spray-can that the player can use to place particles on the board:
  Particle [Diameter] [Power] [Reserve] [RefillRate] ...
@@ -41,14 +46,15 @@ The relevant attributes are:
  Name, Source, Target, OldSource, OldTarget, NewSource, NewTarget.
 
 Implementations provide either a Dynamic Sandbox or a Static Sandbox.
-While the standard currently provides no way of querying an implementation
-as to its performance (though it obviously should), some general notes:
-- both types of sandbox have strong complexity guarantees (the regexes in
-a Dynamic Sandbox compile to state machines with known state-space sizes);
+A few notes...
 - a Static Sandbox is considerably faster to run than a Dynamic Sandbox
 (particle names can be compiled to integers and all interactions pre-computed).
 - a Static Sandbox can easily be "compiled" from a Dynamic Sandbox assuming
 that some algorithm exists to enumerate all valid particles.
+- ultimately the regex functionality of the Dynamic Sandbox may be less
+expressive than e.g. a large Static rule set generated with XSLT.
+- both types of sandbox have strong complexity guarantees (the regexes in
+a Dynamic Sandbox compile to state machines with known state-space sizes).
 
 The reference implementation at zoogas.net uses a Dynamic Sandbox.
 It looks like early phone clients will be Static, for performance reasons.
